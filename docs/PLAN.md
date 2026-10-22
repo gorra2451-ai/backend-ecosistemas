@@ -1,0 +1,65 @@
+# PLAN DE CONSTRUCCIÓN
+> Marca `[x]` al terminar. Dueño: **D** = Diego · **C** = COMPANERO · **D+C** = juntos.
+> `%` = peso de la tarea en el reparto 50/50 (ver `AGENTS.md` §8). Las tareas D+C y la Fase 0 no suman.
+> Fechas propuestas; ajustar cuando se confirmen mid-fi y high-fi (P-09).
+
+## Fase 0 · Arnés y repo — 20 al 26 oct
+| Estado | Tarea | Dueño | % |
+|---|---|---|---|
+| [x] | F0-T1 Arnés: reglas, docs, prompts | D | — |
+| [ ] | F0-T2 Repo `backend-ecosistemas` en GitHub desde Warp, `main` protegida | D | — |
+| [ ] | F0-T3 Invitar a C, confirmar su nombre y que pueda abrir sesión con `prompts/inicio_sesion.md` | D | — |
+| [ ] | F0-T4 Proyecto Supabase remoto + Supabase CLI y Docker en ambas compus | D+C | — |
+| [ ] | F0-T5 Revisar y aprobar `MODELO_DATOS.md` y `API.md` v0 | D+C | — |
+
+## Fase 1 · Base — 27 oct al 2 nov
+| Estado | Tarea | Dueño | % |
+|---|---|---|---|
+| [ ] | F1-T1 Migración: extensiones (postgis, pg_cron), enums, `parametros` | D | 4% |
+| [ ] | F1-T2 Migración: `perfiles`, `entradas`, auth anónima, RLS + pruebas | C | 10% |
+| [ ] | F1-T3 Migración: `reportes`, `confirmaciones`, RLS + pruebas | D | 5% |
+| [ ] | F1-T4 Polígono de la ZMG y función `dentro_de_zmg` | D | 3% |
+| [ ] | F1-T5 `seed.sql` con datos de prueba | D | 3% |
+| [ ] | F1-T6 Congelar `API.md` v1 y compartir con los 5 equipos | D+C | — |
+
+## Fase 2 · Reporte y confirmación — 3 al 9 nov
+| Estado | Tarea | Dueño | % |
+|---|---|---|---|
+| [ ] | F2-T1 RPC `crear_reporte` con validaciones y límites + pruebas | D | 7% |
+| [ ] | F2-T2 RPC `confirmar_reporte`, `marcar_falso`, `reportes_cercanos` + pruebas | D | 8% |
+| [ ] | F2-T3 Activación por umbral y expiración con `pg_cron` + pruebas | D | 7% |
+| [ ] | F2-T4 Tabla `evidencias` + RLS, Storage `evidencias` con políticas y `agregar_evidencia` + pruebas | C | 8% |
+
+## Fase 3 · Mapa — 10 al 16 nov
+| Estado | Tarea | Dueño | % |
+|---|---|---|---|
+| [ ] | F3-T1 Vista `zonas_publicas` y niveles + pruebas | D | 5% |
+| [ ] | F3-T2 RPC `reportes_activos_en_area` | D | 3% |
+| [ ] | F3-T3 Realtime habilitado en reportes/zonas | C | 4% |
+| [ ] | F3-T4 `refugios` + vista pública | C | 6% |
+
+## Fase 4 · Notificaciones y derivación — 17 al 23 nov
+| Estado | Tarea | Dueño | % |
+|---|---|---|---|
+| [ ] | F4-T1 `suscripciones_push` + Edge Function de envío Web Push | C | 5% |
+| [ ] | F4-T2 Disparo por cambio de estado con límite anti-spam | C | 4% |
+| [ ] | F4-T3 `alertas_clima` + carga (API o manual, según P-06) | C | 3% |
+| [ ] | F4-T4 `instituciones` verificadas + RPC `derivar` | C | 10% |
+
+## Fase 5 · Admin, seguridad e integración — 24 al 30 nov
+| Estado | Tarea | Dueño | % |
+|---|---|---|---|
+| [ ] | F5-T1 Rol admin, ocultar reportes, `acciones_admin` | D | 5% |
+| [ ] | F5-T2 Auditoría de RLS y llaves con `prompts/revision_pr.md` | D+C | — |
+| [ ] | F5-T3 Integración con cada equipo de front y corrección de contrato | D+C | — |
+
+## Fase 6 · Cierre — diciembre
+| Estado | Tarea | Dueño | % |
+|---|---|---|---|
+| [ ] | F6-T1 Congelar, documentar y preparar demo | D+C | — |
+
+## Suma del reparto
+| Persona | Tareas | Total |
+|---|---|---|
+| Diego | F1-T1 4 · F1-T3 5 · F1-T4 3 · F1-T5 3 · F2-T1 7 · F2-T2 8 · F2-T3 7 · F3-T1 5 · F3-T2 3 · F5-T1 5 | **50%** |
+| COMPANERO | F1-T2 10 · F2-T4 8 · F3-T3 4 · F3-T4 6 · F4-T1 5 · F4-T2 4 · F4-T3 3 · F4-T4 10 | **50%** |

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Valida el mensaje de commit: tipo(modulo): qué cambió, y sin trailers de co-autor.
+. "$(git rev-parse --show-toplevel)/scripts/lib.sh"
+
+mensaje="$(grep -v '^#' "$1")"
+primera="$(printf '%s\n' "$mensaje" | head -n 1)"
+
+# Vercel Hobby bloquea deploys con un segundo colaborador (AGENTS.md §3.11).
+if printf '%s\n' "$mensaje" | grep -qi '^co-authored-by:'; then
+  bloquear "el commit trae 'Co-Authored-By'. Quita esa línea del mensaje."
+fi
+
+# Mensajes que genera git solo (merge, revert, fixup) se aceptan tal cual.
+case "$primera" in
+  "Merge "*|"Revert "*|"fixup! "*|"squash! "*) exit 0 ;;
+esac
+
+if ! mensaje_valido "$primera"; then
+  echo "✘ BLOQUEADO: mensaje de commit con formato inválido: \"$primera\"" >&2
+  explicar_formato
+  exit 1
+fi

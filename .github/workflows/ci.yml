@@ -1,0 +1,69 @@
+# CI gratis (GitHub Actions): corre en cada PR y en cada push a main.
+# 1. arnes: pruebas del arnés + revisión de llaves/.env/mensajes en todos los commits del PR.
+# 2. base-de-datos: levanta Postgres de Supabase, aplica migraciones desde cero y corre pgTAP.
+#    Si todavía no hay migraciones ni pruebas, pasa sin error.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  arnes:
+    name: Arnés (hooks, scripts y secretos)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # historial completo para revisar cada commit del PR
+
+      - name: Pruebas del arnés
+        run: bash scripts/test-arnes.sh
+
+      - name: Revisar commits del PR (llaves, .env, formato, co-autor)
+        if: github.event_name == 'pull_request'
+        run: bash scripts/ci-revisar.sh "origin/${{ github.base_ref }}"
+
+  base-de-datos:
+    name: Base de datos (db reset + test db)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ¿Hay migraciones o pruebas?
+        id: hay
+        run: |
+          migraciones=$(find supabase/migrations -name '*.sql' | wc -l)
+          pruebas=$(find supabase/tests -name '*.sql' | wc -l)
+          echo "migraciones=$migraciones" >> "$GITHUB_OUTPUT"
+          echo "pruebas=$pruebas" >> "$GITHUB_OUTPUT"
+          echo "Migraciones: $migraciones · Pruebas: $pruebas"
+
+      - uses: supabase/setup-cli@v1
+        if: steps.hay.outputs.migraciones != '0' || steps.hay.outputs.pruebas != '0'
+        with:
+          version: 2.121.0   # misma versión que en las compus; subirla es una decisión explícita
+
+      - name: Levantar Postgres local
+        if: steps.hay.outputs.migraciones != '0' || steps.hay.outputs.pruebas != '0'
+        run: supabase db start
+
+      - name: supabase db reset (migraciones desde cero + seed)
+        if: steps.hay.outputs.migraciones != '0' || steps.hay.outputs.pruebas != '0'
+        run: supabase db reset
+
+      - name: supabase test db (pgTAP)
+        if: steps.hay.outputs.pruebas != '0'
+        run: supabase test db
+
+      - name: Sin migraciones todavía
+        if: steps.hay.outputs.migraciones == '0' && steps.hay.outputs.pruebas == '0'
+        run: echo "No hay migraciones ni pruebas en supabase/. Nada que probar todavía."

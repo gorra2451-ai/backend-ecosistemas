@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Bloquea push directo a main: a main solo se entra por PR (AGENTS.md §3.12).
+# Se permite crear main la primera vez (repo nuevo). En repo privado de GitHub Free esto es
+# lo único que lo impide del lado local; el servidor no puede forzarlo (ver DECISIONES D-011).
+. "$(git rev-parse --show-toplevel)/scripts/lib.sh"
+
+ceros="0000000000000000000000000000000000000000"
+while read -r _ref_local _sha_local ref_remota sha_remota; do
+  if [ "$ref_remota" = "refs/heads/main" ] && [ "$sha_remota" != "$ceros" ]; then
+    bloquear "push directo a main. Sube tu rama y abre PR: bash scripts/cerrar-tarea.sh"
+  fi
+done
+exit 0
