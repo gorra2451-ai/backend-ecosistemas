@@ -50,7 +50,7 @@
 | Estado | Tarea | Dueño | % |
 |---|---|---|---|
 | [x] | F5-T1 Rol admin, ocultar reportes, `acciones_admin` | D | 5% |
-| [ ] | F5-T2 Auditoría de RLS y llaves con `prompts/revision_pr.md` | D+C | — |
+| [ ] | F5-T2 Auditoría de RLS y llaves con `prompts/revision_pr.md` (módulos D auditados 2026-10-23 con advisors: migración 000600; faltan los de C) | D+C | — |
 | [ ] | F5-T3 Integración con cada equipo de front y corrección de contrato | D+C | — |
 
 ## Fase 6 · Cierre — diciembre
