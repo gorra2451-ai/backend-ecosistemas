@@ -69,6 +69,7 @@ supabase test db          # corre pruebas pgTAP de supabase/tests
 supabase migration new <nombre>
 supabase functions serve  # Edge Functions en local
 supabase db push          # aplica migraciones al proyecto remoto (solo desde main)
+bash scripts/probar-nube.sh  # revisa la seguridad de la nube desde fuera (tras cada push)
 ```
 
 ## 7. Qué NO hacer
