@@ -45,7 +45,7 @@ awk -F'|' '
     if ($2 ~ /\[x\]/) { hecho[dueno] += pct; listas[dueno]++ }
   }
   END {
-    nombre["D"] = "Diego"; nombre["C"] = "COMPANERO"; nombre["D+C"] = "Juntos"
+    nombre["D"] = "Diego"; nombre["C"] = "LeoFigo74z"; nombre["D+C"] = "Juntos"
     split("D C D+C", orden, " ")
     for (i = 1; i <= 3; i++) {
       d = orden[i]

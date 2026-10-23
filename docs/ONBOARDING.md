@@ -1,5 +1,5 @@
 # ONBOARDING — Primer día en el backend
-> Para COMPANERO (o quien entre al repo). Tiempo: ~30 min. Al final debes tener
+> Para LeoFigo74z (o quien entre al repo). Tiempo: ~30 min. Al final debes tener
 > `bash scripts/diagnostico.sh` con **0 problemas**.
 
 ## 1. Instalar herramientas

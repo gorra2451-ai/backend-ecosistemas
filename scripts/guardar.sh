@@ -24,7 +24,9 @@ else
   git log -1 --oneline
 fi
 
-if hay_remoto; then
+if solo_local; then
+  info "Commit guardado solo en tu compu (modo solo local). Para subirlo pide autorización a Diego."
+elif hay_remoto; then
   git push -q -u origin "$rama" || bloquear "falló el push. Corre bash scripts/sync.sh y vuelve a intentar."
   info "Subido a origin/$rama."
 else

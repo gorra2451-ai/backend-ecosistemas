@@ -2,7 +2,7 @@
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
 **Última actualización:** 2026-10-23 · Diego (con Claude Code)
-**Fase actual:** módulos de Diego terminados y en la nube; faltan los de COMPANERO
+**Fase actual:** módulos de Diego terminados y en la nube; faltan los de LeoFigo74z
 **Rama activa:** ninguna (`main` al día)
 **Repo:** https://github.com/gorra2451-ai/backend-ecosistemas (público, `main` protegida: D-012)
 
@@ -19,10 +19,10 @@
 - `docs/API.md` **v1 congelada** (✅ disponible / ⏳ pendiente por módulo).
 
 ## Siguiente paso (en este orden)
-1. Usuario de GitHub de COMPANERO → reemplazar `COMPANERO` en docs → `bash scripts/invitar.sh <usuario>`
-   → subir revisiones requeridas a 1 (comando en D-012) → mandarle `prompts/mensaje_companero.md`.
-2. Si para el 27-oct (inicio Fase 1) no entra: D-013, Diego toma F1-T2 (perfiles/entradas) y sigue
-   con sus tareas C por fase.
+1. LeoFigo74z ya está invitado (2026-10-23) y `main` pide 1 revisión. Falta: que acepte la
+   invitación, haga `docs/ONBOARDING.md` y pegue `prompts/arranque_companero.md` en su IA.
+   Su primera tarea: F1-T2 (sesión anónima), la que destraba la escritura para los equipos.
+2. Si para el 27-oct (inicio Fase 1) no entra: D-013, Diego toma F1-T2 y sigue con sus tareas C.
 3. F1-T6: Diego comparte `docs/API.md` v1 + URL + llave publicable con los 5 equipos.
    Ojo: sin sesión anónima (F1-T2) los equipos solo pueden **leer**; escribir requiere F1-T2.
 4. Nuevas migraciones a la nube: `supabase db push` solo desde `main` (password en `.env`).

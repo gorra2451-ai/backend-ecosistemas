@@ -11,7 +11,7 @@ clase → PREGUNTAS.md → DECISIONES.md → tarea en PLAN.md → PR
 - Si responde una pregunta ya abierta, se anota la respuesta en esa fila.
 
 ## 2. `PREGUNTAS.md` → `DECISIONES.md`
-- Los dos (Diego y COMPANERO) acuerdan la respuesta.
+- Los dos (Diego y LeoFigo74z) acuerdan la respuesta.
 - Se agrega una decisión nueva `D-XXX`. Si contradice una anterior, la anterior se marca
   "Reemplazada por D-XXX" y **no se borra**.
 - La fila de la pregunta se marca ✔ con el número de decisión.

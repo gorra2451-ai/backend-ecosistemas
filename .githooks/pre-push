@@ -4,6 +4,9 @@
 # lo único que lo impide del lado local; el servidor no puede forzarlo (ver DECISIONES D-011).
 . "$(git rev-parse --show-toplevel)/scripts/lib.sh"
 
+solo_local && bloquear "modo solo local: el push necesita autorización de Diego. Cuando la dé:
+  PUSH_AUTORIZADO=1 bash scripts/guardar.sh \"tipo(modulo): qué cambió\""
+
 ceros="0000000000000000000000000000000000000000"
 while read -r _ref_local _sha_local ref_remota sha_remota; do
   if [ "$ref_remota" = "refs/heads/main" ] && [ "$sha_remota" != "$ceros" ]; then

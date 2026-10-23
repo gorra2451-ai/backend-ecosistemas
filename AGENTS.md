@@ -41,6 +41,9 @@ No leas todo el repo "por si acaso": gasta contexto. Lee lo que la tarea pide.
     (tipos: feat, fix, docs, test, refactor, chore). Sin trailers de co-autor
     (Vercel Hobby bloquea deploys con un segundo colaborador).
 12. **Merge a `main` solo por PR** revisado por la otra persona, con `--no-ff`.
+13. **LeoFigo74z trabaja en modo solo local (D-015):** construye y prueba en su compu, no hace
+    push sin autorización de Diego (`git config arnes.soloLocal true` lo bloquea). Al terminar
+    cada tarea de `docs/PLAN.md` se detiene y le manda a Diego un resumen; las dudas van a Diego.
 
 ## 4. Definición de terminado
 - [ ] Hace lo que pide la tarea y nada más
@@ -75,7 +78,7 @@ supabase db push          # aplica migraciones al proyecto remoto (solo desde ma
 - No borrar archivos de documentación; si algo ya no aplica, márcalo como obsoleto.
 
 ## 8. Quién es quién
-Reparto 50/50 del backend. `COMPANERO` es marcador hasta confirmar nombre y usuario de GitHub (P-10).
+Reparto 50/50 del backend. Compañero: GitHub `LeoFigo74z` (P-10; nombre por confirmar).
 
 | Persona | Herramienta | Módulo | % |
 |---|---|---|---|
@@ -85,12 +88,12 @@ Reparto 50/50 del backend. `COMPANERO` es marcador hasta confirmar nombre y usua
 | | | Zonas de calor | 5% |
 | | | Admin | 5% |
 | | | **Total Diego** | **50%** |
-| COMPANERO | ChatGPT / Codex | Registro anónimo y perfiles | 10% |
+| LeoFigo74z | ChatGPT / Codex | Registro anónimo y perfiles | 10% |
 | | | Fotos/videos (evidencias + Storage) | 8% |
 | | | Refugios y realtime | 10% |
 | | | Notificaciones y clima | 12% |
 | | | Derivación | 10% |
-| | | **Total COMPANERO** | **50%** |
+| | | **Total LeoFigo74z** | **50%** |
 
 Ambos revisan los PR del otro. El esquema base (Fase 1) se revisa juntos.
 Las tareas `D+C` de `docs/PLAN.md` (coordinación, revisión, integración) no cuentan en el reparto.

@@ -1,6 +1,6 @@
 # MODELO DE DATOS (v0 revisado en F0-T5 · 2026-10-22)
 > Nombres en español, snake_case. Toda tabla con RLS. Ubicaciones en `geography(Point, 4326)`.
-> Dueño de cada tabla entre corchetes: **[D]** Diego · **[C]** COMPANERO.
+> Dueño de cada tabla entre corchetes: **[D]** Diego · **[C]** LeoFigo74z.
 
 ## Diagrama
 ```
