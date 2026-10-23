@@ -74,8 +74,9 @@ espera_bloqueo "guardar.sh se niega a correr" sh -c "cd '$TMP/sin-repo' && bash 
 espera_bloqueo "diagnostico.sh lo avisa" sh -c "cd '$TMP/sin-repo' && bash scripts/diagnostico.sh --sin-pruebas"
 
 echo "diagnostico.sh"
-out="$(bash scripts/diagnostico.sh --sin-pruebas 2>&1)"; r=$?
-echo "$out" | grep -q "✔ hooks" && [ $r -eq 0 ] && ok "reporta hooks activos" || mal "reporta hooks activos" "$out"
+# Solo se revisa la línea de hooks: el total depende de qué herramientas tenga la máquina (en CI no hay supabase).
+out="$(bash scripts/diagnostico.sh --sin-pruebas 2>&1)"
+echo "$out" | grep -q "✔ hooks" && ok "reporta hooks activos" || mal "reporta hooks activos" "$out"
 git config --unset core.hooksPath
 out="$(bash scripts/diagnostico.sh --sin-pruebas 2>&1)"; r=$?
 echo "$out" | grep -q "✘ hooks" && [ $r -ne 0 ] && ok "detecta hooks desactivados" || mal "detecta hooks desactivados" "$out"

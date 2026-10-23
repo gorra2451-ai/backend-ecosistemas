@@ -14,3 +14,4 @@
 | P-09 | Fechas de mid-fi y high-fi | Plan | Diego | Profesora | Abierta |
 | P-10 | Nombre y usuario de GitHub de COMPANERO | Fase 0 | Diego | COMPANERO | Abierta |
 | P-11 | ¿Quién es administrador y qué puede hacer? | Fase 5 | Ambos | Grupo | Abierta |
+| P-12 | ¿Repo público para forzar la protección de `main` (D-011)? | Fase 0 | Diego | Diego + COMPANERO | Abierta |

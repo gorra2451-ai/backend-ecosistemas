@@ -65,3 +65,13 @@ cada dato. Lo que siga abierto entra como valor en `parametros` o como `POR CONF
 se confirme, se ajusta el parámetro o se agrega una migración nueva (nunca se edita una aplicada).
 **Por qué:** las preguntas abiertas (P-01 a P-11) no deben frenar la construcción, y así un cambio
 acordado en clase no obliga a rehacer código. Flujo en `docs/CAMBIOS_DE_CLASE.md`.
+
+## D-011 · Repo privado; protección de `main` por regla de equipo
+**Estado:** Aprobada (Diego) · 2026-10-22 · se revisa en P-12
+**Decisión:** `gorra2451-ai/backend-ecosistemas` es privado. GitHub Free no permite proteger
+ramas en repos privados (la API respondió `403 · Upgrade to GitHub Pro or make this repository
+public`), así que "a `main` solo por PR con 1 revisión y CI en verde" es regla del equipo.
+**Mitigación:** hooks locales (`pre-commit` bloquea commits a `main`, `pre-push` bloquea push a
+`main`) y CI que revisa cada commit del PR (`scripts/ci-revisar.sh`). Ninguno impide apretar
+"Merge" en GitHub con el CI en rojo: eso depende de los dos.
+**Alternativa:** hacerlo público permite forzar PR + revisión + CI (no hay secretos en el repo).
