@@ -9,7 +9,7 @@
 | [x] | F0-T1 Arnés: reglas, docs, prompts | D | — |
 | [x] | F0-T2 Repo `backend-ecosistemas` en GitHub desde Warp (privado; `main` protegida por regla, D-011) | D | — |
 | [ ] | F0-T3 Invitar a C, confirmar su nombre y que pueda abrir sesión con `prompts/inicio_sesion.md` | D | — |
-| [ ] | F0-T4 Proyecto Supabase remoto + Supabase CLI y Docker en ambas compus (Diego listo; puertos 554xx) | D+C | — |
+| [ ] | F0-T4 Proyecto Supabase remoto + Supabase CLI y Docker en ambas compus (remoto listo, D-014; compu de Diego lista, puertos 554xx; falta la de COMPANERO) | D+C | — |
 | [x] | F0-T5 Revisar y aprobar `MODELO_DATOS.md` y `API.md` v0 (Diego, D-013) | D+C | — |
 
 ## Fase 1 · Base — 27 oct al 2 nov
@@ -20,7 +20,7 @@
 | [x] | F1-T3 Migración: `reportes`, `confirmaciones`, RLS + pruebas | D | 5% |
 | [x] | F1-T4 Polígono de la ZMG y función `dentro_de_zmg` | D | 3% |
 | [x] | F1-T5 `seed.sql` con datos de prueba | D | 3% |
-| [ ] | F1-T6 Congelar `API.md` v1 y compartir con los 5 equipos | D+C | — |
+| [ ] | F1-T6 Congelar `API.md` v1 (hecho 2026-10-23) y compartir con los 5 equipos (falta) | D+C | — |
 
 ## Fase 2 · Reporte y confirmación — 3 al 9 nov
 | Estado | Tarea | Dueño | % |

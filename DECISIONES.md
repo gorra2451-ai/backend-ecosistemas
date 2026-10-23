@@ -93,3 +93,12 @@ requieren a los dos. Si al inicio de cada fase COMPANERO sigue sin acceso, Diego
 C de esa fase, en el orden de `docs/PLAN.md`, y las marca en el plan como `C→D`.
 **Por qué:** que el backend no se frene; los % del reparto quedan registrados para la evaluación.
 
+
+## D-014 · Proyecto Supabase en la nube
+**Estado:** Aceptada (Diego) · 2026-10-23
+**Decisión:** proyecto `backend-ecosistemas` (ref `hdaolwqvxofmvqahzjvp`, región us-west-1) en la
+org gratuita de gorra2451-ai. Para liberar el cupo de 2 proyectos activos se pausó
+`encuesta-zmg-equipo2` (se reactiva desde el panel). Migraciones aplicadas con `supabase db push`
+desde `main`; el seed **no** se sube (la nube arranca sin datos falsos).
+**Por qué:** los equipos de front necesitan una URL real para conectarse (F1-T6).
+La contraseña de Postgres vive solo en `.env` local de Diego (`SUPABASE_DB_PASSWORD`).
