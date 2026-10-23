@@ -2,7 +2,7 @@
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
 **Última actualización:** 2026-10-23 · Diego (con Claude Code)
-**Fase actual:** módulos de Diego terminados (F1–F3, F5-T1); faltan los de COMPANERO
+**Fase actual:** módulos de Diego terminados y en la nube; faltan los de COMPANERO
 **Rama activa:** ninguna (`main` al día)
 **Repo:** https://github.com/gorra2451-ai/backend-ecosistemas (público, `main` protegida: D-012)
 
@@ -13,16 +13,19 @@
   (`supabase db reset && supabase test db` local y en CI).
 - Revisión independiente de seguridad hecha y sus hallazgos corregidos (PR #6). Lo de diseño quedó
   en P-16 (anti-spam con sesiones anónimas).
-- `docs/API.md` v0 al día con todas las RPC, vistas y códigos de error de los módulos de Diego.
+- **Nube (D-014):** proyecto `hdaolwqvxofmvqahzjvp` (us-west-1) con las 7 migraciones, sin seed.
+  Verificado por REST con la llave publicable: lecturas públicas OK, `crear_reporte` sin sesión
+  → 42501, `perfil_id` oculto, cron `expirar-reportes` activo. Se pausó `encuesta-zmg-equipo2`.
+- `docs/API.md` **v1 congelada** (✅ disponible / ⏳ pendiente por módulo).
 
 ## Siguiente paso (en este orden)
 1. Usuario de GitHub de COMPANERO → reemplazar `COMPANERO` en docs → `bash scripts/invitar.sh <usuario>`
    → subir revisiones requeridas a 1 (comando en D-012) → mandarle `prompts/mensaje_companero.md`.
 2. Si para el 27-oct (inicio Fase 1) no entra: D-013, Diego toma F1-T2 (perfiles/entradas) y sigue
    con sus tareas C por fase.
-3. F0-T4: crear proyecto Supabase remoto y `supabase db push` desde `main` (cuando haya que dar
-   acceso a los equipos de front). Ojo: 2.º proyecto activo de la org (D-009).
-4. F1-T6: congelar `docs/API.md` v1 y compartirlo con los 5 equipos.
+3. F1-T6: Diego comparte `docs/API.md` v1 + URL + llave publicable con los 5 equipos.
+   Ojo: sin sesión anónima (F1-T2) los equipos solo pueden **leer**; escribir requiere F1-T2.
+4. Nuevas migraciones a la nube: `supabase db push` solo desde `main` (password en `.env`).
 5. Llevar a clase P-01, P-02, P-03, P-13 (polígono ZMG), P-14, P-15, P-16.
 
 ## Bloqueos
