@@ -40,6 +40,8 @@
 | Remoto (proyecto Supabase gratuito) | Lo que usan los equipos de front | Solo desde `main` |
 
 ## Riesgos conocidos
+- **Spam con sesiones anónimas:** cualquiera abre sesiones nuevas gratis, y `persona_en_riesgo` activa con 1
+  reporte. Antes de abrir a público: captcha y límite de inicios anónimos en Supabase Auth (P-16).
 - El plan gratuito pausa proyectos inactivos: programar un uso semanal o reactivarlo antes de testeos.
 - Push en iPhone solo funciona si la web se instala en pantalla de inicio (verificar en Fase 4).
 - La fuente oficial de clima puede no tener API: plan B es carga manual por el admin.

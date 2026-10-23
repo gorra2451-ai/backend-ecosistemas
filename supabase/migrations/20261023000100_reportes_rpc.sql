@@ -27,6 +27,10 @@ begin
   if v_uid is null then
     raise exception 'sin_sesion';
   end if;
+  if p_id is null or p_tipo is null or p_pasan_carros is null
+     or (p_precision_m is not null and p_precision_m < 0) then
+    raise exception 'parametros_invalidos';
+  end if;
 
   -- Serializa las altas de un mismo usuario: el límite por hora y el duplicado no se brincan
   -- con llamadas simultáneas.
@@ -60,7 +64,7 @@ begin
   if exists (
     select 1 from public.reportes r
     where r.perfil_id = v_uid
-      and r.estado in ('pendiente', 'activo')
+      and r.estado in ('pendiente', 'activo', 'en_revision')
       and extensions.st_dwithin(r.ubicacion, v_punto, public.param('radio_agrupacion_m')::double precision)
   ) then
     raise exception 'duplicado_cercano';
@@ -109,6 +113,17 @@ language plpgsql stable security definer set search_path = '' as $$
 declare
   v_area extensions.geography;
 begin
+  -- NaN no cae en ningún "between", así que también es inválido.
+  if min_lat is null or min_lng is null or max_lat is null or max_lng is null
+     or min_lat not between -90 and 90 or max_lat not between -90 and 90
+     or min_lng not between -180 and 180 or max_lng not between -180 and 180
+     or min_lat >= max_lat or min_lng >= max_lng then
+    raise exception 'parametros_invalidos';
+  end if;
+  -- Rectángulos de media vuelta al mundo o más rompen la geografía de PostGIS: claramente demasiado grandes.
+  if max_lng - min_lng >= 180 then
+    raise exception 'area_demasiado_grande';
+  end if;
   v_area := extensions.st_makeenvelope(min_lng, min_lat, max_lng, max_lat, 4326)::extensions.geography;
 
   if extensions.st_area(v_area) / 1000000.0 > public.param('area_max_consulta_km2') then

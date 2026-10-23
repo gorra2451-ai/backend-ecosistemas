@@ -108,8 +108,8 @@ select throws_ok($$ select public.restaurar_reporte('40000000-0000-0000-0000-000
   'P0001', 'estado_invalido', 'restaurar resuelto -> estado_invalido');
 select throws_ok($$ select perfil_id from public.reportes $$, '42501', null, 'admin tampoco lee perfil_id');
 reset role;
-select is((select ultima_confirmacion from public.reportes where id = '40000000-0000-0000-0000-000000000002'),
-  now(), 'restaurar pone ultima_confirmacion = now()');
+select ok((select ultima_confirmacion >= now() from public.reportes where id = '40000000-0000-0000-0000-000000000002'),
+  'restaurar reinicia ultima_confirmacion (hora real, no anterior al inicio)');
 select is((select count(*) from public.acciones_admin)::int, 3,
   'solo las acciones exitosas quedan en bitácora (1 ocultar + 2 restaurar)');
 

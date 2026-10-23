@@ -102,8 +102,8 @@ select is(public.confirmar_reporte('21000000-0000-0000-0000-000000000001', true)
   '{"reporte_id": "21000000-0000-0000-0000-000000000001", "estado": "activo"}'::jsonb,
   'confirmar devuelve {reporte_id, estado}');
 reset role;
-select is((select ultima_confirmacion from public.reportes where id = '21000000-0000-0000-0000-000000000001'), now(),
-  'confirmar "sí" actualiza ultima_confirmacion');
+select ok((select ultima_confirmacion >= now() from public.reportes where id = '21000000-0000-0000-0000-000000000001'),
+  'confirmar "sí" actualiza ultima_confirmacion (hora real, no anterior al inicio)');
 
 -- B: sí → no → sí deja una sola fila
 set local role authenticated;

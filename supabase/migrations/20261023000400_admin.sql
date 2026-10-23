@@ -43,21 +43,26 @@ grant execute on function public.ocultar_reporte(uuid, text) to authenticated;
 create function public.restaurar_reporte(p_reporte_id uuid, p_motivo text) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare
-  v_estado public.estado_reporte;
+  v_estado    public.estado_reporte;
+  v_resuelto  timestamptz;
 begin
   perform public.validar_accion_admin(p_motivo);
 
-  select estado into v_estado from public.reportes where id = p_reporte_id for update;
+  select estado, resuelto_en into v_estado, v_resuelto from public.reportes where id = p_reporte_id for update;
   if not found then
     raise exception 'reporte_no_existe';
   end if;
-  if v_estado not in ('en_revision', 'oculto') then
+  -- Un oculto que ya estaba resuelto no se revive (pondría una inundación vieja en el mapa).
+  if v_estado not in ('en_revision', 'oculto') or v_resuelto is not null then
     raise exception 'estado_invalido';
   end if;
 
+  -- La decisión del admin borra las banderas anteriores: si no, un solo falso más lo regresaría a revisión.
+  update public.confirmaciones set falso = false where reporte_id = p_reporte_id and falso;
+
   update public.reportes
      set estado = 'activo',
-         ultima_confirmacion = now(),
+         ultima_confirmacion = clock_timestamp(),   -- después de limpiar banderas: votos previos no cuentan
          activado_en = coalesce(activado_en, now()),
          resuelto_en = null
    where id = p_reporte_id;

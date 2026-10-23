@@ -84,10 +84,13 @@ from (values
 on conflict do nothing;
 
 -- Confirmaciones (nunca del autor del reporte). sigue=true es "sí sigue".
-insert into public.confirmaciones (reporte_id, perfil_id, sigue, falso)
-select ('5eed1000-0000-0000-0000-0000000000' || v.n)::uuid,
+-- Fechadas al activarse el reporte (antes de su ultima_confirmacion) para no simular votos "no"
+-- posteriores al último "sí" que no existen.
+insert into public.confirmaciones (reporte_id, perfil_id, sigue, falso, creado_en, actualizado_en)
+select r.id,
        ('5eed0000-0000-0000-0000-00000000000' || v.u)::uuid,
-       v.sigue, v.falso
+       v.sigue, v.falso,
+       coalesce(r.activado_en, r.creado_en), coalesce(r.activado_en, r.creado_en)
 from (values
   ('01', 6, true,  false), ('01', 7, true,  false), ('01', 8, true,  false),
   ('02', 1, true,  false), ('02', 6, true,  false),
@@ -107,4 +110,5 @@ from (values
   ('25', 3, true,  false),
   ('30', 1, false, true),  ('30', 2, false, true),  ('30', 3, false, true),  ('30', 4, true, false)
 ) as v(n, u, sigue, falso)
+join public.reportes r on r.id = ('5eed1000-0000-0000-0000-0000000000' || v.n)::uuid
 on conflict do nothing;

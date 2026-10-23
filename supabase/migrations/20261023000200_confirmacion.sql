@@ -13,10 +13,26 @@ declare
   r       public.reportes%rowtype;
   v_radio double precision := public.param('radio_agrupacion_m');
   v_desde timestamptz := now() - make_interval(mins => public.param('ventana_activacion_min')::int);
+  v_g     extensions.geometry;
+  v_llave bigint;
 begin
-  -- Serializa la activación: sin esto, dos reportes simultáneos del mismo grupo no se ven entre sí
-  -- (ninguno ha hecho commit) y pueden quedarse sin activar. Se libera al terminar la transacción.
-  perform pg_advisory_xact_lock(hashtext('evaluar_activacion'));
+  -- Serializa la activación SOLO entre reportes vecinos: sin esto, dos reportes simultáneos del mismo
+  -- grupo no se ven entre sí (ninguno ha hecho commit) y pueden quedarse sin activar.
+  -- Celdas de lado = radio en UTM 13N: dos reportes a <= radio caen en celdas iguales o contiguas, y
+  -- cada uno bloquea su celda y las 8 vecinas (en orden, sin deadlocks). Reportes lejanos no se esperan.
+  select extensions.st_transform(ubicacion::extensions.geometry, 32613) into v_g
+    from public.reportes where id = p_reporte_id;
+  if v_g is not null then
+    for v_llave in
+      select hashtextextended(format('activacion:%s:%s',
+               floor(extensions.st_x(v_g) / greatest(v_radio, 1)) + dx,
+               floor(extensions.st_y(v_g) / greatest(v_radio, 1)) + dy), 0)
+      from generate_series(-1, 1) dx, generate_series(-1, 1) dy
+      order by 1
+    loop
+      perform pg_advisory_xact_lock(v_llave);
+    end loop;
+  end if;
   select * into r from public.reportes where id = p_reporte_id for update;
   if not found or r.estado <> 'pendiente' then
     return r.estado;
@@ -131,6 +147,9 @@ language plpgsql security definer set search_path = '' as $$
 declare
   v_estado public.estado_reporte;
 begin
+  if p_sigue is null then
+    raise exception 'parametros_invalidos';
+  end if;
   perform public.validar_confirmable(p_reporte_id);
 
   insert into public.confirmaciones as c (reporte_id, perfil_id, sigue)
@@ -140,7 +159,8 @@ begin
         falso = case when excluded.sigue then false else c.falso end;
 
   if p_sigue then
-    update public.reportes set ultima_confirmacion = now() where id = p_reporte_id;
+    -- clock_timestamp(): hora real tras esperar el lock (now() es el inicio de la transacción).
+    update public.reportes set ultima_confirmacion = clock_timestamp() where id = p_reporte_id;
     v_estado := 'activo';
   else
     v_estado := public.aplicar_votos_no(p_reporte_id);
