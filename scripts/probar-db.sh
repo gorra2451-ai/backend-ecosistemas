@@ -17,6 +17,35 @@ docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$contenedor" \
 preparar() {
   echo "begin;"
   echo "set local lock_timeout = '300s';"
+  # Parte de cero aunque la base local ya tenga migraciones aplicadas (p. ej. tras un db reset):
+  # borra lo nuestro en public (no lo de extensiones). El rollback final lo restaura.
+  cat <<'SQL'
+do $limpiar$
+declare r record;
+begin
+  for r in
+    select format('drop %s if exists public.%I cascade',
+                  case c.relkind when 'v' then 'view' when 'm' then 'materialized view' else 'table' end,
+                  c.relname) as q
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind in ('r', 'v', 'm', 'p')
+      and not exists (select 1 from pg_depend d where d.objid = c.oid and d.deptype = 'e')
+  loop execute r.q; end loop;
+  for r in
+    select format('drop function if exists %s cascade', p.oid::regprocedure) as q
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
+  loop execute r.q; end loop;
+  for r in
+    select format('drop type if exists public.%I cascade', t.typname) as q
+    from pg_type t join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public' and t.typtype in ('e', 'c', 'd') and t.typrelid = 0
+      and not exists (select 1 from pg_depend d where d.objid = t.oid and d.deptype = 'e')
+  loop execute r.q; end loop;
+end
+$limpiar$;
+SQL
   for m in supabase/migrations/*.sql; do
     [ -f "$m" ] || continue
     echo "\\echo '# migración $m'"

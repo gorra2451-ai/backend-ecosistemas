@@ -4,6 +4,14 @@
 
 ## 2026-10-22 · gorra2451-ai · cierre F1-T1
 **Hecho**
+- PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/5
+- fix(base): funciones nuevas sin EXECUTE para PUBLIC; probar-db.sh parte de cero
+
+**Pendiente**
+- Revisión del PR por la otra persona.
+
+## 2026-10-22 · gorra2451-ai · cierre F1-T1
+**Hecho**
 - PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/4
 - feat(base): extensiones, parámetros, ZMG provisional, reportes, confirmaciones y admin con RLS
 

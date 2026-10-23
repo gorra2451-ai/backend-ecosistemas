@@ -1,7 +1,7 @@
 -- Base (F1-T1, F1-T3, F1-T4): extensiones, parámetros, ZMG, tablas de reportes, RLS y permisos.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(26);
+select plan(28);
 
 -- Aislar de seed.sql: se borra dentro de la transacción y el rollback lo restaura.
 delete from public.reportes;
@@ -71,6 +71,16 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 set local role authenticated;
 select ok(public.es_admin(), 'B es admin');
 select is((select count(*) from public.acciones_admin)::int, 1, 'B ve acciones_admin');
+reset role;
+
+-- Funciones nuevas nacen cerradas (hueco detectado en M1: EXECUTE a PUBLIC por defecto)
+create function public.funcion_nueva_de_prueba() returns int language sql as 'select 1';
+set local role anon;
+select throws_ok($$ select public.funcion_nueva_de_prueba() $$, '42501', null, 'anon no ejecuta funciones nuevas');
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+select throws_ok($$ select public.funcion_nueva_de_prueba() $$, '42501', null, 'authenticated no ejecuta funciones nuevas');
 reset role;
 
 select * from finish();
