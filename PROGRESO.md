@@ -4,6 +4,14 @@
 
 ## 2026-10-22 · gorra2451-ai · cierre F2-T1
 **Hecho**
+- PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/7
+- docs(repo): handoff y progreso del bloque de módulos de Diego
+
+**Pendiente**
+- Revisión del PR por la otra persona.
+
+## 2026-10-22 · gorra2451-ai · cierre F2-T1
+**Hecho**
 - PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/6
 - fix(reportes): endurecimiento tras revisión (banderas, rastro, entradas, locks por celda)
 - docs(api): errores y formato de celda de los módulos de Diego; plan al día
@@ -48,6 +56,25 @@
 
 **Pendiente**
 - Revisión del PR por la otra persona.
+
+## 2026-10-23 · Diego · Claude Code (bloque grande con 4 agentes en paralelo)
+**Hecho**
+- Repo público con `main` protegida (D-012); contingencia D-013.
+- F0-T5: revisión del modelo (9 cambios: Realtime por Broadcast, permisos por columna, `administradores`, etc.).
+- Base (F1-T1/T3/T4) + arreglo de permisos de funciones (EXECUTE a PUBLIC).
+- Con 4 agentes en worktrees: M1 reportes (F2-T1, F3-T2), M2 confirmación/activación/expiración
+  (F2-T2, F2-T3), M3 zonas (F3-T1), M4 admin + seed (F5-T1, F1-T5).
+- Revisión independiente de seguridad: 1 alto, 4 medios, 7 bajos → corregidos los de código
+  (banderas al restaurar, rastro en confirmaciones, locks por celda, entradas inválidas, etc.).
+- `scripts/probar-db.sh`: pruebas en transacción que se deshace (varios agentes sin pisarse).
+- 152 pruebas pgTAP en verde, local y CI. PRs #3–#6.
+
+**Decidido**
+- D-012 público · D-013 contingencia. Rol admin en tabla `administradores` (no `perfiles.rol`).
+- Polígono ZMG provisional (rectángulo) hasta tener el oficial (P-13).
+
+**Pendiente**
+- Usuario de COMPANERO; P-13 a P-16; proyecto Supabase remoto (F0-T4); congelar API v1 (F1-T6).
 
 ## 2026-10-22 · Diego · Claude Code (prompts/warp_arranque.md)
 **Hecho**
