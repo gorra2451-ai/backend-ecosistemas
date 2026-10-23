@@ -39,7 +39,18 @@
 | Local (Docker + Supabase CLI) | Desarrollo y pruebas | Cada quien |
 | Remoto (proyecto Supabase gratuito) | Lo que usan los equipos de front | Solo desde `main` |
 
+## Seguridad del proyecto en la nube (D-016)
+- Sesiones firmadas con llave asimétrica ES256; la llave HS256 heredada está **revocada**.
+- SSL obligatorio en conexiones directas a Postgres. GraphQL (`pg_graphql`) apagado.
+- Contraseñas (solo admins): mínimo 12, con minúsculas, mayúsculas y dígitos.
+- El front usa solo la llave **publicable**; la `secret` nunca sale de la compu de Diego.
+- Revisión desde fuera tras cada `supabase db push`: `bash scripts/probar-nube.sh`.
+- Pendiente (P-16): captcha y sesión anónima (F1-T2); registro por correo abierto (ver abajo).
+
 ## Riesgos conocidos
+- **Registro por correo abierto:** Supabase no permite apagar el alta por correo sin apagar también
+  la anónima. Quien confirme un correo obtiene los mismos permisos que una sesión anónima (no admin).
+  El correo integrado de Supabase limita a 2 envíos por hora, lo que frena el abuso (P-16).
 - **Spam con sesiones anónimas:** cualquiera abre sesiones nuevas gratis, y `persona_en_riesgo` activa con 1
   reporte. Antes de abrir a público: captcha y límite de inicios anónimos en Supabase Auth (P-16).
 - El plan gratuito pausa proyectos inactivos: programar un uso semanal o reactivarlo antes de testeos.

@@ -34,6 +34,7 @@
 ## No olvidar
 - Cada sesión: `bash scripts/sync.sh`; git solo con `scripts/`. BD local: `supabase db start`
   (puertos 554xx; no chocar con `consultorio-britanico`). Pruebas rápidas: `bash scripts/probar-db.sh`.
+  Tras cada `supabase db push`: `bash scripts/probar-nube.sh` (seguridad de la nube desde fuera).
 - Las funciones nuevas nacen sin EXECUTE: cada RPC lleva su `grant` explícito.
 - Plan de este bloque: `docs/planes/2026-10-23-construccion-diego.md`.
 - Opcional: `actions/checkout@v4` → v5 (aviso Node 20 en CI).

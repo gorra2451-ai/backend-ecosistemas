@@ -73,6 +73,9 @@ cp -R scripts "$TMP/sin-repo/"
 espera_bloqueo "guardar.sh se niega a correr" sh -c "cd '$TMP/sin-repo' && bash scripts/guardar.sh 'feat(x): y'"
 espera_bloqueo "diagnostico.sh lo avisa" sh -c "cd '$TMP/sin-repo' && bash scripts/diagnostico.sh --sin-pruebas"
 
+echo "probar-nube.sh"
+espera_bloqueo "sin URL ni llave en .env lo avisa" bash scripts/probar-nube.sh
+
 echo "diagnostico.sh"
 # Solo se revisa la línea de hooks: el total depende de qué herramientas tenga la máquina (en CI no hay supabase).
 out="$(bash scripts/diagnostico.sh --sin-pruebas 2>&1)"
