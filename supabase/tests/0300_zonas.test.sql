@@ -25,10 +25,15 @@ language sql as $$
   returning id
 $$;
 
+-- Las funciones nacen sin EXECUTE (20261023000050): abrir los auxiliares de prueba.
+grant execute on function pg_temp.utm(float8, float8) to anon, authenticated;
+grant execute on function pg_temp.rep(float8, float8, public.estado_reporte, boolean) to anon, authenticated;
+
 -- Celda A (2240_7617): 2 activos + uno de cada estado no activo.
 select pg_temp.rep(672100, 2285200, 'activo');
 select pg_temp.rep(672200, 2285300, 'activo');
-select pg_temp.rep(672150, 2285250, 'pendiente');
+-- El pendiente se inserta resuelto y se cambia: el trigger de activación (M2) solo actúa al insertar.
+update public.reportes set estado = 'pendiente' where id = pg_temp.rep(672150, 2285250, 'resuelto');
 select pg_temp.rep(672150, 2285250, 'resuelto');
 select pg_temp.rep(672150, 2285250, 'oculto');
 select pg_temp.rep(672150, 2285250, 'en_revision');
