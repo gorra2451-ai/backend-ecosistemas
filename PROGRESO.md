@@ -2,6 +2,14 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-22 · gorra2451-ai · cierre F0-T2
+**Hecho**
+- PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/2
+- docs(repo): repo público con main protegida (D-012) y contingencia (D-013)
+
+**Pendiente**
+- Revisión del PR por la otra persona.
+
 ## 2026-10-22 · Diego · Claude Code (prompts/warp_arranque.md)
 **Hecho**
 - Supabase CLI 2.121.0 instalado y con sesión; `supabase init` (config.toml). Sin proyecto remoto.
