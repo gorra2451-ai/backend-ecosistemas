@@ -10,7 +10,7 @@
 - Endurecimiento de la nube: HS256 revocada, SSL, contraseñas 12+, `probar-nube.sh` (PR #11, D-016).
 
 **Decidido**
-- D-014, D-015, D-016. Leo decide sus PRs solo con autorización de Diego.
+- D-014, D-015, D-016. LeoFigo74z sube cambios solo con autorización de Diego.
 
 **Pendiente**
 - Aprobación de #10 y #11 por LeoFigo74z; `db push` de #10; F1-T2; compartir API v1; preguntas de clase.
