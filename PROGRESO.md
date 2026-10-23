@@ -2,6 +2,21 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-22 · gorra2451-ai · cierre F2-T1
+**Hecho**
+- PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/6
+- fix(reportes): endurecimiento tras revisión (banderas, rastro, entradas, locks por celda)
+- docs(api): errores y formato de celda de los módulos de Diego; plan al día
+- test(zonas): auxiliares con grant y pendiente que no dispara activación
+- fix(confirmacion): lock de activación y prueba base sin pendiente junto a activo
+- feat(confirmacion): activación, confirmación, falsos y expiración
+- feat(admin): ocultar, restaurar y revisión; seed de prueba
+- feat(reportes): crear_reporte y reportes_activos_en_area
+- feat(zonas): vista zonas_publicas con niveles
+
+**Pendiente**
+- Revisión del PR por la otra persona.
+
 ## 2026-10-22 · gorra2451-ai · cierre F1-T1
 **Hecho**
 - PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/5
