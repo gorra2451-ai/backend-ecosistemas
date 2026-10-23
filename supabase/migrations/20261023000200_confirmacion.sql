@@ -14,6 +14,9 @@ declare
   v_radio double precision := public.param('radio_agrupacion_m');
   v_desde timestamptz := now() - make_interval(mins => public.param('ventana_activacion_min')::int);
 begin
+  -- Serializa la activación: sin esto, dos reportes simultáneos del mismo grupo no se ven entre sí
+  -- (ninguno ha hecho commit) y pueden quedarse sin activar. Se libera al terminar la transacción.
+  perform pg_advisory_xact_lock(hashtext('evaluar_activacion'));
   select * into r from public.reportes where id = p_reporte_id for update;
   if not found or r.estado <> 'pendiente' then
     return r.estado;
