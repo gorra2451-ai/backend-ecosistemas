@@ -4,6 +4,14 @@
 
 ## 2026-10-22 · gorra2451-ai · cierre F2-T1
 **Hecho**
+- PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/7
+- docs(repo): handoff y progreso del bloque de módulos de Diego
+
+**Pendiente**
+- Revisión del PR por la otra persona.
+
+## 2026-10-22 · gorra2451-ai · cierre F2-T1
+**Hecho**
 - PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/6
 - fix(reportes): endurecimiento tras revisión (banderas, rastro, entradas, locks por celda)
 - docs(api): errores y formato de celda de los módulos de Diego; plan al día
