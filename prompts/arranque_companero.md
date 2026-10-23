@@ -1,4 +1,4 @@
-# Prompt · Primer arranque de COMPANERO (pegar tal cual en la IA, una sola vez)
+# Prompt · Primer arranque de LeoFigo74z (pegar tal cual en la IA, una sola vez)
 
 Vas a ayudarme en el backend `backend-ecosistemas` (plataforma de inundaciones de la ZMG,
 Supabase + Postgres). Trabajo en equipo con Diego, que usa Claude. Las reglas obligatorias

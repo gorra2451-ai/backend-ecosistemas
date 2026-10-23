@@ -1,4 +1,4 @@
-# Mensaje para COMPANERO (WhatsApp)
+# Mensaje para LeoFigo74z (WhatsApp)
 
 Ya quedó el repo del backend 🌧️ https://github.com/gorra2451-ai/backend-ecosistemas
 

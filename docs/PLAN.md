@@ -1,5 +1,5 @@
 # PLAN DE CONSTRUCCIÓN
-> Marca `[x]` al terminar. Dueño: **D** = Diego · **C** = COMPANERO · **D+C** = juntos.
+> Marca `[x]` al terminar. Dueño: **D** = Diego · **C** = LeoFigo74z · **D+C** = juntos.
 > `%` = peso de la tarea en el reparto 50/50 (ver `AGENTS.md` §8). Las tareas D+C y la Fase 0 no suman.
 > Fechas propuestas; ajustar cuando se confirmen mid-fi y high-fi (P-09).
 
@@ -9,7 +9,7 @@
 | [x] | F0-T1 Arnés: reglas, docs, prompts | D | — |
 | [x] | F0-T2 Repo `backend-ecosistemas` en GitHub desde Warp (privado; `main` protegida por regla, D-011) | D | — |
 | [ ] | F0-T3 Invitar a C, confirmar su nombre y que pueda abrir sesión con `prompts/inicio_sesion.md` | D | — |
-| [ ] | F0-T4 Proyecto Supabase remoto + Supabase CLI y Docker en ambas compus (remoto listo, D-014; compu de Diego lista, puertos 554xx; falta la de COMPANERO) | D+C | — |
+| [ ] | F0-T4 Proyecto Supabase remoto + Supabase CLI y Docker en ambas compus (remoto listo, D-014; compu de Diego lista, puertos 554xx; falta la de LeoFigo74z) | D+C | — |
 | [x] | F0-T5 Revisar y aprobar `MODELO_DATOS.md` y `API.md` v0 (Diego, D-013) | D+C | — |
 
 ## Fase 1 · Base — 27 oct al 2 nov
@@ -62,4 +62,4 @@
 | Persona | Tareas | Total |
 |---|---|---|
 | Diego | F1-T1 4 · F1-T3 5 · F1-T4 3 · F1-T5 3 · F2-T1 7 · F2-T2 8 · F2-T3 7 · F3-T1 5 · F3-T2 3 · F5-T1 5 | **50%** |
-| COMPANERO | F1-T2 10 · F2-T4 8 · F3-T3 4 · F3-T4 6 · F4-T1 5 · F4-T2 4 · F4-T3 3 · F4-T4 10 | **50%** |
+| LeoFigo74z | F1-T2 10 · F2-T4 8 · F3-T3 4 · F3-T4 6 · F4-T1 5 · F4-T2 4 · F4-T3 3 · F4-T4 10 | **50%** |
