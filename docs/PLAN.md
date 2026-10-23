@@ -9,8 +9,8 @@
 | [x] | F0-T1 Arnés: reglas, docs, prompts | D | — |
 | [x] | F0-T2 Repo `backend-ecosistemas` en GitHub desde Warp (privado; `main` protegida por regla, D-011) | D | — |
 | [ ] | F0-T3 Invitar a C, confirmar su nombre y que pueda abrir sesión con `prompts/inicio_sesion.md` | D | — |
-| [ ] | F0-T4 Proyecto Supabase remoto + Supabase CLI y Docker en ambas compus | D+C | — |
-| [ ] | F0-T5 Revisar y aprobar `MODELO_DATOS.md` y `API.md` v0 | D+C | — |
+| [ ] | F0-T4 Proyecto Supabase remoto + Supabase CLI y Docker en ambas compus (Diego listo; puertos 554xx) | D+C | — |
+| [x] | F0-T5 Revisar y aprobar `MODELO_DATOS.md` y `API.md` v0 (Diego, D-013) | D+C | — |
 
 ## Fase 1 · Base — 27 oct al 2 nov
 | Estado | Tarea | Dueño | % |
