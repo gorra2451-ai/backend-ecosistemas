@@ -1,7 +1,8 @@
 # CONTRATO DE API (para los equipos de front)
 > Todo se consume con `supabase-js`. Llave pública `anon` + sesión anónima.
 > Si cambias algo aquí, avisa a los equipos y registra en PROGRESO.md.
-> Estado: **BORRADOR v0** — se congela al cerrar la Fase 1.
+> Estado: **v0 revisado (F0-T5, 2026-10-22)** — se congela al cerrar la Fase 1.
+> Sin sesión (`anon`) solo se lee lo público; toda escritura pide sesión anónima.
 
 ## Arranque (Equipo Registro)
 ```js
@@ -22,31 +23,42 @@ await supabase.rpc('crear_reporte', {
 // Evidencia opcional: subir a Storage bucket 'evidencias/<reporte_id>/<archivo>'
 // y luego rpc('agregar_evidencia', { p_reporte_id, p_ruta, p_tipo: 'foto' })
 ```
-Errores: `fuera_de_zmg`, `limite_por_hora`, `duplicado_cercano`, `sin_sesion`.
+Errores (en `error.message`): `sin_sesion`, `fuera_de_zmg`, `limite_por_hora`, `duplicado_cercano`, `id_en_uso`.
 
 ## Confirmar (Equipo Confirmación)
 ```js
-await supabase.rpc('reportes_cercanos', { p_lat, p_lng, p_radio_m: 300 })   // para el aviso
-await supabase.rpc('confirmar_reporte', { p_reporte_id, p_sigue: true })
-await supabase.rpc('marcar_falso', { p_reporte_id })
+await supabase.rpc('reportes_cercanos', { p_lat, p_lng, p_radio_m: 300 })   // para el aviso; radio topado a radio_cercanos_max_m
+// → [{ id, tipo, pasan_carros, lat, lng, distancia_m, ultima_confirmacion, es_propio }]
+await supabase.rpc('confirmar_reporte', { p_reporte_id, p_sigue: true })   // → { reporte_id, estado }
+await supabase.rpc('marcar_falso', { p_reporte_id })                       // → { reporte_id, estado }
 ```
 
 ## Mapa (Equipo Mapa)
 ```js
-await supabase.from('zonas_publicas').select('*')            // celda, centro, nivel, total_reportes...
+await supabase.from('zonas_publicas').select('*')   // celda, lat, lng, nivel, total_reportes, total_confirmaciones, alguno_no_pasan_carros
 await supabase.rpc('reportes_activos_en_area', { min_lat, min_lng, max_lat, max_lng })
+// → [{ id, tipo, pasan_carros, lat, lng, ultima_confirmacion, creado_en }]   error: area_demasiado_grande
 await supabase.from('refugios_publicos').select('*')
-supabase.channel('zonas').on('postgres_changes', { event: '*', schema: 'public', table: 'reportes' }, cb).subscribe()
+// Tiempo real por Broadcast (no postgres_changes: filtraría el autor). Canal y payload: F3-T3.
+supabase.channel('reportes').on('broadcast', { event: 'cambio' }, cb).subscribe()
 // Rutas alternas: el front arma link a Waze/Google Maps con lat/lng (no pasa por el backend)
 ```
 
 ## Notificaciones y derivación (Equipo 5)
 ```js
-await supabase.rpc('suscribir_push', { p_endpoint, p_p256dh, p_auth })
+await supabase.rpc('suscribir_push', { p_endpoint, p_p256dh, p_auth, p_municipio })   // interés por municipio/celda, nunca un punto
 await supabase.from('alertas_clima_vigentes').select('*')
 await supabase.rpc('derivar', { p_caso: 'casa', p_municipio: 'Zapopan', p_lat, p_lng })
 // → { instituciones: [...], refugios: [...], pasos: [...] }
 ```
+
+## Admin (panel interno)
+```js
+await supabase.rpc('reportes_en_revision')                                    // solo admins
+await supabase.rpc('ocultar_reporte', { p_reporte_id, p_motivo })             // → { reporte_id, estado }
+await supabase.rpc('restaurar_reporte', { p_reporte_id, p_motivo })           // en_revision|oculto → activo
+```
+Error si no es admin: `no_autorizado`. `p_motivo` vacío: `motivo_requerido`.
 
 ## Formato de respuesta
 - Ubicaciones siempre como `{ lat, lng }`.

@@ -13,24 +13,30 @@
           │             │
           │             ├── votos_no_para_resolver "no" ──► resuelto
           │             ├── minutos_expiracion sin "sí" ──► resuelto
+          │             ├── banderas_para_revision falsos ► en_revision ──admin──► activo | oculto
           │             └── admin lo oculta ─────────────► oculto
           └── ventana_activacion_min sin juntar umbral ──► resuelto
 ```
 - Solo los reportes `activo` se ven en el mapa y cuentan para zonas.
-- `persona_en_riesgo` se activa con 1 reporte (no espera umbral) y aparece primero. **Propuesta, POR CONFIRMAR con el grupo.**
+- `persona_en_riesgo` se activa con `umbral_persona_en_riesgo` (1) reportes y aparece primero. **Propuesta, POR CONFIRMAR con el grupo.**
+- Activación: al crear un reporte se cuentan los reportes `pendiente`/`activo` a ≤ `radio_agrupacion_m`
+  creados en los últimos `ventana_activacion_min`. Si llegan a `umbral_activacion`, todos los
+  `pendiente` de ese grupo pasan a `activo`. Un reporte nuevo junto a uno ya `activo` nace `activo`.
 
 ## 2. Crear reporte (`crear_reporte`)
 - Requiere sesión (anónima vale).
-- Ubicación dentro de la ZMG (polígono en `parametros`/tabla aparte). Fuera → error claro.
+- Ubicación dentro de la ZMG (tabla `limites_zmg`, función `dentro_de_zmg`). Fuera → `fuera_de_zmg`.
 - Fecha y hora las pone el servidor, nunca el cliente.
 - Límite: `max_reportes_por_hora` por usuario.
-- Si el `id` ya existe del mismo usuario → devuelve el existente (idempotente).
+- Si el `id` ya existe del mismo usuario → devuelve el existente (idempotente). De otro usuario → `id_en_uso`.
 - Un usuario no puede reportar dos veces el mismo punto (≤ radio) mientras su reporte siga vivo.
 
 ## 3. Confirmar (`confirmar_reporte`)
 - Una confirmación por usuario por reporte; se puede cambiar de "sí" a "no".
 - No puedes confirmar tu propio reporte.
-- "sí" actualiza `ultima_confirmacion`. "no" suma hacia `votos_no_para_resolver`.
+- Solo se confirman reportes `activo`.
+- "sí" actualiza `ultima_confirmacion`. "no" suma hacia `votos_no_para_resolver`; cuentan los "no"
+  registrados después del último "sí".
 - El aviso "¿sigue inundado?" lo dispara el front al estar cerca (D-006).
 
 ## 4. Expiración
@@ -39,13 +45,13 @@
 
 ## 5. Zonas de calor
 - Celdas de `tamano_celda_m`. Nivel por reportes activos en la celda:
-  `bajo` 1–2 · `medio` 3–5 · `alto` 6+ **(propuesta, POR CONFIRMAR)**.
+  `bajo` < `nivel_medio_min` (3) · `medio` < `nivel_alto_min` (6) · `alto` el resto **(propuesta, POR CONFIRMAR)**.
 - Si algún reporte dice `pasan_carros=false`, la zona sube a `alto`.
 - El front no debe depender solo del color: la API entrega también `nivel` como texto.
 
 ## 6. Notificaciones
 - Se notifica por **cambio de estado** (zona nueva activa, zona resuelta) y por alerta de clima.
-- Nunca más de 1 aviso por zona cada 30 min por usuario **(propuesta)**.
+- Nunca más de 1 aviso por zona cada `minutos_entre_avisos` (30) por usuario **(propuesta)**.
 - Solo a quien se suscribió y aceptó permisos.
 
 ## 7. Derivación
@@ -55,4 +61,6 @@
 
 ## 8. Moderación
 - El admin puede ocultar reportes; cada acción queda en `acciones_admin` con motivo.
-- Marcar como falso = confirmación "no" + bandera; 3 banderas lo mandan a revisión **(propuesta)**.
+- Marcar como falso = confirmación "no" + `falso = true`; `banderas_para_revision` (3) lo mandan a
+  `en_revision` (sale del mapa) **(propuesta)**. El admin lo regresa a `activo` u `oculto`.
+- Los admins están en la tabla `administradores` (alta solo por SQL con llave de servicio).
