@@ -16,3 +16,5 @@
 | P-11 | ¿Quién es administrador y qué puede hacer? | Fase 5 | Ambos | Grupo | Abierta |
 | P-12 | ¿Repo público para forzar la protección de `main` (D-011)? | Fase 0 | Diego | Diego + COMPANERO | ✔ D-012 |
 | P-13 | Polígono oficial de la ZMG (fuente: IMEPLAN/INEGI). Hoy hay un rectángulo provisional | Fase 2 | Diego | Profesora / IMEPLAN | Abierta |
+| P-14 | ¿El límite de `max_reportes_por_hora` cuenta reportes ocultados por moderación? (hoy: cuenta todos) | Fase 2 | Diego | Equipo Reporte | Abierta |
+| P-15 | ¿Un reporte nuevo junto a uno `activo` nace activo sin importar tipo ni antigüedad del activo? (hoy: sí) | Fase 2 | Diego | Equipo Confirmación | Abierta |

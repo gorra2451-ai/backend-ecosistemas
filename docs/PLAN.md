@@ -19,22 +19,22 @@
 | [ ] | F1-T2 Migración: `perfiles`, `entradas`, auth anónima, RLS + pruebas | C | 10% |
 | [x] | F1-T3 Migración: `reportes`, `confirmaciones`, RLS + pruebas | D | 5% |
 | [x] | F1-T4 Polígono de la ZMG y función `dentro_de_zmg` | D | 3% |
-| [ ] | F1-T5 `seed.sql` con datos de prueba | D | 3% |
+| [x] | F1-T5 `seed.sql` con datos de prueba | D | 3% |
 | [ ] | F1-T6 Congelar `API.md` v1 y compartir con los 5 equipos | D+C | — |
 
 ## Fase 2 · Reporte y confirmación — 3 al 9 nov
 | Estado | Tarea | Dueño | % |
 |---|---|---|---|
-| [ ] | F2-T1 RPC `crear_reporte` con validaciones y límites + pruebas | D | 7% |
-| [ ] | F2-T2 RPC `confirmar_reporte`, `marcar_falso`, `reportes_cercanos` + pruebas | D | 8% |
-| [ ] | F2-T3 Activación por umbral y expiración con `pg_cron` + pruebas | D | 7% |
+| [x] | F2-T1 RPC `crear_reporte` con validaciones y límites + pruebas | D | 7% |
+| [x] | F2-T2 RPC `confirmar_reporte`, `marcar_falso`, `reportes_cercanos` + pruebas | D | 8% |
+| [x] | F2-T3 Activación por umbral y expiración con `pg_cron` + pruebas | D | 7% |
 | [ ] | F2-T4 Tabla `evidencias` + RLS, Storage `evidencias` con políticas y `agregar_evidencia` + pruebas | C | 8% |
 
 ## Fase 3 · Mapa — 10 al 16 nov
 | Estado | Tarea | Dueño | % |
 |---|---|---|---|
-| [ ] | F3-T1 Vista `zonas_publicas` y niveles + pruebas | D | 5% |
-| [ ] | F3-T2 RPC `reportes_activos_en_area` | D | 3% |
+| [x] | F3-T1 Vista `zonas_publicas` y niveles + pruebas | D | 5% |
+| [x] | F3-T2 RPC `reportes_activos_en_area` | D | 3% |
 | [ ] | F3-T3 Realtime habilitado en reportes/zonas | C | 4% |
 | [ ] | F3-T4 `refugios` + vista pública | C | 6% |
 
@@ -49,7 +49,7 @@
 ## Fase 5 · Admin, seguridad e integración — 24 al 30 nov
 | Estado | Tarea | Dueño | % |
 |---|---|---|---|
-| [ ] | F5-T1 Rol admin, ocultar reportes, `acciones_admin` | D | 5% |
+| [x] | F5-T1 Rol admin, ocultar reportes, `acciones_admin` | D | 5% |
 | [ ] | F5-T2 Auditoría de RLS y llaves con `prompts/revision_pr.md` | D+C | — |
 | [ ] | F5-T3 Integración con cada equipo de front y corrección de contrato | D+C | — |
 
