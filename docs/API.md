@@ -14,7 +14,7 @@ await supabase.rpc('guardar_accesibilidad', { prefs: { daltonismo: true } })
 ## Reportar (Equipo Reporte)
 ```js
 await supabase.rpc('crear_reporte', {
-  p_id: crypto.randomUUID(),   // el front lo genera; reintentar con el mismo id no duplica
+  p_id: crypto.randomUUID(),   // UUID v4 generado en el front (nunca v1: incluye la MAC); reintentar con el mismo id no duplica
   p_tipo: 'calle',             // calle|casa|coche|persona_en_riesgo
   p_pasan_carros: false,
   p_lat: 20.6597, p_lng: -103.3496, p_precision_m: 15
@@ -23,21 +23,27 @@ await supabase.rpc('crear_reporte', {
 // Evidencia opcional: subir a Storage bucket 'evidencias/<reporte_id>/<archivo>'
 // y luego rpc('agregar_evidencia', { p_reporte_id, p_ruta, p_tipo: 'foto' })
 ```
-Errores (en `error.message`): `sin_sesion`, `fuera_de_zmg`, `limite_por_hora`, `duplicado_cercano`, `id_en_uso`.
+Errores (en `error.message`): `sin_sesion`, `parametros_invalidos`, `fuera_de_zmg`, `limite_por_hora`, `duplicado_cercano`, `id_en_uso`.
 
 ## Confirmar (Equipo Confirmación)
 ```js
 await supabase.rpc('reportes_cercanos', { p_lat, p_lng, p_radio_m: 300 })   // para el aviso; radio topado a radio_cercanos_max_m
-// → [{ id, tipo, pasan_carros, lat, lng, distancia_m, ultima_confirmacion, es_propio }]
+// → [{ id, tipo, pasan_carros, lat, lng, distancia_m, ultima_confirmacion, es_propio }]   error: sin_sesion
 await supabase.rpc('confirmar_reporte', { p_reporte_id, p_sigue: true })   // → { reporte_id, estado }
 await supabase.rpc('marcar_falso', { p_reporte_id })                       // → { reporte_id, estado }
+```
+Errores de confirmar/marcar_falso: `sin_sesion`, `parametros_invalidos` (p_sigue nulo), `reporte_no_existe`, `propio_reporte`, `reporte_no_activo`.
+`es_propio = true` → el front no debe ofrecer confirmar ese reporte.
+
+```js
 ```
 
 ## Mapa (Equipo Mapa)
 ```js
-await supabase.from('zonas_publicas').select('*')   // celda, lat, lng, nivel, total_reportes, total_confirmaciones, alguno_no_pasan_carros
+await supabase.from('zonas_publicas').select('*')   // celda, lat, lng, nivel, total_reportes, total_confirmaciones, alguno_no_pasan_carros, actualizado_en
+// celda = '<ix>_<iy>' (enteros: coordenada UTM 13N / tamano_celda_m), p. ej. '2240_7617'. Mismo formato en notificaciones.
 await supabase.rpc('reportes_activos_en_area', { min_lat, min_lng, max_lat, max_lng })
-// → [{ id, tipo, pasan_carros, lat, lng, ultima_confirmacion, creado_en }]   error: area_demasiado_grande
+// → [{ id, tipo, pasan_carros, lat, lng, ultima_confirmacion, creado_en }]   errores: parametros_invalidos (min ≥ max, fuera de rango), area_demasiado_grande
 await supabase.from('refugios_publicos').select('*')
 // Tiempo real por Broadcast (no postgres_changes: filtraría el autor). Canal y payload: F3-T3.
 supabase.channel('reportes').on('broadcast', { event: 'cambio' }, cb).subscribe()
@@ -58,7 +64,12 @@ await supabase.rpc('reportes_en_revision')                                    //
 await supabase.rpc('ocultar_reporte', { p_reporte_id, p_motivo })             // → { reporte_id, estado }
 await supabase.rpc('restaurar_reporte', { p_reporte_id, p_motivo })           // en_revision|oculto → activo
 ```
-Error si no es admin: `no_autorizado`. `p_motivo` vacío: `motivo_requerido`.
+Errores (en este orden): `no_autorizado`, `motivo_requerido`, `reporte_no_existe`, `estado_invalido`
+(restaurar algo que no está `en_revision`/`oculto`).
+
+## Lectura directa de tablas
+`reportes` (solo activos, sin autor) y `confirmaciones` (solo `reporte_id`, `sigue`, `falso`) se pueden leer
+con `from(...)`, pero lo recomendado es usar las RPC y vistas de arriba.
 
 ## Formato de respuesta
 - Ubicaciones siempre como `{ lat, lng }`.

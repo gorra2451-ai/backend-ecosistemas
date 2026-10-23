@@ -34,12 +34,12 @@ select throws_ok($$ select public.param('no_existe') $$, 'P0001', 'parametro_no_
 select ok(public.dentro_de_zmg(20.6597, -103.3496), 'centro de Guadalajara está en la ZMG');
 select ok(not public.dentro_de_zmg(19.4326, -99.1332), 'CDMX no está en la ZMG');
 
--- Datos para permisos: un reporte activo y uno pendiente de A
+-- Datos para permisos: un reporte activo y uno pendiente de A (a ~1 km: lejos para que no se active en grupo)
 insert into public.reportes (id, perfil_id, tipo, pasan_carros, ubicacion, estado) values
   ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000a', 'calle', true,
    extensions.st_setsrid(extensions.st_makepoint(-103.3496, 20.6597), 4326)::extensions.geography, 'activo'),
   ('10000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-00000000000a', 'casa', false,
-   extensions.st_setsrid(extensions.st_makepoint(-103.3500, 20.6600), 4326)::extensions.geography, 'pendiente');
+   extensions.st_setsrid(extensions.st_makepoint(-103.3500, 20.6700), 4326)::extensions.geography, 'pendiente');
 insert into public.confirmaciones (reporte_id, perfil_id, sigue) values
   ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b', true);
 
