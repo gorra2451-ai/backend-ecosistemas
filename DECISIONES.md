@@ -67,7 +67,7 @@ se confirme, se ajusta el parámetro o se agrega una migración nueva (nunca se 
 acordado en clase no obliga a rehacer código. Flujo en `docs/CAMBIOS_DE_CLASE.md`.
 
 ## D-011 · Repo privado; protección de `main` por regla de equipo
-**Estado:** Aprobada (Diego) · 2026-10-22 · se revisa en P-12
+**Estado:** Reemplazada por D-012
 **Decisión:** `gorra2451-ai/backend-ecosistemas` es privado. GitHub Free no permite proteger
 ramas en repos privados (la API respondió `403 · Upgrade to GitHub Pro or make this repository
 public`), así que "a `main` solo por PR con 1 revisión y CI en verde" es regla del equipo.
@@ -75,3 +75,21 @@ public`), así que "a `main` solo por PR con 1 revisión y CI en verde" es regla
 `main`) y CI que revisa cada commit del PR (`scripts/ci-revisar.sh`). Ninguno impide apretar
 "Merge" en GitHub con el CI en rojo: eso depende de los dos.
 **Alternativa:** hacerlo público permite forzar PR + revisión + CI (no hay secretos en el repo).
+
+## D-012 · Repo público con `main` protegida en GitHub
+**Estado:** Aprobada (Diego) · 2026-10-22 · reemplaza a D-011
+**Decisión:** el repo es público y `main` está protegida en GitHub: PR obligatorio, CI en verde
+obligatorio (jobs "Arnés" y "Base de datos", rama al día con `main`), sin force-push ni borrado,
+y **aplica también a admins**.
+**Revisiones requeridas:** 0 mientras COMPANERO no tenga acceso (GitHub no deja aprobar el PR
+propio). Al invitarlo se sube a 1:
+`gh api -X PATCH repos/gorra2451-ai/backend-ecosistemas/branches/main/protection/required_pull_request_reviews -F required_approving_review_count=1`
+**Por qué:** en privado GitHub Free no deja forzar la protección (D-011). No hay secretos en el repo.
+
+## D-013 · Contingencia si COMPANERO no se integra
+**Estado:** Propuesta (Diego) · 2026-10-22
+**Decisión:** mientras no tenga acceso, Diego avanza con sus tareas (dueño D) y las D+C que no
+requieren a los dos. Si al inicio de cada fase COMPANERO sigue sin acceso, Diego toma las tareas
+C de esa fase, en el orden de `docs/PLAN.md`, y las marca en el plan como `C→D`.
+**Por qué:** que el backend no se frene; los % del reparto quedan registrados para la evaluación.
+
