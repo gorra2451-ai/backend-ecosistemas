@@ -2,6 +2,14 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-22 · gorra2451-ai · cierre F1-T1
+**Hecho**
+- PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/4
+- feat(base): extensiones, parámetros, ZMG provisional, reportes, confirmaciones y admin con RLS
+
+**Pendiente**
+- Revisión del PR por la otra persona.
+
 ## 2026-10-22 · gorra2451-ai · cierre F0-T5
 **Hecho**
 - PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/3
