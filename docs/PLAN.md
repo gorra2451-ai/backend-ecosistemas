@@ -15,10 +15,10 @@
 ## Fase 1 · Base — 27 oct al 2 nov
 | Estado | Tarea | Dueño | % |
 |---|---|---|---|
-| [ ] | F1-T1 Migración: extensiones (postgis, pg_cron), enums, `parametros` | D | 4% |
+| [x] | F1-T1 Migración: extensiones (postgis, pg_cron), enums, `parametros` | D | 4% |
 | [ ] | F1-T2 Migración: `perfiles`, `entradas`, auth anónima, RLS + pruebas | C | 10% |
-| [ ] | F1-T3 Migración: `reportes`, `confirmaciones`, RLS + pruebas | D | 5% |
-| [ ] | F1-T4 Polígono de la ZMG y función `dentro_de_zmg` | D | 3% |
+| [x] | F1-T3 Migración: `reportes`, `confirmaciones`, RLS + pruebas | D | 5% |
+| [x] | F1-T4 Polígono de la ZMG y función `dentro_de_zmg` | D | 3% |
 | [ ] | F1-T5 `seed.sql` con datos de prueba | D | 3% |
 | [ ] | F1-T6 Congelar `API.md` v1 y compartir con los 5 equipos | D+C | — |
 
