@@ -102,3 +102,11 @@ org gratuita de gorra2451-ai. Para liberar el cupo de 2 proyectos activos se pau
 desde `main`; el seed **no** se sube (la nube arranca sin datos falsos).
 **Por qué:** los equipos de front necesitan una URL real para conectarse (F1-T6).
 La contraseña de Postgres vive solo en `.env` local de Diego (`SUPABASE_DB_PASSWORD`).
+
+## D-015 · LeoFigo74z en modo solo local
+**Estado:** Aceptada (Diego) · 2026-10-23
+**Decisión:** LeoFigo74z construye y prueba en su compu y no sube nada sin autorización de Diego.
+Lo hace cumplir el arnés: con `git config arnes.soloLocal true`, `pre-push` bloquea y
+`guardar.sh` solo hace commit local; con autorización se sube con `PUSH_AUTORIZADO=1`.
+Al terminar cada tarea de `docs/PLAN.md` le manda a Diego un resumen y espera; las dudas van a Diego.
+**Por qué:** Diego integra y revisa todo el backend; así nada llega a GitHub sin pasar por él.

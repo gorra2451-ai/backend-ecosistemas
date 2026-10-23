@@ -41,6 +41,9 @@ No leas todo el repo "por si acaso": gasta contexto. Lee lo que la tarea pide.
     (tipos: feat, fix, docs, test, refactor, chore). Sin trailers de co-autor
     (Vercel Hobby bloquea deploys con un segundo colaborador).
 12. **Merge a `main` solo por PR** revisado por la otra persona, con `--no-ff`.
+13. **LeoFigo74z trabaja en modo solo local (D-015):** construye y prueba en su compu, no hace
+    push sin autorización de Diego (`git config arnes.soloLocal true` lo bloquea). Al terminar
+    cada tarea de `docs/PLAN.md` se detiene y le manda a Diego un resumen; las dudas van a Diego.
 
 ## 4. Definición de terminado
 - [ ] Hace lo que pide la tarea y nada más

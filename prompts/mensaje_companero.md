@@ -2,10 +2,11 @@
 
 Ya quedó el repo del backend 🌧️ https://github.com/gorra2451-ai/backend-ecosistemas
 
-1. Acepta la invitación que te llegó de GitHub.
-2. Sigue `docs/ONBOARDING.md` (si usas Windows, todo en Git Bash). Termina con
-   `bash scripts/diagnostico.sh` en 0 problemas.
-3. Abre ChatGPT/Codex y pega `prompts/arranque_companero.md`: revisa contigo que el arnés
-   funcione con tu IA. Mándame lo que te diga.
+1. Acepta la invitación: https://github.com/gorra2451-ai/backend-ecosistemas/invitations
+2. Abre Codex o ChatGPT y pega completo el prompt de este link:
+   https://github.com/gorra2451-ai/backend-ecosistemas/blob/main/prompts/arranque_companero.md
+   La IA revisa tu compu, baja el repo, lo deja listo y arranca con tu primera tarea.
+3. Todo se construye en tu compu; nada se sube sin que yo lo autorice. Cuando termines cada
+   bloque, la IA te arma un mensaje para mandármelo. Cualquier duda, pregúntame directo.
 
 Las llaves de `.env` te las paso por privado, nunca en el chat de la IA.

@@ -107,6 +107,15 @@ echo "pre-push"
 espera_bloqueo "bloquea push directo a main" git push -q origin HEAD:main
 espera_ok "permite push de una rama" git push -q origin prueba
 
+echo "modo solo local (push solo con autorización de Diego)"
+git config arnes.soloLocal true
+git commit -q --allow-empty -m "feat(reportes): trabajo local"
+espera_bloqueo "bloquea push sin autorización" git push -q origin prueba
+out="$(bash scripts/guardar.sh "feat(reportes): otro cambio" 2>&1)"; r=$?
+[ $r -eq 0 ] && echo "$out" | grep -q "solo en tu compu" && ok "guardar.sh hace commit y no sube" || mal "guardar.sh hace commit y no sube" "$out"
+espera_ok "permite push con PUSH_AUTORIZADO=1" env PUSH_AUTORIZADO=1 git push -q origin prueba
+git config --unset arnes.soloLocal
+
 echo "pre-commit secretos"
 # Llaves falsas armadas por partes: así este archivo no trae el patrón literal y se puede subir.
 JWT_FALSO="ey""JhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.abc"

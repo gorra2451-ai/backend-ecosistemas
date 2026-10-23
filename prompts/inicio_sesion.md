@@ -15,4 +15,7 @@ Reglas rápidas: una tarea a la vez, rama por tarea, no inventes datos (usa POR 
 el esquema solo cambia por migración, toda regla lleva prueba. Git solo con `scripts/`
 (`nueva-tarea.sh`, `guardar.sh`, `cerrar-tarea.sh`).
 
+Si soy LeoFigo74z: modo solo local (AGENTS.md §3.13). Nada de push sin autorización de Diego;
+al terminar cada tarea, mensaje para Diego y alto; dudas, a Diego.
+
 Tarea de hoy (si ya la sé): ______

@@ -27,6 +27,9 @@ ir_a_raiz() {
 }
 rama_actual()    { git branch --show-current; }
 hay_remoto()     { git remote get-url origin >/dev/null 2>&1; }
+# Modo solo local (D-015): con `git config arnes.soloLocal true` nada se sube sin
+# PUSH_AUTORIZADO=1, que se usa solo cuando Diego lo autoriza.
+solo_local()     { [ "$(git config --get arnes.soloLocal)" = "true" ] && [ "${PUSH_AUTORIZADO:-}" != "1" ]; }
 arbol_limpio()   { [ -z "$(git status --porcelain)" ]; }
 mensaje_valido() { printf '%s\n' "$1" | head -n 1 | grep -Eq "$RE_MENSAJE"; }
 
