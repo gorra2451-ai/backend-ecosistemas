@@ -27,6 +27,16 @@
 4. **Parámetros configurables** en la tabla `parametros` (D-004).
 5. **Realtime solo para lo que cambia en pantalla:** zonas y estado de reportes.
 
+### Broadcast del mapa (F3-T3)
+- La publicación `supabase_realtime` incluye `realtime.messages`, no `reportes` ni
+  `confirmaciones`; los triggers envían invalidaciones al cambiar reportes activos o
+  confirmaciones que afectan una zona.
+- Canales públicos `reportes` y `zonas`, evento `cambio`. El primero lleva `id` y `estado`;
+  el segundo solo `celda` (Realtime agrega un identificador del mensaje). Nunca se manda
+  `perfil_id`, una fila completa ni la ubicación exacta de un usuario.
+- El front vuelve a consultar las RPC/vistas autorizadas tras recibir el evento. Un cliente
+  podría enviar un Broadcast falso; la fuente de verdad siempre es la consulta a Postgres.
+
 ## Privacidad
 - Sin correo, teléfono, nombre ni edad.
 - El servidor no guarda dónde está el usuario; solo dónde está cada reporte (D-006).

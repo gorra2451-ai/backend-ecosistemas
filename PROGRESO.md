@@ -2,6 +2,16 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-26 · LeoFigo74z · Codex (F3-T3, trabajo local)
+**Hecho**
+- Broadcast público de invalidaciones `reportes`/`zonas` desde triggers, sin replicar
+  reportes ni confirmaciones completos; payload sin autor ni ubicación privada.
+- 14 pruebas pgTAP nuevas; `supabase db reset` y `supabase test db` con 224 pruebas en verde.
+- Prueba WebSocket real con dos canales y un reporte activo: ambos eventos recibidos.
+
+**Pendiente**
+- Revisión de Diego/Claude y autorización antes de `push`/PR/nube.
+
 ## 2026-10-26 · LeoFigo74z · Codex (F2-T4, trabajo local)
 **Hecho**
 - Bucket privado `evidencias`, tabla con RLS y RPC `agregar_evidencia` para archivos de reportes propios.

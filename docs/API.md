@@ -69,15 +69,22 @@ await supabase.rpc('marcar_falso', { p_reporte_id })                       // �
 Errores de confirmar/marcar_falso: `sin_sesion`, `parametros_invalidos` (p_sigue nulo), `reporte_no_existe`, `propio_reporte`, `reporte_no_activo`.
 `es_propio = true` → el front no debe ofrecer confirmar ese reporte.
 
-## Mapa (Equipo Mapa) ✅ zonas y reportes · ⏳ refugios y tiempo real (F3)
+## Mapa (Equipo Mapa) ✅ zonas y reportes · ✅ realtime local · ⏳ refugios/nube (F3)
 ```js
 await supabase.from('zonas_publicas').select('*')   // celda, lat, lng, nivel, total_reportes, total_confirmaciones, alguno_no_pasan_carros, actualizado_en
 // celda = '<ix>_<iy>' (enteros: coordenada UTM 13N / tamano_celda_m), p. ej. '2240_7617'. Mismo formato en notificaciones.
 await supabase.rpc('reportes_activos_en_area', { min_lat, min_lng, max_lat, max_lng })
 // → [{ id, tipo, pasan_carros, lat, lng, ultima_confirmacion, creado_en }]   errores: parametros_invalidos (min ≥ max, fuera de rango), area_demasiado_grande
 await supabase.from('refugios_publicos').select('*')
-// Tiempo real por Broadcast (no postgres_changes: filtraría el autor). Canal y payload: F3-T3.
-supabase.channel('reportes').on('broadcast', { event: 'cambio' }, cb).subscribe()
+// Broadcast público de invalidación, sin postgres_changes ni filas privadas.
+supabase.channel('reportes').on('broadcast', { event: 'cambio' }, ({ payload }) => {
+  // payload = { id: reporte_uuid, estado: 'activo'|'resuelto'|'oculto'|'en_revision'|'borrado' }
+  // Consultar de nuevo reportes_activos_en_area; quitar el id si salió del mapa.
+}).subscribe()
+supabase.channel('zonas').on('broadcast', { event: 'cambio' }, ({ payload }) => {
+  // payload = { celda: '<ix>_<iy>', id: uuid_del_mensaje }
+  // Consultar de nuevo zonas_publicas para esa celda (puede haber desaparecido).
+}).subscribe()
 // Rutas alternas: el front arma link a Waze/Google Maps con lat/lng (no pasa por el backend)
 ```
 

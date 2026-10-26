@@ -2,19 +2,21 @@
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
 **Última actualización:** 2026-10-26 · LeoFigo74z (con Codex)
-**Fase actual:** módulos de Diego en la nube; F1-T2 y F2-T4 de Leo probadas localmente
-**Rama activa:** `feat/f2-t4-evidencias` (apilada sobre F1-T2; solo local)
+**Fase actual:** módulos de Diego en la nube; F1-T2, F2-T4 y F3-T3 de Leo probadas localmente
+**Rama activa:** `feat/f3-t3-realtime-mapa` (apilada sobre F2-T4 y F1-T2; solo local)
 **Repo:** https://github.com/gorra2451-ai/backend-ecosistemas (público, `main` protegida: D-012)
 
 ## Dónde quedamos
 - **Todas las tareas D de `docs/PLAN.md` están hechas** (50% de Diego): base, reportes,
   confirmación/activación/expiración (pg_cron cada 5 min), zonas de calor, admin y seed.
-- Base de Diego: 7 migraciones y 152 pruebas. F1-T2 y F2-T4 añaden 2 migraciones
-  y 58 pruebas: **210 pruebas locales en verde** tras `supabase db reset`,
+- Base de Diego: 7 migraciones y 152 pruebas. Tres tareas de Leo añaden 3 migraciones
+  y 72 pruebas: **224 pruebas locales en verde** tras `supabase db reset`,
   `supabase test db` y `scripts/probar-db.sh`; asesores locales sin hallazgos.
 - Sesión anónima real probada por HTTP local: perfil automático, entrada y accesibilidad.
 - Evidencias: bucket privado, autoría de subida y registro por RPC. Prueba HTTP local con
   dos usuarios: tercero no sube ni lee pendiente; evidencia activa pública.
+- Broadcast por WebSocket real: canales `reportes`/`zonas` reciben eventos sin autor ni
+  fila completa. Test SQL comprueba 14 casos de activación, confirmación y resolución.
 - Diagnóstico completo del arnés: 55 pruebas, 0 fallas, 0 problemas (corregido grep de CRLF en Windows).
 - Revisión independiente de seguridad hecha y sus hallazgos corregidos (PR #6). Lo de diseño quedó
   en P-16 (anti-spam con sesiones anónimas).
@@ -25,7 +27,7 @@
 
 ## Siguiente paso (en este orden)
 1. Leo autorizó completar toda su mitad localmente y enviar un informe único a Diego/Claude
-   al final. Siguiente tarea: F3-T3 (Realtime por Broadcast). No hacer `push`.
+   al final. Siguiente tarea: F3-T4 (refugios). No hacer `push`.
 2. F1-T2 quedó en commits locales `e0997af`, `6d419af`, `f24ec25`; F2-T4 está en
    la rama apilada. Al cierre, Diego revisa ramas/commits y autoriza PR/nube.
 3. Diego habilita sesiones anónimas en Auth remoto; `config.toml` solo habilita local.
