@@ -39,13 +39,14 @@ create policy entradas_solo_propietario on public.entradas
 -- El esquema privado no se expone por la Data API.
 create schema if not exists private;
 revoke all on schema private from public, anon, authenticated;
-create function private.crear_perfil() returns trigger
+create or replace function private.crear_perfil() returns trigger
 language plpgsql security definer set search_path = '' as $$
 begin
   insert into public.perfiles (id) values (new.id) on conflict (id) do nothing;
   return new;
 end $$;
 revoke execute on function private.crear_perfil() from public, anon, authenticated;
+drop trigger if exists crear_perfil_al_registrar_usuario on auth.users;
 create trigger crear_perfil_al_registrar_usuario
   after insert on auth.users for each row execute function private.crear_perfil();
 

@@ -6,7 +6,8 @@
 **Hecho**
 - Configuración local de Auth anónima, perfil automático, `entradas` y preferencias v1.
 - RPC `registrar_entrada` y `guardar_accesibilidad`; tablas con RLS y escritura solo por RPC.
-- Migración nueva y 30 pruebas pgTAP nuevas. `supabase db reset` limpio; 182 pruebas pasan, 0 fallan.
+- Migración nueva y 30 pruebas pgTAP nuevas. `supabase db reset`, `supabase test db` y
+  `scripts/probar-db.sh` completos: 182 pruebas pasan, 0 fallan.
 - Prueba HTTP local: sesión anónima, perfil, entrada y accesibilidad; asesores de seguridad y rendimiento sin hallazgos.
 - Arnés Windows: `diagnostico.sh` detecta CRLF en modo binario; diagnóstico completo con 55 pruebas, 0 fallas y 0 problemas.
 
