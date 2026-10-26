@@ -2,6 +2,16 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-26 · LeoFigo74z · Codex (F4-T2, trabajo local)
+**Hecho**
+- Cola privada por celda, trigger de activación/resolución, límite anti-spam y trabajador
+  con reclamo exclusivo, token y reintentos. Cron queda sin envío hasta configurar Vault.
+- 20 pgTAP nuevas: 279 totales en verde tras reconstruir la base. Prueba HTTP completa
+  de Auth → suscripción → reporte → cola → Edge Function → reintento, sin envío externo.
+
+**Pendiente**
+- P-21/P-22, configurar secretos de servidor en despliegue, revisión/PR/nube con Diego.
+
 ## 2026-10-26 · LeoFigo74z · Codex (F4-T1, trabajo local)
 **Hecho**
 - `suscripciones_push` privada, RPC de alta/baja, ámbito por municipio o celda y límite

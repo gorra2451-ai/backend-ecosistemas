@@ -417,3 +417,6 @@ enabled = true
 # secreta del proyecto dentro del handler. No acepta JWT de usuario.
 [functions.enviar-push]
 verify_jwt = false
+
+[functions.procesar-avisos]
+verify_jwt = false

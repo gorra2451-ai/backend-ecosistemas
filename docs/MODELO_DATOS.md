@@ -130,6 +130,16 @@ no concede SELECT a usuarios. Solo las RPC `suscribir_push`/`baja_push` la modif
 con límite por perfil en `parametros`. Se borra al eliminar el perfil. La Edge Function
 interna usa clave secreta de servidor y VAPID para enviar; no se guardan coordenadas.
 
+### avisos_push [C]
+| id | suscripcion_id | celda | tipo | titulo | mensaje | estado | intentos | proximo_intento_en | bloqueado_hasta | token_reclamo | creado_en | enviado_en |
+Cola privada y sin datos del autor ni coordenadas. Un trigger de `reportes` encola el
+primer evento activo y la última resolución de cada celda, respetando el intervalo de
+`parametros`. Solo `service_role` puede reclamar y cerrar envíos; el token de reclamo
+impide que un trabajador atrasado cierre el trabajo de otro. Cron invoca una Edge Function
+interna mediante `pg_net` y Vault, cuando Diego configure URL y clave en producción.
+Reintentos y retención provisionales: P-22. Sin mapa municipal verificado, los eventos
+de reportes no se envían a suscripciones por municipio (P-21).
+
 ### alertas_clima [C]
 | id | fuente | nivel enum | titulo | descripcion | area geography(Polygon)? | vigente_desde | vigente_hasta |
 

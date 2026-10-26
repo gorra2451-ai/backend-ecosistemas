@@ -110,8 +110,13 @@ suyo con `baja_push`. Errores: `sin_sesion`, `parametros_invalidos`,
 `suscripcion_en_uso`, `limite_suscripciones` (5 dispositivos provisionales, P-20).
 La Edge Function `enviar-push` es **interna**: solo el servidor la invoca con `apikey`
 secreta. El front nunca recibe esa clave. Requiere VAPID configurado en el entorno
-servidor; no hay credenciales de producción en el repo. F4-T2 conectará los cambios de
-estado con los envíos y el límite anti-spam.
+servidor; no hay credenciales de producción en el repo.
+**Avisos por zona ✅ local, ⏳ nube (F4-T2):** al aparecer el primer reporte activo
+de una celda, o resolverse el último, se encola un aviso por suscripción a esa celda.
+El límite por usuario y celda es `minutos_entre_avisos` (30 minutos provisionales).
+El trabajador interno `procesar-avisos` reclama lotes, invoca `enviar-push` y reintenta
+fallos. El front no llama al trabajador ni lee la cola. Por ahora las suscripciones por
+municipio no reciben este evento: falta una delimitación municipal verificada (P-21).
 
 ## Admin (panel interno) ✅
 ```js
