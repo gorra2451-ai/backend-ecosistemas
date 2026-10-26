@@ -11,8 +11,8 @@
 │ Funciones RPC     → reglas de negocio     │
 │ Realtime          → mapa en vivo          │
 │ Storage           → fotos y videos        │
-│ pg_cron           → expirar reportes      │
-│ Edge Functions    → push y clima          │
+│ pg_cron           → expiración y avisos   │
+│ Edge Functions    → Web Push              │
 └──────────────────────────────────────────┘
         │
         ▼
@@ -54,4 +54,5 @@
   reporte. Antes de abrir a público: captcha y límite de inicios anónimos en Supabase Auth (P-16).
 - El plan gratuito pausa proyectos inactivos: programar un uso semanal o reactivarlo antes de testeos.
 - Push en iPhone solo funciona si la web se instala en pantalla de inicio (verificar en Fase 4).
-- La fuente oficial de clima puede no tener API: plan B es carga manual por el admin.
+- La fuente oficial de clima sigue pendiente (P-06): la carga local es manual por
+  servicio autorizado, con fuente HTTPS y verificación. No hay ingesta automática.

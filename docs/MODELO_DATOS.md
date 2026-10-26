@@ -58,6 +58,8 @@ Valores iniciales (**5 y 30 salieron de clase; el resto son propuestas** a ajust
 | `radio_cercanos_max_m` | 1000 | tope de `p_radio_m` en `reportes_cercanos` |
 | `area_max_consulta_km2` | 2500 | tope del rectángulo en `reportes_activos_en_area` |
 | `minutos_entre_avisos` | 30 | máx. 1 aviso por zona por usuario en este lapso (módulo C) |
+| `max_intentos_push` / `minutos_reintento_push` / `minutos_bloqueo_aviso_push` / `dias_retencion_avisos_push` | 3 / 5 / 2 / 7 | cola de avisos (P-22) |
+| `radio_refugios_derivacion_m` / `max_refugios_derivacion` | 20000 / 5 | límites de orientación (P-24) |
 
 ### limites_zmg [D]
 | id smallint PK | nombre | area geography(MultiPolygon) | fuente | actualizado_en |
@@ -149,8 +151,12 @@ respeta el intervalo de avisos; ninguna alerta de prueba persiste en producción
 El significado operativo de `bajo|medio|alto` debe validarse con el equipo (P-23).
 
 ### instituciones [C]
-| id | nombre | tipos_caso `tipo_caso`[] | telefono | url | municipio | horario | fuente | verificado_en |
-> Sin datos verificados no se publica (`verificado_en` nulo = oculto).
+| id | nombre | tipos_caso `tipo_caso`[] | telefono? | url? | municipio | horario? | fuente | verificado_en | creado_en |
+Solo servicio carga/verifica contactos; debe haber teléfono o URL HTTPS. RLS y
+`instituciones_publicas` ocultan fichas sin `verificado_en`. El catálogo arranca vacío
+hasta cotejar institución, ámbito, contacto y fuente (P-05). `derivar` filtra por caso
+y municipio, añade refugios verificados dentro de `radio_refugios_derivacion_m` y
+devuelve pasos generales. La ubicación de la consulta no se guarda.
 
 ### refugios [C]
 | id | nombre | ubicacion | direccion | municipio | capacidad | fuente | verificado_en |

@@ -3,7 +3,8 @@
 > Si cambias algo aquí, avisa a los equipos y registra en PROGRESO.md.
 > Estado: **v1 congelada (F1-T6, 2026-10-23)**. Cambios que rompan algo → v2, avisando a los 5 equipos.
 > Sin sesión (`anon`) solo se lee lo público; toda escritura pide sesión anónima.
-> ✅ = ya funciona en la nube · ⏳ = contrato fijo, implementación pendiente (fase indicada).
+> Las secciones indican por separado lo probado **localmente** y lo disponible **en nube**.
+> Las incorporaciones de Leo siguen locales hasta revisión y publicación autorizada.
 
 ## Conexión
 ```js
@@ -101,7 +102,9 @@ await supabase.from('alertas_clima_vigentes').select('*')
 // → [{ id, fuente, fuente_url, nivel: 'bajo'|'medio'|'alto', titulo, descripcion,
 //       municipio, vigente_desde, vigente_hasta, verificado_en }]
 await supabase.rpc('derivar', { p_caso: 'casa', p_municipio: 'Zapopan', p_lat, p_lng })
-// → { instituciones: [...], refugios: [...], pasos: [...] }
+// → { instituciones: [{id,nombre,tipos_caso,telefono,url,municipio,horario,fuente,verificado_en}],
+//     refugios: [{id,nombre,direccion,municipio,capacidad,fuente,verificado_en,lat,lng,distancia_m}],
+//     pasos: [string,...] }
 ```
 **Push ✅ local, ⏳ nube (F4-T1):** el navegador pide permiso al usuario y obtiene
 `endpoint`, `p256dh` y `auth` de `PushSubscription`. Convierte las claves a base64url.
@@ -123,6 +126,12 @@ municipio no reciben este evento: falta una delimitación municipal verificada (
 vigentes, cargadas manualmente por el servicio con URL HTTPS de la fuente, municipio y
 fechas. Un trabajo programado encola el aviso para suscripciones de ese municipio.
 El catálogo empieza vacío mientras se confirma la fuente (P-06) y la escala (P-23).
+**Derivación ✅ local, ⏳ nube (F4-T4):** `derivar` acepta
+`casa|coche|persona_herida|tercero|otro`, municipio y coordenadas válidas. Solo entrega
+instituciones verificadas para ese caso y municipio y hasta cinco refugios verificados
+dentro de 20 km (límites provisionales P-24). Si no hay fichas verificadas, devuelve
+listas vacías y pasos generales. La consulta no guarda ubicación ni crea folios.
+Error: `parametros_invalidos`. El catálogo oficial está pendiente de P-05/P-07.
 
 ## Admin (panel interno) ✅
 ```js

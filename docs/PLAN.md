@@ -9,7 +9,7 @@
 | [x] | F0-T1 Arnés: reglas, docs, prompts | D | — |
 | [x] | F0-T2 Repo `backend-ecosistemas` en GitHub desde Warp (privado; `main` protegida por regla, D-011) | D | — |
 | [ ] | F0-T3 Invitar a C, confirmar su nombre y que pueda abrir sesión con `prompts/inicio_sesion.md` | D | — |
-| [ ] | F0-T4 Proyecto Supabase remoto + Supabase CLI y Docker en ambas compus (remoto listo, D-014; compu de Diego lista, puertos 554xx; falta la de LeoFigo74z) | D+C | — |
+| [ ] | F0-T4 Proyecto Supabase remoto + Supabase CLI y Docker en ambas compus (remoto D-014 y entorno local de Leo funcional; validar cierre conjunto) | D+C | — |
 | [x] | F0-T5 Revisar y aprobar `MODELO_DATOS.md` y `API.md` v0 (Diego, D-013) | D+C | — |
 
 ## Fase 1 · Base — 27 oct al 2 nov
@@ -44,7 +44,7 @@
 | [ ] | F4-T1 `suscripciones_push` + Edge Function de envío Web Push (probada localmente; pendiente envío real a navegador, revisión/PR/nube) | C | 5% |
 | [ ] | F4-T2 Disparo por cambio de estado con límite anti-spam (probado localmente; pendiente revisión/PR/nube y P-21/P-22) | C | 4% |
 | [ ] | F4-T3 `alertas_clima` + carga manual verificada (probado localmente; pendiente P-06/P-23 y revisión/PR/nube) | C | 3% |
-| [ ] | F4-T4 `instituciones` verificadas + RPC `derivar` | C | 10% |
+| [ ] | F4-T4 `instituciones` verificadas + RPC `derivar` (probado localmente; catálogo vacío hasta P-05/P-07, pendiente revisión/PR/nube) | C | 10% |
 
 ## Fase 5 · Admin, seguridad e integración — 24 al 30 nov
 | Estado | Tarea | Dueño | % |

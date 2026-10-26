@@ -49,7 +49,7 @@ create unique index avisos_clima_entrega_unica_idx on public.avisos_push
 create index avisos_push_municipio_historial_idx on public.avisos_push
   (suscripcion_id, municipio, creado_en desc) where municipio is not null;
 
-create function private.encolar_alertas_clima_vigentes() returns integer
+create or replace function private.encolar_alertas_clima_vigentes() returns integer
 language plpgsql security definer set search_path = '' as $$
 declare
   v_total integer := 0;

@@ -2,6 +2,18 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-26 · LeoFigo74z · Codex (F4-T4, trabajo local)
+**Hecho**
+- Catálogo privado de instituciones con contacto, fuente, casos y verificación; vista
+  pública solo de fichas verificadas. `derivar` filtra caso/municipio, ordena refugios
+  cercanos y devuelve orientación sin guardar la posición.
+- 19 pruebas pgTAP nuevas: **314 en total** tras `supabase db reset` y `supabase test db`.
+  `scripts/probar-db.sh` pasó las 14 suites y el lint de `public,private` no reportó errores.
+  HTTP local confirmó respuesta con listas vacías y pasos cuando no hay fuentes oficiales.
+
+**Pendiente**
+- Catálogo oficial P-05/P-07 y reglas P-24; revisión/PR/nube con Diego.
+
 ## 2026-10-26 · LeoFigo74z · Codex (F4-T3, trabajo local)
 **Hecho**
 - Catálogo de alertas meteorológicas de carga manual, fuente HTTPS, municipio, nivel,

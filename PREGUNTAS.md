@@ -26,3 +26,4 @@
 | P-21 | ¿Qué polígonos municipales oficiales se usarán para asociar reportes a suscripciones por municipio? Hasta entonces los avisos de reportes solo llegan a suscripciones por celda | F4-T2 integración | LeoFigo74z | Diego + Equipo Mapa | Abierta |
 | P-22 | ¿Aceptamos máximo 3 intentos de push, reintento a 5 min, reclamo a 2 min y retención de 7 días? Valores provisionales en `parametros` | F4-T2 despliegue | LeoFigo74z | Diego + Equipo Notif. | Abierta |
 | P-23 | ¿Qué significa cada nivel climático `bajo`, `medio`, `alto` y qué autoridad puede verificar una alerta? Hoy son etiquetas de carga manual, sin umbrales inventados | F4-T3 antes de uso público | LeoFigo74z | Diego + Equipo Notif. | Abierta |
+| P-24 | ¿Sirven 20 km y máximo 5 refugios en `derivar`? Son límites provisionales en `parametros`; ¿qué pasos de orientación aprueba el equipo? | F4-T4 antes de uso público | LeoFigo74z | Diego + Equipo Derivación | Abierta |
