@@ -9,7 +9,7 @@
 | P-04 | ¿Qué librería de mapa usará el front? (Leaflet/OSM, Google, link a Waze) | Fase 3 | LeoFigo74z | Equipo Mapa / Leo | Abierta |
 | P-05 | ¿Qué institución atiende cada tipo de caso en la ZMG? (teléfonos verificados) | Fase 4 | LeoFigo74z | Equipo Notif.+Derivación | Abierta |
 | P-06 | ¿De dónde salen las alertas de clima? (fuente oficial y si tiene API) | Fase 4 | LeoFigo74z | Equipo Notif.+Derivación | Abierta |
-| P-07 | ¿Dónde hay refugios oficiales y quién los publica? | Fase 4 | LeoFigo74z | Equipo Notif.+Derivación | Abierta |
+| P-07 | ¿Dónde hay refugios oficiales, en qué municipio y quién verifica/publica cada ficha? El catálogo existe pero queda vacío hasta recibir fuentes | Carga de F3-T4 y derivación F4-T4 | LeoFigo74z | Equipo Notif.+Derivación | Abierta |
 | P-08 | ¿Web o app? (afecta notificaciones push en iPhone) | Fase 4 | Ambos | Testeo del grupo | Abierta |
 | P-09 | Fechas de mid-fi y high-fi | Plan | Diego | Profesora | Abierta |
 | P-10 | Nombre y usuario de GitHub del compañero | Fase 0 | Diego | LeoFigo74z | ✔ LeoFigo74z (invitado 2026-10-23) |

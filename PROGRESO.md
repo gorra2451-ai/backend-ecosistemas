@@ -2,6 +2,17 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-26 · LeoFigo74z · Codex (F3-T4, trabajo local)
+**Hecho**
+- Tabla `refugios` con ubicación PostGIS, fuente, municipio y fecha de verificación;
+  vista `refugios_publicos` con RLS de solo lectura verificada.
+- 15 pruebas pgTAP nuevas; 239 en total tras `supabase db reset`, `supabase test db`
+  y `scripts/probar-db.sh`. Asesores de seguridad y rendimiento sin hallazgos.
+- Sin filas inventadas en seed ni en la nube.
+
+**Pendiente**
+- P-07: recibir y comprobar lista de refugios oficiales; revisión/PR/nube con Diego.
+
 ## 2026-10-26 · LeoFigo74z · Codex (F3-T3, trabajo local)
 **Hecho**
 - Broadcast público de invalidaciones `reportes`/`zonas` desde triggers, sin replicar

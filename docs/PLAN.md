@@ -36,7 +36,7 @@
 | [x] | F3-T1 Vista `zonas_publicas` y niveles + pruebas | D | 5% |
 | [x] | F3-T2 RPC `reportes_activos_en_area` | D | 3% |
 | [ ] | F3-T3 Realtime habilitado en reportes/zonas (lista localmente 2026-10-26; pendiente revisión/PR/nube) | C | 4% |
-| [ ] | F3-T4 `refugios` + vista pública | C | 6% |
+| [ ] | F3-T4 `refugios` + vista pública (lista localmente 2026-10-26; catálogo vacío hasta P-07, pendiente revisión/PR/nube) | C | 6% |
 
 ## Fase 4 · Notificaciones y derivación — 17 al 23 nov
 | Estado | Tarea | Dueño | % |

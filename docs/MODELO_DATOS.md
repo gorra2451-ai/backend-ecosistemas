@@ -134,4 +134,8 @@ Interés por **municipio o celda**, nunca un punto (D-006: un punto suele ser la
 > Sin datos verificados no se publica (`verificado_en` nulo = oculto).
 
 ### refugios [C]
-| id | nombre | ubicacion | direccion | capacidad | fuente | verificado_en |
+| id | nombre | ubicacion | direccion | municipio | capacidad | fuente | verificado_en |
+Solo servicio/administración puede cargar o verificar refugios. RLS y la vista
+`refugios_publicos` exponen únicamente filas con `verificado_en` no nulo y vigente.
+La vista entrega `lat` y `lng` para el front. `capacidad` puede ser nula si se desconoce.
+El catálogo de producción arranca vacío hasta verificar fuentes oficiales (P-07).

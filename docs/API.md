@@ -69,13 +69,15 @@ await supabase.rpc('marcar_falso', { p_reporte_id })                       // �
 Errores de confirmar/marcar_falso: `sin_sesion`, `parametros_invalidos` (p_sigue nulo), `reporte_no_existe`, `propio_reporte`, `reporte_no_activo`.
 `es_propio = true` → el front no debe ofrecer confirmar ese reporte.
 
-## Mapa (Equipo Mapa) ✅ zonas y reportes · ✅ realtime local · ⏳ refugios/nube (F3)
+## Mapa (Equipo Mapa) ✅ zonas y reportes · ✅ realtime y refugios locales · ⏳ nube (F3)
 ```js
 await supabase.from('zonas_publicas').select('*')   // celda, lat, lng, nivel, total_reportes, total_confirmaciones, alguno_no_pasan_carros, actualizado_en
 // celda = '<ix>_<iy>' (enteros: coordenada UTM 13N / tamano_celda_m), p. ej. '2240_7617'. Mismo formato en notificaciones.
 await supabase.rpc('reportes_activos_en_area', { min_lat, min_lng, max_lat, max_lng })
 // → [{ id, tipo, pasan_carros, lat, lng, ultima_confirmacion, creado_en }]   errores: parametros_invalidos (min ≥ max, fuera de rango), area_demasiado_grande
 await supabase.from('refugios_publicos').select('*')
+// → [{ id, nombre, lat, lng, direccion, municipio, capacidad, fuente, verificado_en }]
+// Puede devolver [] hasta que el equipo aporte fuentes oficiales verificadas (P-07).
 // Broadcast público de invalidación, sin postgres_changes ni filas privadas.
 supabase.channel('reportes').on('broadcast', { event: 'cambio' }, ({ payload }) => {
   // payload = { id: reporte_uuid, estado: 'activo'|'resuelto'|'oculto'|'en_revision'|'borrado' }
