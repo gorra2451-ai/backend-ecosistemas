@@ -92,11 +92,26 @@ supabase.channel('zonas').on('broadcast', { event: 'cambio' }, ({ payload }) => 
 
 ## Notificaciones y derivación (Equipo 5) ⏳ F4
 ```js
-await supabase.rpc('suscribir_push', { p_endpoint, p_p256dh, p_auth, p_municipio })   // interés por municipio/celda, nunca un punto
+await supabase.rpc('suscribir_push', {
+  p_endpoint, p_p256dh, p_auth, p_municipio: 'Guadalajara'
+}) // → UUID de suscripción; interés por municipio, nunca un punto
+// Opción por celda: p_municipio: null, p_celda: '2240_7617'.
+await supabase.rpc('baja_push', { p_endpoint }) // → boolean
 await supabase.from('alertas_clima_vigentes').select('*')
 await supabase.rpc('derivar', { p_caso: 'casa', p_municipio: 'Zapopan', p_lat, p_lng })
 // → { instituciones: [...], refugios: [...], pasos: [...] }
 ```
+**Push ✅ local, ⏳ nube (F4-T1):** el navegador pide permiso al usuario y obtiene
+`endpoint`, `p256dh` y `auth` de `PushSubscription`. Convierte las claves a base64url.
+La RPC requiere sesión anónima, acepta exactamente un ámbito (`municipio` o `celda`),
+normaliza municipio a minúsculas y devuelve el mismo UUID al reintentar con el mismo
+endpoint. El front no puede consultar endpoints ni claves; solo puede dar de baja el
+suyo con `baja_push`. Errores: `sin_sesion`, `parametros_invalidos`,
+`suscripcion_en_uso`, `limite_suscripciones` (5 dispositivos provisionales, P-20).
+La Edge Function `enviar-push` es **interna**: solo el servidor la invoca con `apikey`
+secreta. El front nunca recibe esa clave. Requiere VAPID configurado en el entorno
+servidor; no hay credenciales de producción en el repo. F4-T2 conectará los cambios de
+estado con los envíos y el límite anti-spam.
 
 ## Admin (panel interno) ✅
 ```js

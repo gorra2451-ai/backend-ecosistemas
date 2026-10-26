@@ -41,7 +41,7 @@
 ## Fase 4 · Notificaciones y derivación — 17 al 23 nov
 | Estado | Tarea | Dueño | % |
 |---|---|---|---|
-| [ ] | F4-T1 `suscripciones_push` + Edge Function de envío Web Push | C | 5% |
+| [ ] | F4-T1 `suscripciones_push` + Edge Function de envío Web Push (probada localmente; pendiente envío real a navegador, revisión/PR/nube) | C | 5% |
 | [ ] | F4-T2 Disparo por cambio de estado con límite anti-spam | C | 4% |
 | [ ] | F4-T3 `alertas_clima` + carga (API o manual, según P-06) | C | 3% |
 | [ ] | F4-T4 `instituciones` verificadas + RPC `derivar` | C | 10% |

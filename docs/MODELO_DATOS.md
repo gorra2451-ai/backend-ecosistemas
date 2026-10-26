@@ -123,8 +123,12 @@ del bucket. Los números provisionales están en `parametros` (P-18). El front d
 antes de subir fotos; falta verificar ese flujo para publicación (P-19).
 
 ### suscripciones_push [C]
-| id | perfil_id | endpoint | p256dh | auth | municipio text? | celda text? | creado_en |
+| id | perfil_id | endpoint | p256dh | auth | municipio text? | celda text? | creado_en | actualizado_en |
 Interés por **municipio o celda**, nunca un punto (D-006: un punto suele ser la casa).
+El endpoint identifica un dispositivo y sus claves permiten cifrar el mensaje; la tabla
+no concede SELECT a usuarios. Solo las RPC `suscribir_push`/`baja_push` la modifican,
+con límite por perfil en `parametros`. Se borra al eliminar el perfil. La Edge Function
+interna usa clave secreta de servidor y VAPID para enviar; no se guardan coordenadas.
 
 ### alertas_clima [C]
 | id | fuente | nivel enum | titulo | descripcion | area geography(Polygon)? | vigente_desde | vigente_hasta |

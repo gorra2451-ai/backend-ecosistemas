@@ -2,6 +2,20 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-26 · LeoFigo74z · Codex (F4-T1, trabajo local)
+**Hecho**
+- `suscripciones_push` privada, RPC de alta/baja, ámbito por municipio o celda y límite
+  provisional de 5 dispositivos. 20 pruebas pgTAP nuevas; 259 en total pasan tras
+  `supabase db reset`, `supabase test db` y `scripts/probar-db.sh`.
+- Edge Function `enviar-push` validada con Deno y runtime local de Supabase: 401 sin clave,
+  400 por solicitud inválida, 404 sin suscripción y 422 para proveedor ajeno.
+- Cifrado y firma VAPID comprobados sin envío externo. Pruebas HTTP de alta/baja y privacidad;
+  asesores locales de seguridad y rendimiento sin hallazgos.
+
+**Pendiente**
+- Envío real a un navegador suscrito, claves VAPID de producción y acuerdo P-08/P-20.
+- F4-T2 conectará cambios de estado con envíos y límite anti-spam; revisión/PR/nube con Diego.
+
 ## 2026-10-26 · LeoFigo74z · Codex (F3-T4, trabajo local)
 **Hecho**
 - Tabla `refugios` con ubicación PostGIS, fuente, municipio y fecha de verificación;
