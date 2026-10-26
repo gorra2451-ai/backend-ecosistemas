@@ -10,7 +10,8 @@
 - **Todas las tareas D de `docs/PLAN.md` están hechas** (50% de Diego): base, reportes,
   confirmación/activación/expiración (pg_cron cada 5 min), zonas de calor, admin y seed.
 - Base de Diego: 7 migraciones y 152 pruebas. F1-T2 añade una migración y 30 pruebas:
-  **182 pruebas locales en verde** tras `supabase db reset`; asesores locales sin hallazgos.
+  **182 pruebas locales en verde** tras `supabase db reset`, `supabase test db` y
+  `scripts/probar-db.sh`; asesores locales sin hallazgos.
 - Sesión anónima real probada por HTTP local: perfil automático, entrada y accesibilidad.
 - Diagnóstico completo del arnés: 55 pruebas, 0 fallas, 0 problemas (corregido grep de CRLF en Windows).
 - Revisión independiente de seguridad hecha y sus hallazgos corregidos (PR #6). Lo de diseño quedó
@@ -21,8 +22,8 @@
 - `docs/API.md` **v1 congelada** (✅ disponible / ⏳ pendiente por módulo).
 
 ## Siguiente paso (en este orden)
-1. Guardar F1-T2 en commit local y mandar resumen a Diego. No hacer `push` ni empezar F2-T4
-   hasta que Leo comunique su respuesta.
+1. F1-T2 ya está guardada en dos commits locales (`e0997af`, `6d419af`).
+   Preparar revisión para Diego/Claude. No hacer `push` sin autorización de Diego.
 2. Tras aprobación, abrir PR y revisar CI. Diego habilita sesiones anónimas en Auth remoto;
    `config.toml` solo habilita el entorno local.
 3. Acordar P-16 (anti-spam) y P-17 (preferencias adicionales) antes de testeo/integración.
