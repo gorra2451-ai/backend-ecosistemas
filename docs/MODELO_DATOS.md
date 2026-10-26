@@ -141,7 +141,12 @@ Reintentos y retención provisionales: P-22. Sin mapa municipal verificado, los 
 de reportes no se envían a suscripciones por municipio (P-21).
 
 ### alertas_clima [C]
-| id | fuente | nivel enum | titulo | descripcion | area geography(Polygon)? | vigente_desde | vigente_hasta |
+| id | fuente | fuente_url | nivel `nivel_alerta_clima` | titulo | descripcion | municipio | vigente_desde | vigente_hasta | verificado_en | creado_en |
+Carga manual por servicio hasta acordar fuente oficial (P-06). Sin polígonos verificados,
+el ámbito explícito es un municipio. RLS y `alertas_clima_vigentes` muestran solo alertas
+verificadas dentro de su intervalo. Cron encola una vez por suscripción municipal y
+respeta el intervalo de avisos; ninguna alerta de prueba persiste en producción.
+El significado operativo de `bajo|medio|alto` debe validarse con el equipo (P-23).
 
 ### instituciones [C]
 | id | nombre | tipos_caso `tipo_caso`[] | telefono | url | municipio | horario | fuente | verificado_en |

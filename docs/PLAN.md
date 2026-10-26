@@ -43,7 +43,7 @@
 |---|---|---|---|
 | [ ] | F4-T1 `suscripciones_push` + Edge Function de envío Web Push (probada localmente; pendiente envío real a navegador, revisión/PR/nube) | C | 5% |
 | [ ] | F4-T2 Disparo por cambio de estado con límite anti-spam (probado localmente; pendiente revisión/PR/nube y P-21/P-22) | C | 4% |
-| [ ] | F4-T3 `alertas_clima` + carga (API o manual, según P-06) | C | 3% |
+| [ ] | F4-T3 `alertas_clima` + carga manual verificada (probado localmente; pendiente P-06/P-23 y revisión/PR/nube) | C | 3% |
 | [ ] | F4-T4 `instituciones` verificadas + RPC `derivar` | C | 10% |
 
 ## Fase 5 · Admin, seguridad e integración — 24 al 30 nov

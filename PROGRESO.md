@@ -2,6 +2,16 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-26 · LeoFigo74z · Codex (F4-T3, trabajo local)
+**Hecho**
+- Catálogo de alertas meteorológicas de carga manual, fuente HTTPS, municipio, nivel,
+  vigencia y verificación obligatoria para lectura pública. Sin datos inventados.
+- Escáner programado que encola una entrega por dispositivo municipal, idempotente y
+  sujeto al intervalo anti-spam. 16 pgTAP nuevas; **295 pruebas locales en verde**.
+
+**Pendiente**
+- Fuente oficial P-06, escala y verificador P-23, revisión/PR/nube con Diego.
+
 ## 2026-10-26 · LeoFigo74z · Codex (F4-T2, trabajo local)
 **Hecho**
 - Cola privada por celda, trigger de activación/resolución, límite anti-spam y trabajador

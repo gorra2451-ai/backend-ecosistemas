@@ -98,6 +98,8 @@ await supabase.rpc('suscribir_push', {
 // Opción por celda: p_municipio: null, p_celda: '2240_7617'.
 await supabase.rpc('baja_push', { p_endpoint }) // → boolean
 await supabase.from('alertas_clima_vigentes').select('*')
+// → [{ id, fuente, fuente_url, nivel: 'bajo'|'medio'|'alto', titulo, descripcion,
+//       municipio, vigente_desde, vigente_hasta, verificado_en }]
 await supabase.rpc('derivar', { p_caso: 'casa', p_municipio: 'Zapopan', p_lat, p_lng })
 // → { instituciones: [...], refugios: [...], pasos: [...] }
 ```
@@ -117,6 +119,10 @@ El límite por usuario y celda es `minutos_entre_avisos` (30 minutos provisional
 El trabajador interno `procesar-avisos` reclama lotes, invoca `enviar-push` y reintenta
 fallos. El front no llama al trabajador ni lee la cola. Por ahora las suscripciones por
 municipio no reciben este evento: falta una delimitación municipal verificada (P-21).
+**Clima ✅ local, ⏳ nube (F4-T3):** la vista solo entrega alertas verificadas y
+vigentes, cargadas manualmente por el servicio con URL HTTPS de la fuente, municipio y
+fechas. Un trabajo programado encola el aviso para suscripciones de ese municipio.
+El catálogo empieza vacío mientras se confirma la fuente (P-06) y la escala (P-23).
 
 ## Admin (panel interno) ✅
 ```js
