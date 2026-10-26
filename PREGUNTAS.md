@@ -19,3 +19,4 @@
 | P-14 | ¿El límite de `max_reportes_por_hora` cuenta reportes ocultados por moderación? (hoy: cuenta todos) | Fase 2 | Diego | Equipo Reporte | Abierta |
 | P-15 | ¿Un reporte nuevo junto a uno `activo` nace activo sin importar tipo ni antigüedad del activo? (hoy: sí) | Fase 2 | Diego | Equipo Confirmación | Abierta |
 | P-16 | Anti-spam: ¿captcha y límite de sesiones anónimas en Supabase Auth? ¿`persona_en_riesgo` con 1 reporte y "nace activo junto a activo" sin confirmaciones son aceptables? | Antes de testeo público | Diego | Grupo + profesora | Abierta |
+| P-17 | ¿Qué preferencias de accesibilidad, además de `daltonismo`, debe guardar el backend? Hoy v1 solo admite esa clave booleana | Integración Equipo Registro | LeoFigo74z | Diego + Equipo Registro | Abierta |

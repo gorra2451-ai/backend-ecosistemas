@@ -16,7 +16,7 @@
 | Estado | Tarea | Dueño | % |
 |---|---|---|---|
 | [x] | F1-T1 Migración: extensiones (postgis, pg_cron), enums, `parametros` | D | 4% |
-| [ ] | F1-T2 Migración: `perfiles`, `entradas`, auth anónima, RLS + pruebas | C | 10% |
+| [ ] | F1-T2 Migración: `perfiles`, `entradas`, auth anónima, RLS + pruebas (lista localmente 2026-10-26; pendiente revisión/PR/nube) | C | 10% |
 | [x] | F1-T3 Migración: `reportes`, `confirmaciones`, RLS + pruebas | D | 5% |
 | [x] | F1-T4 Polígono de la ZMG y función `dentro_de_zmg` | D | 3% |
 | [x] | F1-T5 `seed.sql` con datos de prueba | D | 3% |

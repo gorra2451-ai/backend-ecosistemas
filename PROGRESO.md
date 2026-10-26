@@ -2,6 +2,18 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-26 · LeoFigo74z · Codex (F1-T2, trabajo local)
+**Hecho**
+- Configuración local de Auth anónima, perfil automático, `entradas` y preferencias v1.
+- RPC `registrar_entrada` y `guardar_accesibilidad`; tablas con RLS y escritura solo por RPC.
+- Migración nueva y 30 pruebas pgTAP nuevas. `supabase db reset` limpio; 182 pruebas pasan, 0 fallan.
+- Prueba HTTP local: sesión anónima, perfil, entrada y accesibilidad; asesores de seguridad y rendimiento sin hallazgos.
+- Arnés Windows: `diagnostico.sh` detecta CRLF en modo binario; diagnóstico completo con 55 pruebas, 0 fallas y 0 problemas.
+
+**Pendiente**
+- Revisión de Diego y autorización antes de `push`/PR; después habilitar Auth anónima en el proyecto remoto.
+- P-16 (captcha/límite anti-spam) y P-17 (otras preferencias de accesibilidad).
+
 ## 2026-10-23 · gorra2451-ai · cierre F0-T3
 **Hecho**
 - PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/9

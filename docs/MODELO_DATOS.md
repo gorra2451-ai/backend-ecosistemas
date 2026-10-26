@@ -101,9 +101,15 @@ Columnas: `celda` text, `lat`, `lng` (centro), `total_reportes`, `total_confirma
 ### perfiles [C]
 | id uuid PK = auth.users.id | accesibilidad jsonb | creado_en |
 Sin columna `rol` (el rol admin vive en `administradores`).
+Se crea automáticamente con `auth.users`, también para sesiones anónimas. RLS permite leer
+solo el propio perfil; los clientes actualizan `accesibilidad` mediante
+`guardar_accesibilidad(prefs)` y no por escritura directa. En v1 `accesibilidad` solo admite
+`{}` o `{ "daltonismo": boolean }`; otras preferencias requieren acuerdo con Equipo Registro.
 
 ### entradas [C]
 | id | perfil_id | medio `medio_transporte` | creado_en |
+Una fila por llamada a `registrar_entrada(medio)`. RLS permite leer solo entradas propias;
+la escritura del cliente es exclusiva de la RPC. `perfil_id` tiene índice para lectura y cascada.
 
 ### evidencias [C]
 | id | reporte_id | ruta_storage | tipo `tipo_evidencia` | creado_en |

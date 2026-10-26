@@ -15,12 +15,19 @@ const supabase = createClient(
 ```
 Nunca uses la llave `secret`/`service_role` en el front.
 
-## Arranque (Equipo Registro) ⏳ F1-T2
+## Arranque (Equipo Registro) ✅ local · ⏳ nube (F1-T2)
 ```js
 const { data } = await supabase.auth.signInAnonymously()
 await supabase.rpc('registrar_entrada', { medio: 'auto' })        // peaton|bici|auto|transporte_publico
 await supabase.rpc('guardar_accesibilidad', { prefs: { daltonismo: true } })
 ```
+Auth crea el perfil automáticamente al abrir la sesión. Cada llamada a `registrar_entrada`
+guarda una visita nueva; ambas RPC devuelven `null` al completarse. Para `prefs`, v1 acepta
+`{}` o `{ daltonismo: boolean }`; otras claves o valores no booleanos dan
+`parametros_invalidos`. Sin sesión no se pueden llamar las RPC (`42501` sin token;
+`sin_sesion` si el rol llega sin usuario). Solo el dueño puede leer su perfil y sus entradas.
+La sesión anónima está habilitada en la configuración **local**. Diego debe habilitarla también
+en Auth del proyecto remoto al publicar F1-T2; captcha y límite de altas siguen en P-16.
 
 ## Reportar (Equipo Reporte) ✅
 ```js
