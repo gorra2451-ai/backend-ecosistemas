@@ -28,7 +28,7 @@
 | [x] | F2-T1 RPC `crear_reporte` con validaciones y límites + pruebas | D | 7% |
 | [x] | F2-T2 RPC `confirmar_reporte`, `marcar_falso`, `reportes_cercanos` + pruebas | D | 8% |
 | [x] | F2-T3 Activación por umbral y expiración con `pg_cron` + pruebas | D | 7% |
-| [ ] | F2-T4 Tabla `evidencias` + RLS, Storage `evidencias` con políticas y `agregar_evidencia` + pruebas | C | 8% |
+| [ ] | F2-T4 Tabla `evidencias` + RLS, Storage `evidencias` con políticas y `agregar_evidencia` + pruebas (lista localmente 2026-10-26; pendiente revisión/PR/nube y P-19 antes de uso público) | C | 8% |
 
 ## Fase 3 · Mapa — 10 al 16 nov
 | Estado | Tarea | Dueño | % |

@@ -31,17 +31,33 @@ en Auth del proyecto remoto al publicar F1-T2; captcha y límite de altas siguen
 
 ## Reportar (Equipo Reporte) ✅
 ```js
-await supabase.rpc('crear_reporte', {
+const { data: reporte } = await supabase.rpc('crear_reporte', {
   p_id: crypto.randomUUID(),   // UUID v4 generado en el front (nunca v1: incluye la MAC); reintentar con el mismo id no duplica
   p_tipo: 'calle',             // calle|casa|coche|persona_en_riesgo
   p_pasan_carros: false,
   p_lat: 20.6597, p_lng: -103.3496, p_precision_m: 15
 })
 // → { id, estado: 'pendiente' | 'activo' }   ✅ (requiere sesión anónima: F1-T2)
-// Evidencia opcional ⏳ F2-T4: subir a Storage bucket 'evidencias/<reporte_id>/<archivo>'
-// y luego rpc('agregar_evidencia', { p_reporte_id, p_ruta, p_tipo: 'foto' })
+// Evidencia opcional ✅ local · ⏳ nube (F2-T4): después de crear el reporte,
+// quitar metadatos EXIF de la foto en el front (P-19) y subir al bucket privado:
+const ruta = `${reporte.id}/${crypto.randomUUID()}.png`
+await supabase.storage.from('evidencias').upload(ruta, archivoSinExif,
+  { contentType: 'image/png', upsert: false })
+await supabase.rpc('agregar_evidencia',
+  { p_reporte_id: reporte.id, p_ruta: ruta, p_tipo: 'foto' }) // → UUID de evidencia
 ```
 Errores (en `error.message`): `sin_sesion`, `parametros_invalidos`, `fuera_de_zmg`, `limite_por_hora`, `duplicado_cercano`, `id_en_uso`.
+La ruta de evidencia siempre es `<reporte_uuid>/<archivo_uuid>.<extensión>`; acepta
+`jpg|jpeg|png|webp` para `foto` y `mp4|webm` para `video`. Tamaño máximo provisional:
+10 MiB por archivo y 3 archivos por reporte (`parametros`, P-18). Solo el autor puede subir;
+no se permite sobrescribir. La RPC exige que el objeto exista en Storage y sea suyo;
+repetirla con la misma ruta devuelve el mismo UUID. Errores adicionales:
+`reporte_no_existe`, `reporte_no_autorizado`, `reporte_no_activo`, `archivo_no_existe`,
+`tipo_archivo_invalido`, `archivo_invalido`, `limite_evidencias`.
+El bucket es privado: para leer una evidencia autorizada se usa
+`supabase.storage.from('evidencias').download(ruta_storage)` (no `getPublicUrl`).
+El autor puede leer su evidencia pendiente; las evidencias de reportes activos son públicas.
+Archivos subidos por error y todavía sin registrar pueden borrarse por su dueño.
 
 ## Confirmar (Equipo Confirmación) ✅
 ```js

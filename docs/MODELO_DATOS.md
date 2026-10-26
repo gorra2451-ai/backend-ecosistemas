@@ -113,6 +113,14 @@ la escritura del cliente es exclusiva de la RPC. `perfil_id` tiene índice para 
 
 ### evidencias [C]
 | id | reporte_id | ruta_storage | tipo `tipo_evidencia` | creado_en |
+Bucket privado `evidencias`, ruta `<reporte_uuid>/<archivo_uuid>.<extensión>`. Subida solo
+por el autor del reporte pendiente/activo mediante política de Storage; no se sobrescribe.
+`agregar_evidencia` comprueba autoría, objeto existente, dueño del objeto, MIME, tamaño y
+límite por reporte antes de insertar. La ruta es única; repetir la RPC es idempotente.
+RLS: el autor ve las evidencias de su reporte, y cualquier lector ve las de reportes activos.
+La lectura del archivo usa Storage autenticado o público autorizado por RLS, nunca URL pública
+del bucket. Los números provisionales están en `parametros` (P-18). El front debe quitar EXIF
+antes de subir fotos; falta verificar ese flujo para publicación (P-19).
 
 ### suscripciones_push [C]
 | id | perfil_id | endpoint | p256dh | auth | municipio text? | celda text? | creado_en |

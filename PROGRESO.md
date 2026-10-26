@@ -2,6 +2,18 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-26 · LeoFigo74z · Codex (F2-T4, trabajo local)
+**Hecho**
+- Bucket privado `evidencias`, tabla con RLS y RPC `agregar_evidencia` para archivos de reportes propios.
+- 28 pruebas pgTAP nuevas. `supabase db reset`, `supabase test db` y `scripts/probar-db.sh`
+  pasan con 210 pruebas en total (se repetirá al cerrar la rama).
+- Prueba HTTP local: dos sesiones anónimas; el usuario ajeno no pudo subir, el autor subió
+  una foto y la registró por RPC. Script `scripts/smoke-evidencias.ps1`.
+
+**Pendiente**
+- Revisión de Diego/Claude y autorización antes de `push`/PR/nube.
+- P-18: límites provisionales; P-19: eliminación verificable de EXIF antes de uso público.
+
 ## 2026-10-26 · LeoFigo74z · Codex (F1-T2, trabajo local)
 **Hecho**
 - Configuración local de Auth anónima, perfil automático, `entradas` y preferencias v1.

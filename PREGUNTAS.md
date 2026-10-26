@@ -20,3 +20,5 @@
 | P-15 | ¿Un reporte nuevo junto a uno `activo` nace activo sin importar tipo ni antigüedad del activo? (hoy: sí) | Fase 2 | Diego | Equipo Confirmación | Abierta |
 | P-16 | Anti-spam: ¿captcha y límite de sesiones anónimas en Supabase Auth? ¿`persona_en_riesgo` con 1 reporte y "nace activo junto a activo" sin confirmaciones son aceptables? | Antes de testeo público | Diego | Grupo + profesora | Abierta |
 | P-17 | ¿Qué preferencias de accesibilidad, además de `daltonismo`, debe guardar el backend? Hoy v1 solo admite esa clave booleana | Integración Equipo Registro | LeoFigo74z | Diego + Equipo Registro | Abierta |
+| P-18 | ¿Sirven 10 MiB por archivo y 3 evidencias por reporte? ¿Qué duración máxima de video aceptará el front? Son valores provisionales de `parametros` | F2-T4 antes de uso público | LeoFigo74z | Diego + Equipo Reporte | Abierta |
+| P-19 | ¿Quién elimina EXIF de fotos antes de subirlas y cómo se verificará? Storage comprueba MIME/tamaño, pero no elimina metadatos de ubicación | F2-T4 antes de uso público | LeoFigo74z | Diego + Equipo Reporte | Abierta |
