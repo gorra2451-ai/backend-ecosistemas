@@ -5,6 +5,32 @@
 **Alcance cerrado:** las ocho tareas de implementación local asignadas a Leo.  
 **Estado de publicación:** commits locales; sin push, PR ni cambios en Supabase remoto.
 
+## Visibilidad en GitHub y autorizaciones
+
+La rama de Leo **todavía no se puede ver en GitHub**. En GitHub está la base
+`main` de Diego; los once commits de esta entrega y este informe actualizado
+están en la computadora de Leo. Para que Ángel y su Claude vean el código ahora,
+hay que compartirles el archivo `backend-ecosistemas-entrega-angel-v2.bundle`
+junto con este informe y el `LEEME.txt` del paquete. El bundle transporta los
+commits versionados, sin archivos locales ignorados ni secretos.
+
+El orden de aprobación acordado en `AGENTS.md` es:
+
+1. Ángel y su Claude revisan **localmente** el bundle, el diff, los permisos y
+   las pruebas. Pueden devolver hallazgos; esa revisión no publica nada.
+2. **Diego autoriza expresamente el push de la rama** de Leo a GitHub. El repo
+   establece esta autorización en su regla 3.13. Si Ángel actúa en nombre de
+   Diego, conviene dejarlo explícito en su respuesta. Una vez autorizado, se
+   podrá subir la rama y abrir un PR para que el equipo vea el diff en GitHub.
+3. El PR se revisa por la otra persona y el merge a `main` se hace con `--no-ff`
+   según la regla 3.12. La aplicación de migraciones al Supabase remoto, la
+   configuración de credenciales y el despliegue son pasos posteriores que
+   requieren su propia decisión operativa. No se han hecho aquí.
+
+**La revisión del código y el permiso para subir una rama no equivalen a
+aprobar su puesta en producción.** Las fuentes oficiales, las decisiones
+provisionales y la integración del frontend se detallan más abajo.
+
 ## Resultado de la revisión
 
 La revisión encontró defectos que las pruebas anteriores no cubrían. Se corrigieron
@@ -82,25 +108,42 @@ zonas, eventos y refugios; no incluye el componente visual ni una cuenta/API de 
 
 ## Instrucción para la revisión de Ángel y su Claude
 
-Leer `AGENTS.md`, este informe, `HANDOFF.md` y el diff acumulado de
-`main...codex/revision-final-local`. Revisar las reglas, permisos y casos de concurrencia
-por su cuenta; repetir los comandos anteriores. Para los smokes de Edge ejecutar antes
-`supabase functions serve`, con VAPID de prueba en un archivo ignorado por Git.
-Las pruebas HTTP de catálogos vacíos se corren antes de cargar fuentes reales.
+Usar el `LEEME.txt` adjunto para importar el bundle en un clon de este repo cuya
+`main` contenga el commit base `e6dc5c8beef6769f8f47d9612e7faa6d1ee254e2`.
+Después comparar `main...codex/revision-leo`. El bundle actualizado contiene
+los once commits de implementación y este informe. No hace falta acceso a la
+computadora de Leo para revisar ese paquete.
 
-El paquete local `backend-ecosistemas-revision.bundle` contiene la rama de entrega y
-necesita el commit base de `main`; el `LEEME.txt` adjunto registra ese commit y las
-instrucciones de importación. El bundle no incluye `.env` ni claves VAPID locales.
-Solicitar hallazgos con archivo/línea, comandos repetidos y decisiones pendientes;
-preparar la integración después de la aprobación del equipo.
+Leer `AGENTS.md`, `HANDOFF.md`, `docs/PLAN.md`, `docs/API.md`, `PREGUNTAS.md`
+y este informe. Para Claude, la revisión solicitada es:
 
-## Mensaje breve para enviar
+1. Examinar las once migraciones nuevas, RLS, políticas de Storage y RPC, y
+   compatibilidad del contrato con el frontend y con la base de Diego.
+2. Revisar autenticación y autorización de las funciones Edge, uso de secretos,
+   privacidad del payload Realtime, idempotencia de la cola, vigencia de avisos,
+   límites de evidencias y carreras de renovación/borrado de suscripciones.
+3. Repetir `supabase db reset`, `supabase test db`, `bash scripts/probar-db.sh`,
+   `./scripts/probar-edge.ps1` y `node scripts/smoke-concurrencia.mjs` en local.
+   Se necesitan Docker y Supabase CLI. Para los smokes HTTP de Edge, iniciar
+   `supabase functions serve` y usar VAPID de prueba en un archivo ignorado.
+4. Informar hallazgos por gravedad, con archivo/línea, prueba que los demuestra
+   y propuesta de corrección. Confirmar si la rama es apta para subir a GitHub
+   y abrir PR, y separar esa decisión de las condiciones para uso público.
 
-Ángel, ya quedó implementada y revisada localmente nuestra mitad del backend: las ocho
-tareas que suman el 50% del reparto. En la segunda revisión corregimos casos de avisos
-obsoletos, concurrencia de archivos y reportes, renovación de push y errores de red.
-Pasaron 333 pruebas de base de datos y 10 de funciones, además de las pruebas locales
-de API y concurrencia. Te comparto este informe y el bundle con los commits para que
-tu Claude pueda revisarlos y repetir las pruebas. Falta acordar fuentes oficiales,
-probar push real con el frontend y hacer la revisión/publicación autorizada; todo lo
-construido sigue local. El informe detalla cada pendiente y cómo integrar la entrega.
+No aplicar migraciones al Supabase remoto durante esta revisión. Los catálogos
+de refugios e instituciones siguen vacíos hasta contar con fuentes verificadas;
+las pruebas HTTP de catálogos vacíos se ejecutaron en ese estado. Los resultados
+de pruebas citados son locales y deben ser reproducidos por el revisor.
+
+### Decisiones concretas a devolver al equipo
+
+- **Para ver el trabajo en GitHub:** autorización expresa de Diego para hacer
+  push de `codex/revision-final-local` y abrir PR. La revisión del PR precede
+  cualquier merge; no autorizar `supabase db push` por implicación.
+- **Para integrar el frontend:** decidir mapa (P-04), formato web/app (P-08),
+  eliminación de EXIF (P-19), Service Worker y prueba de Web Push real (P-20).
+- **Para activar servicios reales:** obtener instituciones, teléfonos y refugios
+  oficiales (P-05/P-07); fuente y validación de alertas climáticas (P-06/P-23);
+  polígonos municipales (P-21); límites contra abuso y parámetros provisionales
+  (P-16/P-18/P-22/P-24). Configurar Auth anónima, VAPID, Vault/cron y comprobar
+  el flujo completo en el entorno remoto autorizado.
