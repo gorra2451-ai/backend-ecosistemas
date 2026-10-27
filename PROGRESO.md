@@ -9,7 +9,7 @@
   alertas largas. Manejo de JSON inválido, red, caducidad y renovación de push; compatibilidad legacy.
 - Dos migraciones nuevas, 19 regresiones SQL y 9 tests nuevos de funciones. Total:
   **333 pgTAP + 10 Deno**. Pruebas de concurrencia con transacciones reales y APIs locales.
-- Informe actualizado para Ángel: `docs/INFORME_PARA_ANGEL_2026-10-26.md`.
+- Informe actualizado para Diego: `docs/INFORME_PARA_DIEGO_2026-10-26.md`.
   Entrega sigue local; no hubo push, PR ni cambios remotos.
 
 **Pendiente**

@@ -18,7 +18,7 @@
 | P-13 | Polígono oficial de la ZMG (fuente: IMEPLAN/INEGI). Hoy hay un rectángulo provisional | Fase 2 | Diego | Profesora / IMEPLAN | Abierta |
 | P-14 | ¿El límite de `max_reportes_por_hora` cuenta reportes ocultados por moderación? (hoy: cuenta todos) | Fase 2 | Diego | Equipo Reporte | Abierta |
 | P-15 | ¿Un reporte nuevo junto a uno `activo` nace activo sin importar tipo ni antigüedad del activo? (hoy: sí) | Fase 2 | Diego | Equipo Confirmación | Abierta |
-| P-16 | Anti-spam: ¿captcha y límite de sesiones anónimas en Supabase Auth? ¿`persona_en_riesgo` con 1 reporte y "nace activo junto a activo" sin confirmaciones son aceptables? | Antes de testeo público | Diego | Grupo + profesora | Abierta |
+| P-16 | NO activar Auth anónima en la nube hasta definir captcha y límites de altas. Anti-spam: ¿captcha y límite de sesiones anónimas en Supabase Auth? ¿`persona_en_riesgo` con 1 reporte y "nace activo junto a activo" sin confirmaciones son aceptables? | Antes de testeo público | Diego | Grupo + profesora | Abierta |
 | P-17 | ¿Qué preferencias de accesibilidad, además de `daltonismo`, debe guardar el backend? Hoy v1 solo admite esa clave booleana | Integración Equipo Registro | LeoFigo74z | Diego + Equipo Registro | Abierta |
 | P-18 | ¿Sirven 10 MiB por archivo y 3 evidencias por reporte? ¿Qué duración máxima de video aceptará el front? Son valores provisionales de `parametros` | F2-T4 antes de uso público | LeoFigo74z | Diego + Equipo Reporte | Abierta |
 | P-19 | ¿Quién elimina EXIF de fotos antes de subirlas y cómo se verificará? Storage comprueba MIME/tamaño, pero no elimina metadatos de ubicación | F2-T4 antes de uso público | LeoFigo74z | Diego + Equipo Reporte | Abierta |
@@ -27,3 +27,5 @@
 | P-22 | ¿Aceptamos máximo 3 intentos de push, reintento a 5 min, reclamo a 2 min y retención de 7 días? Valores provisionales en `parametros` | F4-T2 despliegue | LeoFigo74z | Diego + Equipo Notif. | Abierta |
 | P-23 | ¿Qué significa cada nivel climático `bajo`, `medio`, `alto` y qué autoridad puede verificar una alerta? Hoy son etiquetas de carga manual, sin umbrales inventados | F4-T3 antes de uso público | LeoFigo74z | Diego + Equipo Notif. | Abierta |
 | P-24 | ¿Sirven 20 km y máximo 5 refugios en `derivar`? Son límites provisionales en `parametros`; ¿qué pasos de orientación aprueba el equipo? | F4-T4 antes de uso público | LeoFigo74z | Diego + Equipo Derivación | Abierta |
+| P-25 | ¿Aprobamos 20 entradas por perfil en una hora como límite provisional de `registrar_entrada`? Configurable en `parametros`; confirmar antes del merge | Revisión de F1-T2 | LeoFigo74z | Diego + Equipo Registro | Abierta |
+| P-26 | Privacidad: una suscripción por celda (~300 m) vinculada a `perfil_id` es ubicación aproximada. ¿La aceptamos y cuál será su retención? | Antes de uso público | LeoFigo74z | Diego + equipo | Abierta |

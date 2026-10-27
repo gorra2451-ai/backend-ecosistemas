@@ -27,7 +27,7 @@
   oficial acordada, el catálogo queda vacío (P-06/P-23).
 - Derivación: catálogo de instituciones verificadas y RPC con contactos por caso/municipio,
   refugios cercanos y pasos. Catálogos vacíos hasta verificar fuentes (P-05/P-07/P-24).
-- Informe actual para Ángel: `docs/INFORME_PARA_ANGEL_2026-10-26.md`; el anterior es histórico.
+- Informe actual para Diego: `docs/INFORME_PARA_DIEGO_2026-10-26.md`; el anterior es histórico.
 - Diagnóstico completo del arnés: 55 pruebas, 0 fallas, 0 problemas (corregido grep de CRLF en Windows).
 - Revisión independiente de seguridad hecha y sus hallazgos corregidos (PR #6). Lo de diseño quedó
   en P-16 (anti-spam con sesiones anónimas).
@@ -37,7 +37,7 @@
 - `docs/API.md` **v1 congelada** (✅ disponible / ⏳ pendiente por módulo).
 
 ## Siguiente paso (en este orden)
-1. Revisión local terminada. Leo enviará informe y bundle local a Ángel para revisión;
+1. Revisión local terminada. Leo enviará informe y bundle local a Diego para revisión;
    fuentes, push real, integración/PR y publicación siguen pendientes de acuerdo del equipo.
 2. F1-T2 quedó en commits locales `e0997af`, `6d419af`, `f24ec25`; F2-T4 está en
    la rama apilada. Al cierre, Diego revisa ramas/commits y autoriza PR/nube.

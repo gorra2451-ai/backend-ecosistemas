@@ -1,6 +1,6 @@
-# Mensaje para Ángel
+# Mensaje para Diego
 
-Ángel, ya terminamos **localmente** las ocho tareas que nos correspondían del
+Diego, ya terminamos **localmente** las ocho tareas que nos correspondían del
 backend (nuestro 50% del reparto): identidad anónima, evidencias, eventos para
 el mapa, refugios, suscripciones y avisos push, alertas de clima y derivación.
 Hicimos una segunda revisión y corregimos casos de concurrencia, avisos

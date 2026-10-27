@@ -39,7 +39,7 @@
 
 ## Privacidad
 - Sin correo, teléfono, nombre ni edad.
-- El servidor no guarda dónde está el usuario; solo dónde está cada reporte (D-006).
+- La ubicación de un reporte se guarda sin exponer su autor. Una suscripción por celda (~300 m) vinculada a `perfil_id` sí representa ubicación aproximada; pendiente de aprobación de privacidad (P-26).
 - La autoría de un reporte nunca se expone a otros usuarios.
 - Fotos: el front debe quitar metadatos de ubicación (EXIF) antes de subir. POR CONFIRMAR cómo.
 
@@ -50,6 +50,10 @@
 | Remoto (proyecto Supabase gratuito) | Lo que usan los equipos de front | Solo desde `main` |
 
 ## Riesgos conocidos
+- `celda_mapa` recalcula `st_transform` de todos los reportes activos en cada cambio de zona (costo O(N)); requiere medición e índice/materialización si aumenta el volumen.
+- Los canales Broadcast públicos pueden recibir eventos falsificados; el cliente solo debe usarlos para recargar y consultar la fuente autorizada.
+- Storage comprueba el MIME declarado por el cliente, no el contenido binario; tampoco hay limpieza automática de objetos de reportes expirados. El front debe eliminar EXIF (P-19) y el equipo debe definir retención.
+- **Nube:** no habilitar Auth anónima hasta resolver captcha y límites de altas de P-16.
 - **Spam con sesiones anónimas:** cualquiera abre sesiones nuevas gratis, y `persona_en_riesgo` activa con 1
   reporte. Antes de abrir a público: captcha y límite de inicios anónimos en Supabase Auth (P-16).
 - El plan gratuito pausa proyectos inactivos: programar un uso semanal o reactivarlo antes de testeos.

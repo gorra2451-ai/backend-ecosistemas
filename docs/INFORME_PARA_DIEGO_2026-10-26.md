@@ -1,4 +1,6 @@
-# Entrega de la mitad de Leo — revisión final para Ángel
+# Entrega de la mitad de Leo — revisión para Diego
+
+> Fotografía histórica del paquete v2 del 26/10. La revisión posterior y sus pruebas se registran en `PROGRESO.md`.
 
 **Fecha local:** 26 de octubre de 2026.  
 **Rama que contiene toda la entrega:** `codex/revision-final-local`.  
@@ -9,18 +11,17 @@
 
 La rama de Leo **todavía no se puede ver en GitHub**. En GitHub está la base
 `main` de Diego; los once commits de esta entrega y este informe actualizado
-están en la computadora de Leo. Para que Ángel y su Claude vean el código ahora,
+están en la computadora de Leo. Para que Diego y su Claude vean el código ahora,
 hay que compartirles el archivo `backend-ecosistemas-entrega-angel-v2.bundle`
 junto con este informe y el `LEEME.txt` del paquete. El bundle transporta los
 commits versionados, sin archivos locales ignorados ni secretos.
 
 El orden de aprobación acordado en `AGENTS.md` es:
 
-1. Ángel y su Claude revisan **localmente** el bundle, el diff, los permisos y
+1. Diego y su Claude revisan **localmente** el bundle, el diff, los permisos y
    las pruebas. Pueden devolver hallazgos; esa revisión no publica nada.
 2. **Diego autoriza expresamente el push de la rama** de Leo a GitHub. El repo
-   establece esta autorización en su regla 3.13. Si Ángel actúa en nombre de
-   Diego, conviene dejarlo explícito en su respuesta. Una vez autorizado, se
+   establece esta autorización en su regla 3.13. Diego confirmó que es la persona a quien Leo llamó Ángel. Una vez autorizado, se
    podrá subir la rama y abrir un PR para que el equipo vea el diff en GitHub.
 3. El PR se revisa por la otra persona y el merge a `main` se hace con `--no-ff`
    según la regla 3.12. La aplicación de migraciones al Supabase remoto, la
@@ -106,7 +107,7 @@ deben resolverse en la revisión e integración; no se presentan como ya termina
 Google Maps sigue siendo una decisión del frontend (P-04). Este backend entrega puntos,
 zonas, eventos y refugios; no incluye el componente visual ni una cuenta/API de Google Maps.
 
-## Instrucción para la revisión de Ángel y su Claude
+## Instrucción para la revisión de Diego y su Claude
 
 Usar el `LEEME.txt` adjunto para importar el bundle en un clon de este repo cuya
 `main` contenga el commit base `e6dc5c8beef6769f8f47d9612e7faa6d1ee254e2`.

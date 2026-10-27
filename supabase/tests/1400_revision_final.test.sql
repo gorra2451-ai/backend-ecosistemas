@@ -11,9 +11,10 @@ insert into public.reportes (id,perfil_id,tipo,pasan_carros,ubicacion,estado) va
   ('10000000-0000-4000-8000-00000000014a','00000000-0000-0000-0000-00000000014a',
    'calle',true,public.punto(20.96,-103.7),'activo');
 update public.reportes set estado='resuelto' where id='10000000-0000-4000-8000-00000000014a';
-select is((select count(*) from public.tomar_avisos_push(5))::int,0,
-  'activación obsoleta no se envía después de resolver');
-select is((select estado::text from public.avisos_push),'fallido','aviso obsoleto queda terminal');
+select is((select count(*) from public.tomar_avisos_push(5))::int,1,
+  'solo se reclama resolución y la activación obsoleta se descarta');
+select is((select estado::text from public.avisos_push where tipo='zona_activada'),
+  'fallido','activación obsoleta queda terminal');
 delete from public.avisos_push;
 update public.reportes set estado='activo' where id='10000000-0000-4000-8000-00000000014a';
 update public.suscripciones_push set celda='9999_9999' where id='20000000-0000-4000-8000-00000000014a';

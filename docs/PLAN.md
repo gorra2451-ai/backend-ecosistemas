@@ -5,7 +5,7 @@
 
 Las ocho tareas C tienen implementación y revisión local al 26-oct-2026; sus casillas
 siguen abiertas para revisión compartida, integración y publicación. Evidencia y
-dependencias: `docs/INFORME_PARA_ANGEL_2026-10-26.md`.
+dependencias: `docs/INFORME_PARA_DIEGO_2026-10-26.md`.
 
 ## Fase 0 · Arnés y repo — 20 al 26 oct
 | Estado | Tarea | Dueño | % |
