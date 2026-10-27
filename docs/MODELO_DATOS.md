@@ -123,6 +123,8 @@ RLS: el autor ve las evidencias de su reporte, y cualquier lector ve las de repo
 La lectura del archivo usa Storage autenticado o público autorizado por RLS, nunca URL pública
 del bucket. Los números provisionales están en `parametros` (P-18). El front debe quitar EXIF
 antes de subir fotos; falta verificar ese flujo para publicación (P-19).
+Las políticas de alta y borrado serializan por reporte para respetar el límite incluso
+con peticiones simultáneas y no borrar un objeto mientras se registra como evidencia.
 
 ### suscripciones_push [C]
 | id | perfil_id | endpoint | p256dh | auth | municipio text? | celda text? | creado_en | actualizado_en |
@@ -139,6 +141,9 @@ primer evento activo y la última resolución de cada celda, respetando el inter
 `parametros`. Solo `service_role` puede reclamar y cerrar envíos; el token de reclamo
 impide que un trabajador atrasado cierre el trabajo de otro. Cron invoca una Edge Function
 interna mediante `pg_net` y Vault, cuando Diego configure URL y clave en producción.
+El reclamo descarta avisos cuya alerta, estado o interés ya no corresponde. `fallido`
+incluye descartes permanentes; `enviado_en` solo se establece si hubo envío exitoso.
+El historial climático se conserva hasta su fin de vigencia para mantener deduplicación.
 Reintentos y retención provisionales: P-22. Sin mapa municipal verificado, los eventos
 de reportes no se envían a suscripciones por municipio (P-21).
 

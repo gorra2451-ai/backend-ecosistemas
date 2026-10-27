@@ -74,17 +74,19 @@ reset role;
 
 set local role service_role;
 create temp table tomados as select * from public.tomar_avisos_push(5);
-select is((select count(*) from tomados)::int, 2, 'servicio reclama ambas entregas');
+select is((select count(*) from tomados)::int, 1, 'servicio reclama solo resolución vigente');
 select is((select count(*) from public.tomar_avisos_push(5))::int, 0,
   'reclamo impide enviar dos veces en paralelo');
-select is(public.finalizar_aviso_push(
-  (select id from tomados order by id limit 1),
-  (select token_reclamo from tomados order by id limit 1), true), true,
-  'servicio marca envío exitoso');
 select is(public.finalizar_aviso_push(
   (select id from tomados order by id desc limit 1),
   (select token_reclamo from tomados order by id desc limit 1), false), true,
   'fallo programa reintento');
+reset role;
+update public.avisos_push set proximo_intento_en = now() where estado = 'pendiente';
+set local role service_role;
+create temp table reintento as select * from public.tomar_avisos_push(5);
+select is(public.finalizar_aviso_push((select id from reintento),
+  (select token_reclamo from reintento), true), true, 'servicio marca reintento exitoso');
 select is(public.finalizar_aviso_push(
   (select id from tomados order by id limit 1),
   gen_random_uuid(), false), false, 'token viejo no cambia entrega');

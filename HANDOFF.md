@@ -2,16 +2,17 @@
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
 **Última actualización:** 2026-10-26 · LeoFigo74z (con Codex)
-**Fase actual:** módulos de Diego en la nube; ocho tareas de Leo probadas localmente
-**Rama activa:** `feat/f4-t4-derivacion` (apilada sobre las tareas previas; solo local)
+**Fase actual:** ocho tareas de Leo implementadas y revisadas localmente; integración pendiente
+**Rama activa:** `codex/revision-final-local` (incluye las ramas apiladas; solo local)
 **Repo:** https://github.com/gorra2451-ai/backend-ecosistemas (público, `main` protegida: D-012)
 
 ## Dónde quedamos
 - **Todas las tareas D de `docs/PLAN.md` están hechas** (50% de Diego): base, reportes,
   confirmación/activación/expiración (pg_cron cada 5 min), zonas de calor, admin y seed.
-- Base de Diego: 7 migraciones y 152 pruebas. Ocho tareas de Leo añaden 9 migraciones
-  y 162 pruebas: **314 pruebas locales en verde** tras `supabase db reset`,
-  `supabase test db` y `scripts/probar-db.sh`; asesores sin hallazgos.
+- Base de Diego: 7 migraciones y 152 pruebas. Entrega de Leo: 11 migraciones adicionales;
+  **333 pgTAP en 15 suites + 10 Deno** pasan. Reset, arnés y smokes locales completos.
+- Asesores sin warn/error; lint: 5 advertencias previas texto/enum en funciones base,
+  sin avisos nuevos en nuestras funciones. Revisión corrigió caducidad y concurrencia.
 - Sesión anónima real probada por HTTP local: perfil automático, entrada y accesibilidad.
 - Evidencias: bucket privado, autoría de subida y registro por RPC. Prueba HTTP local con
   dos usuarios: tercero no sube ni lee pendiente; evidencia activa pública.
@@ -26,7 +27,7 @@
   oficial acordada, el catálogo queda vacío (P-06/P-23).
 - Derivación: catálogo de instituciones verificadas y RPC con contactos por caso/municipio,
   refugios cercanos y pasos. Catálogos vacíos hasta verificar fuentes (P-05/P-07/P-24).
-- Informe para Diego/Claude: `docs/INFORME_REVISION_CLAUDE_2026-10-26.md`.
+- Informe actual para Ángel: `docs/INFORME_PARA_ANGEL_2026-10-26.md`; el anterior es histórico.
 - Diagnóstico completo del arnés: 55 pruebas, 0 fallas, 0 problemas (corregido grep de CRLF en Windows).
 - Revisión independiente de seguridad hecha y sus hallazgos corregidos (PR #6). Lo de diseño quedó
   en P-16 (anti-spam con sesiones anónimas).
@@ -36,8 +37,8 @@
 - `docs/API.md` **v1 congelada** (✅ disponible / ⏳ pendiente por módulo).
 
 ## Siguiente paso (en este orden)
-1. Leo autorizó completar toda su mitad localmente y enviar un informe único a Diego/Claude
-   al final. Siguiente paso: barrido final, informe único para Diego/Claude. No hacer `push`.
+1. Revisión local terminada. Leo enviará informe y bundle local a Ángel para revisión;
+   fuentes, push real, integración/PR y publicación siguen pendientes de acuerdo del equipo.
 2. F1-T2 quedó en commits locales `e0997af`, `6d419af`, `f24ec25`; F2-T4 está en
    la rama apilada. Al cierre, Diego revisa ramas/commits y autoriza PR/nube.
 3. Diego habilita sesiones anónimas en Auth remoto; `config.toml` solo habilita local.

@@ -120,7 +120,10 @@ servidor; no hay credenciales de producción en el repo.
 de una celda, o resolverse el último, se encola un aviso por suscripción a esa celda.
 El límite por usuario y celda es `minutos_entre_avisos` (30 minutos provisionales).
 El trabajador interno `procesar-avisos` reclama lotes, invoca `enviar-push` y reintenta
-fallos. El front no llama al trabajador ni lee la cola. Por ahora las suscripciones por
+fallos. Antes de reclamar descarta estados obsoletos, alertas vencidas o retiradas y
+avisos de intereses anteriores del dispositivo. El payload Web Push incluye `tag`
+estable por entrega: el Service Worker debe usarlo al mostrar la notificación para
+reemplazar duplicados de reintentos. El front no llama al trabajador ni lee la cola. Por ahora las suscripciones por
 municipio no reciben este evento: falta una delimitación municipal verificada (P-21).
 **Clima ✅ local, ⏳ nube (F4-T3):** la vista solo entrega alertas verificadas y
 vigentes, cargadas manualmente por el servicio con URL HTTPS de la fuente, municipio y

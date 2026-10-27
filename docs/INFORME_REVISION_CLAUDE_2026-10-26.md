@@ -1,5 +1,8 @@
 # Entrega local de Leo: revisión independiente para Diego y Claude
 
+> Histórico: la revisión posterior y la rama final están en
+> `docs/INFORME_PARA_ANGEL_2026-10-26.md`; usar ese informe para la entrega actual.
+
 **Fecha:** 2026-10-26  
 **Repo:** `gorra2451-ai/backend-ecosistemas`  
 **Rama local final:** `feat/f4-t4-derivacion`  

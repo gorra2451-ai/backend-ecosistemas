@@ -2,6 +2,21 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-26 · LeoFigo74z · Codex (revisión final Sol 6.1)
+**Hecho**
+- Revisión de las ocho tareas locales. Corregidos avisos obsoletos, resolución concurrente,
+  límite concurrente de evidencias, coordinación de borrado/registro y deduplicación de
+  alertas largas. Manejo de JSON inválido, red, caducidad y renovación de push; compatibilidad legacy.
+- Dos migraciones nuevas, 19 regresiones SQL y 9 tests nuevos de funciones. Total:
+  **333 pgTAP + 10 Deno**. Pruebas de concurrencia con transacciones reales y APIs locales.
+- Informe actualizado para Ángel: `docs/INFORME_PARA_ANGEL_2026-10-26.md`.
+  Entrega sigue local; no hubo push, PR ni cambios remotos.
+
+**Pendiente**
+- Fuentes oficiales, EXIF en frontend, push real, decisiones P-16 a P-24 e integración.
+- El lint por esquema muestra cinco advertencias previas texto/enum en funciones del módulo base;
+  sin avisos nuevos en nuestras funciones. No se ocultan como resultado limpio global.
+
 ## 2026-10-26 · LeoFigo74z · Codex (F4-T4, trabajo local)
 **Hecho**
 - Catálogo privado de instituciones con contacto, fuente, casos y verificación; vista
