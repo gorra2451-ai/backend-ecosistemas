@@ -1,6 +1,6 @@
 # Entrega de la mitad de Leo — revisión para Diego
 
-> Fotografía histórica del paquete v2 del 26/10. La revisión posterior y sus pruebas se registran en `PROGRESO.md`.
+> Fotografía histórica del paquete v2 del 26/10. La revisión posterior está en `docs/INFORME_REVISION_DIEGO_2026-10-27.md`.
 
 **Fecha local:** 26 de octubre de 2026.  
 **Rama que contiene toda la entrega:** `codex/revision-final-local`.  

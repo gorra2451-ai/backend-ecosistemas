@@ -2,6 +2,30 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-27 · LeoFigo74z · Codex (correcciones de revisión de Diego)
+**Hecho**
+- Primero se añadieron pruebas que reprodujeron la activación sin push, fin de zona
+  suprimido, proveedor no permitido y entradas ilimitadas. Cinco de seis y dos de
+  cinco casos fallaron antes del arreglo.
+- Una migración nueva corrigió trigger por statement, cierre de zona, lista de
+  proveedores y límite de entradas. No se editaron migraciones anteriores.
+- `supabase db reset` y **349 pgTAP en 17 archivos** pasan en la rama de Leo;
+  arnés SQL, 10 Deno, smoke de concurrencia y diagnóstico 55/0 también pasan.
+- PR #10 y #11 de Diego revisados y aprobados. Integración temporal de ambas
+  ramas con la nuestra: **358 pgTAP en 18 archivos**, reset limpio.
+- `docs/API.md`, `docs/ARQUITECTURA.md` y `PREGUNTAS.md` actualizados.
+  Diego es la persona a quien Leo llamó Ángel; informes renombrados.
+
+**Decidido provisionalmente**
+- `max_entradas_por_hora=20` en `parametros`, pendiente aprobación de Diego (P-25).
+- La privacidad de la suscripción por celda (~300 m) queda pendiente (P-26).
+  Auth anónima remota no se activa sin resolver captcha P-16.
+
+**Pendiente**
+- Diego fusiona #10/#11; entonces se integra `main`, se repite toda la
+  validación y se abre el PR autorizado de `feat/c-mitad-leo`. Sin cambios
+  en Supabase remoto ni secretos.
+
 ## 2026-10-26 · LeoFigo74z · Codex (revisión final Sol 6.1)
 **Hecho**
 - Revisión de las ocho tareas locales. Corregidos avisos obsoletos, resolución concurrente,
