@@ -2,6 +2,27 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-23 · Diego · Claude Code (cierre de sesión)
+**Hecho**
+- Proyecto en la nube creado y con las 7 migraciones (D-014); `docs/API.md` v1 congelada (PR #8).
+- LeoFigo74z invitado y aceptó; prompt único de arranque y modo solo local en el arnés (PR #9, D-015).
+- Auditoría F5-T2 de módulos D con advisors: utilidades invoker + índice (PR #10, por aprobar).
+- Endurecimiento de la nube: HS256 revocada, SSL, contraseñas 12+, `probar-nube.sh` (PR #11, D-016).
+
+**Decidido**
+- D-014, D-015, D-016. LeoFigo74z sube cambios solo con autorización de Diego.
+
+**Pendiente**
+- Aprobación de #10 y #11 por LeoFigo74z; `db push` de #10; F1-T2; compartir API v1; preguntas de clase.
+
+## 2026-10-23 · gorra2451-ai · cierre F5-T2
+**Hecho**
+- PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/11
+- chore(seguridad): endurecimiento de la nube y probar-nube.sh (D-016)
+
+**Pendiente**
+- Revisión del PR por la otra persona.
+
 ## 2026-10-23 · gorra2451-ai · cierre F5-T2
 **Hecho**
 - PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/10
