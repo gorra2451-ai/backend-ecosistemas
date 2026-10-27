@@ -1,7 +1,7 @@
 -- Regresiones solicitadas por Diego: activar grupo, cerrar zona y proveedor push.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(6);
+select plan(11);
 
 create temp table prueba_usuarios (id uuid primary key);
 insert into prueba_usuarios (id) values
@@ -82,6 +82,21 @@ select throws_ok($$ select public.suscribir_push('https://push.invalido.test/nue
  repeat('A',87),repeat('B',22),'Guadalajara',null) $$,
  'P0001','proveedor_push_no_permitido','proveedor ajeno se rechaza al registrar');
 reset role;
+select set_config('request.jwt.claims',
+ '{"sub":"00000000-0000-0000-0000-00000000015e","role":"authenticated"}',true);
+set local role authenticated;
+select lives_ok($$select public.suscribir_push('https://updates.push.services.mozilla.com/wpush/v2/prueba',
+ repeat('A',87),repeat('B',22),'Guadalajara',null)$$,'Mozilla permitido');
+select lives_ok($$select public.suscribir_push('https://web.push.apple.com/Q/prueba',
+ repeat('A',87),repeat('B',22),'Guadalajara',null)$$,'Apple permitido');
+select lives_ok($$select public.suscribir_push('https://foo.notify.windows.com/w/prueba',
+ repeat('A',87),repeat('B',22),'Guadalajara',null)$$,'WNS permitido');
+select throws_ok($$select public.suscribir_push('https://fcm.googleapis.com.evil.test/prueba',
+ repeat('A',87),repeat('B',22),'Guadalajara',null)$$,
+ 'P0001','proveedor_push_no_permitido','sufijo falso de FCM rechazado');
+select throws_ok($$select public.suscribir_push('https://fcm.googleapis.com:8443/prueba',
+ repeat('A',87),repeat('B',22),'Guadalajara',null)$$,
+ 'P0001','proveedor_push_no_permitido','puerto alterno rechazado');
+reset role;
 select * from finish();
 rollback;
-
