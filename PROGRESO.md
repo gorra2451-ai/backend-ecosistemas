@@ -2,6 +2,29 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-28 · LeoFigo74z · cierre feat/c-mitad-leo
+**Hecho**
+- PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/12
+- feat(push): cerrar retencion y decisiones P-25 P-26
+- docs(entrega): registrar correcciones y relevo para Diego
+- test(push): cubrir proveedores validos y dominios falsos
+- fix(avisos): corregir activacion, cierre y limites de entrada
+- docs(entrega): aclarar revision local y permisos para publicar
+- fix(entrega): corregir concurrencia y avisos obsoletos antes de revisión
+- feat(derivacion): orientar con instituciones verificadas y cerrar entrega local
+- feat(clima): registrar alertas verificadas y avisar por municipio
+- feat(avisos): encolar y procesar cambios de zona con límite de frecuencia
+- feat(push): registrar dispositivos y preparar envio web
+- feat(refugios): publicar solo fichas verificadas
+- feat(mapa): emitir cambios publicos por broadcast
+- feat(evidencias): registrar archivos propios en storage privado
+- docs(handoff): registrar cierre local de perfiles
+- fix(perfiles): reaplicar trigger en pruebas locales
+- feat(perfiles): sesiones anonimas y entradas seguras
+
+**Pendiente**
+- Revisión del PR por la otra persona.
+
 ## 2026-10-28 · LeoFigo74z · Codex (integración y P-25/P-26)
 **Hecho**
 - PR #10 y #11 de Diego fusionados en `main` (088907f); integrado a
