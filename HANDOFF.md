@@ -2,37 +2,38 @@
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas.
 
 **Última actualización:** 2026-10-28 · LeoFigo74z (con Codex)
-**Fase actual:** integrar `main` y cerrar retención de suscripciones antes del PR
-**Rama activa:** `feat/c-mitad-leo` (solo local hasta la validación final)
+**Fase actual:** revisión del PR y despliegue controlado por Diego
+**Rama activa:** `feat/c-mitad-leo`
 **Repo:** https://github.com/gorra2451-ai/backend-ecosistemas
 
-## Dónde quedamos
-- Diego completó su 50%: base, reportes, activación, zonas y admin.
-  PR #10 y #11 aprobados por Leo y fusionados; `main` está en `088907f`.
-- La migración de auditoría del PR #10 ya está en la nube según Diego;
-  `scripts/probar-nube.sh` dio 12/12. Ninguna migración de Leo se aplicó remoto.
-- Leo completó localmente sus ocho tareas (50%): perfiles/entradas, evidencias,
-  Broadcast, refugios, push, avisos de zona, clima y derivación.
-- Revisión de Diego: se corrigieron activación normal, fin de zona, proveedor
-  push y frecuencia de entradas con una migración nueva y 16 pruebas.
-- Antes de integrar `main`: 349 pgTAP en 17 archivos, 10 Deno, arnés SQL,
-  smoke de concurrencia y diagnóstico 55/0 en verde. Integración temporal
-  de PR #10/#11 con la rama de Leo: 358 pgTAP; repetir ahora con `main` real.
-- P-25 aprobado por Diego: `max_entradas_por_hora=20` en `parametros`.
-- P-26 aprobado: celda aproximada ligada a perfil, borrado al darse de baja
-  o tras 30 días sin uso. Falta migración, pgTAP y documentación de retención.
-- P-16 confirmado: Auth anónima remota apagada hasta captcha y límites.
-- Catálogos oficiales P-05/P-07, clima P-06/P-23, EXIF P-19, push real P-20
-  y polígonos P-21 siguen pendientes para uso público.
-- Seguridad nube D-016: HS256 heredada revocada, SSL obligatorio,
-  contraseña robusta y GraphQL apagado. `probar-nube.sh` revisa desde fuera.
+## Estado verificado
+- Diego fusionó PR #10 y #11; `main` está en `088907f`. La rama de Leo
+  ya incorporó ese `main` (merge local `7a36974`).
+- Según Diego, la migración de auditoría `20261023000600` está en Supabase
+  remoto y `probar-nube.sh` pasó 12/12. Ninguna migración de Leo se aplicó
+  en la nube.
+- Las ocho tareas de Leo (50%) están implementadas y verificadas localmente:
+  identidad/entradas, evidencias, Realtime, refugios, Web Push, avisos por
+  zona, alertas climáticas y derivación.
+- Correcciones pedidas por Diego incluidas: activación sin suscriptores,
+  fin de zona, proveedor push y límite de entradas.
+- P-25: 20 entradas por perfil/hora en `parametros`, aprobado.
+- P-26: celda de ~300 m vinculada al perfil, aprobada con borrado al darse
+  de baja o tras 30 días sin renovación ni aviso entregado. Nueva migración:
+  parámetro, fecha de última entrega, trigger y job diario. Ver D-017.
+- P-16: Auth anónima apagada en la nube hasta captcha y límites; local sí
+  puede estar encendida.
+- Validación local integrada: `supabase db reset`; 378 pgTAP en 19 archivos;
+  arnés SQL 19/19; Edge 10/10; concurrencia HTTP; diagnóstico 56/0;
+  lint local sin errores.
 
 ## Siguiente paso
-1. Resolver el merge `main` → `feat/c-mitad-leo` conservando la bitácora
-   y la arquitectura de ambos. No hacer `supabase db push`.
-2. Añadir prueba que falle para caducidad de suscripciones, nueva migración
-   con `dias_retencion_suscripcion=30` y pg_cron; resolver P-25/P-26 en
-   `PREGUNTAS.md` y documentar decisión en `DECISIONES.md`.
-3. Repetir reset, pgTAP, arnés SQL, Edge, smoke y diagnóstico; revisar diff.
-4. Subir solo esta rama autorizada y abrir PR con `PUSH_AUTORIZADO=1`.
-   Diego revisa/mergea y decide después el despliegue remoto.
+1. Publicar solo `feat/c-mitad-leo` con `PUSH_AUTORIZADO=1` y abrir PR
+   para Diego. La autorización está en su mensaje del 28-oct.
+2. Diego revisa el PR y decide el merge. No hacer merge propio.
+3. Solo Diego, tras merge, decide aplicar migraciones a Supabase remoto
+   y verificar con `scripts/probar-nube.sh`. No encender Auth anónima
+   remota antes de captcha y límites.
+4. Para uso público siguen pendientes fuentes y catálogos oficiales
+   (P-05/P-06/P-07/P-23), EXIF (P-19), proveedores/VAPID y push real
+   (P-20), polígonos municipales (P-21) e integración con los frontends.

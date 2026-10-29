@@ -127,11 +127,11 @@ Las políticas de alta y borrado serializan por reporte para respetar el límite
 con peticiones simultáneas y no borrar un objeto mientras se registra como evidencia.
 
 ### suscripciones_push [C]
-| id | perfil_id | endpoint | p256dh | auth | municipio text? | celda text? | creado_en | actualizado_en |
+| id | perfil_id | endpoint | p256dh | auth | municipio text? | celda text? | creado_en | actualizado_en | ultimo_aviso_entregado_en? |
 Interés por **municipio o celda**, nunca un punto (D-006: un punto suele ser la casa).
 El endpoint identifica un dispositivo y sus claves permiten cifrar el mensaje; la tabla
 no concede SELECT a usuarios. Solo las RPC `suscribir_push`/`baja_push` la modifican,
-con límite por perfil en `parametros`. Se borra al eliminar el perfil. La Edge Function
+con límite por perfil en `parametros`. Se borra con `baja_push`, al eliminar el perfil o tras `dias_retencion_suscripcion` días sin renovación ni entrega exitosa (D-017). El último aviso se conserva en la suscripción aunque el historial se limpie a los 7 días. La Edge Function
 interna usa clave secreta de servidor y VAPID para enviar; no se guardan coordenadas.
 
 ### avisos_push [C]

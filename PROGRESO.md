@@ -2,6 +2,31 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-10-28 · LeoFigo74z · Codex (integración y P-25/P-26)
+**Hecho**
+- PR #10 y #11 de Diego fusionados en `main` (088907f); integrado a
+  `feat/c-mitad-leo` con commit de merge local 7a36974.
+- P-25 aprobado: 20 entradas por perfil por hora en `parametros`.
+  P-26 aprobado: celda de ~300 m ligada al perfil, baja inmediata o 30 días
+  sin renovación ni aviso entregado; D-017 registrada.
+- Nueva migración de retención: parámetro, fecha de última entrega exitosa,
+  trigger y job diario de `pg_cron`. La prueba pgTAP falló antes (4/4) y
+  pasó tras el arreglo (20/20).
+- Validación local integrada: reset limpio; 378 pgTAP en 19 archivos;
+  arnés SQL 19/19 archivos; Edge 10/10; concurrencia HTTP correcta;
+  diagnóstico 56/0; lint local sin errores.
+- Arquitectura §Privacidad, modelo de datos, API y preguntas al día.
+  Ocho tareas de Leo implementadas y verificadas localmente.
+
+**Decidido**
+- Auth anónima en la nube sigue apagada hasta captcha y límites (P-16).
+  No se tocó Supabase remoto.
+
+**Pendiente**
+- PR autorizado de `feat/c-mitad-leo`; revisión y merge de Diego.
+  Después Diego decide aplicar migraciones en la nube y valida con
+  `scripts/probar-nube.sh`. Siguen pendientes datos oficiales, EXIF,
+  pruebas push reales y acuerdos de integración frontend.
 ## 2026-10-27 · LeoFigo74z · Codex (correcciones de revisión de Diego)
 **Hecho**
 - Primero se añadieron pruebas que reprodujeron la activación sin push, fin de zona

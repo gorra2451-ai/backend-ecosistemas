@@ -3,9 +3,9 @@
 > `%` = peso de la tarea en el reparto 50/50 (ver `AGENTS.md` §8). Las tareas D+C y la Fase 0 no suman.
 > Fechas propuestas; ajustar cuando se confirmen mid-fi y high-fi (P-09).
 
-Las ocho tareas C tienen implementación y revisión local al 26-oct-2026; sus casillas
-siguen abiertas para revisión compartida, integración y publicación. Evidencia y
-dependencias: `docs/INFORME_REVISION_DIEGO_2026-10-27.md`.
+Las ocho tareas C (50% de Leo) están implementadas y validadas en local al 28-oct-2026.
+Las casillas marcan ese alcance técnico; el PR, la revisión de Diego, el despliegue
+y la integración con frontend se controlan por separado. Ver `PROGRESO.md`.
 
 ## Fase 0 · Arnés y repo — 20 al 26 oct
 | Estado | Tarea | Dueño | % |
@@ -20,7 +20,7 @@ dependencias: `docs/INFORME_REVISION_DIEGO_2026-10-27.md`.
 | Estado | Tarea | Dueño | % |
 |---|---|---|---|
 | [x] | F1-T1 Migración: extensiones (postgis, pg_cron), enums, `parametros` | D | 4% |
-| [ ] | F1-T2 Migración: `perfiles`, `entradas`, auth anónima, RLS + pruebas (lista localmente 2026-10-26; pendiente revisión/PR/nube) | C | 10% |
+| [x] | F1-T2 Migración: `perfiles`, `entradas`, auth anónima, RLS + pruebas (lista localmente 2026-10-26; pendiente revisión y despliegue) | C | 10% |
 | [x] | F1-T3 Migración: `reportes`, `confirmaciones`, RLS + pruebas | D | 5% |
 | [x] | F1-T4 Polígono de la ZMG y función `dentro_de_zmg` | D | 3% |
 | [x] | F1-T5 `seed.sql` con datos de prueba | D | 3% |
@@ -32,23 +32,23 @@ dependencias: `docs/INFORME_REVISION_DIEGO_2026-10-27.md`.
 | [x] | F2-T1 RPC `crear_reporte` con validaciones y límites + pruebas | D | 7% |
 | [x] | F2-T2 RPC `confirmar_reporte`, `marcar_falso`, `reportes_cercanos` + pruebas | D | 8% |
 | [x] | F2-T3 Activación por umbral y expiración con `pg_cron` + pruebas | D | 7% |
-| [ ] | F2-T4 Tabla `evidencias` + RLS, Storage `evidencias` con políticas y `agregar_evidencia` + pruebas (lista localmente 2026-10-26; pendiente revisión/PR/nube y P-19 antes de uso público) | C | 8% |
+| [x] | F2-T4 Tabla `evidencias` + RLS, Storage `evidencias` con políticas y `agregar_evidencia` + pruebas (lista localmente 2026-10-26; pendiente revisión/despliegue; P-19 antes de uso público) | C | 8% |
 
 ## Fase 3 · Mapa — 10 al 16 nov
 | Estado | Tarea | Dueño | % |
 |---|---|---|---|
 | [x] | F3-T1 Vista `zonas_publicas` y niveles + pruebas | D | 5% |
 | [x] | F3-T2 RPC `reportes_activos_en_area` | D | 3% |
-| [ ] | F3-T3 Realtime habilitado en reportes/zonas (lista localmente 2026-10-26; pendiente revisión/PR/nube) | C | 4% |
-| [ ] | F3-T4 `refugios` + vista pública (lista localmente 2026-10-26; catálogo vacío hasta P-07, pendiente revisión/PR/nube) | C | 6% |
+| [x] | F3-T3 Realtime habilitado en reportes/zonas (lista localmente 2026-10-26; pendiente revisión y despliegue) | C | 4% |
+| [x] | F3-T4 `refugios` + vista pública (lista localmente 2026-10-26; catálogo vacío hasta P-07, pendiente revisión y despliegue) | C | 6% |
 
 ## Fase 4 · Notificaciones y derivación — 17 al 23 nov
 | Estado | Tarea | Dueño | % |
 |---|---|---|---|
-| [ ] | F4-T1 `suscripciones_push` + Edge Function de envío Web Push (probada localmente; pendiente envío real a navegador, revisión/PR/nube) | C | 5% |
-| [ ] | F4-T2 Disparo por cambio de estado con límite anti-spam (probado localmente; pendiente revisión/PR/nube y P-21/P-22) | C | 4% |
-| [ ] | F4-T3 `alertas_clima` + carga manual verificada (probado localmente; pendiente P-06/P-23 y revisión/PR/nube) | C | 3% |
-| [ ] | F4-T4 `instituciones` verificadas + RPC `derivar` (probado localmente; catálogo vacío hasta P-05/P-07, pendiente revisión/PR/nube) | C | 10% |
+| [x] | F4-T1 `suscripciones_push` + Edge Function de envío Web Push (probada localmente; pendiente envío real a navegador, revisión y despliegue) | C | 5% |
+| [x] | F4-T2 Disparo por cambio de estado con límite anti-spam (probado localmente; pendiente revisión/despliegue; P-21/P-22) | C | 4% |
+| [x] | F4-T3 `alertas_clima` + carga manual verificada (probado localmente; pendiente P-06/P-23, revisión y despliegue) | C | 3% |
+| [x] | F4-T4 `instituciones` verificadas + RPC `derivar` (probado localmente; catálogo vacío hasta P-05/P-07, pendiente revisión y despliegue) | C | 10% |
 
 ## Fase 5 · Admin, seguridad e integración — 24 al 30 nov
 | Estado | Tarea | Dueño | % |

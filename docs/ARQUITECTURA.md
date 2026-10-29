@@ -39,7 +39,7 @@
 
 ## Privacidad
 - Sin correo, teléfono, nombre ni edad.
-- La ubicación de un reporte se guarda sin exponer su autor. Una suscripción por celda (~300 m) vinculada a `perfil_id` sí representa ubicación aproximada; pendiente de aprobación de privacidad (P-26).
+- La ubicación de un reporte se guarda sin exponer su autor. Diego aprobó (D-017) que una suscripción por celda (~300 m) esté vinculada a `perfil_id`; representa ubicación aproximada, no un punto exacto. El endpoint y sus claves no tienen lectura pública ni del cliente. La suscripción se borra al darse de baja o borrar el perfil. Un job diario de `pg_cron` borra suscripciones tras 30 días sin renovar el endpoint ni recibir un aviso entregado; el plazo vive en `parametros.dias_retencion_suscripcion`. La fecha del último aviso exitoso se guarda en la suscripción para que la limpieza del historial de avisos (7 días) no acorte la retención.
 - La autoría de un reporte nunca se expone a otros usuarios.
 - Fotos: el front debe quitar metadatos de ubicación (EXIF) antes de subir. POR CONFIRMAR cómo.
 
@@ -55,7 +55,7 @@
 - Contraseñas (solo admins): mínimo 12, con minúsculas, mayúsculas y dígitos.
 - El front usa solo la llave **publicable**; la `secret` nunca sale de la compu de Diego.
 - Revisión desde fuera tras cada `supabase db push`: `bash scripts/probar-nube.sh`.
-- Pendiente (P-16): captcha y sesión anónima (F1-T2); registro por correo abierto (ver abajo).
+- P-16: Auth anónima permanece apagada en la nube hasta contar con captcha y límites; en local se usa para pruebas. Registro por correo abierto (ver abajo).
 
 ## Riesgos conocidos
 - `celda_mapa` recalcula `st_transform` de todos los reportes activos en cada cambio de zona (costo O(N)); requiere medición e índice/materialización si aumenta el volumen.
