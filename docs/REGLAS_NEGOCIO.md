@@ -53,11 +53,16 @@
 - Se notifica por **cambio de estado** (zona nueva activa, zona resuelta) y por alerta de clima.
 - Nunca más de 1 aviso por zona cada `minutos_entre_avisos` (30) por usuario **(propuesta)**.
 - Solo a quien se suscribió y aceptó permisos.
+- Los avisos por reporte se agrupan por celda; sin polígonos oficiales no se asigna un
+  municipio al reporte (P-21). Las alertas climáticas manuales sí declaran municipio,
+  requieren fuente HTTPS, verificación y vigencia antes de aparecer o encolarse (P-06/P-23).
 
 ## 7. Derivación
 - Entrada: tipo de caso (`casa`,`coche`,`persona_herida`,`tercero`,`otro`) + municipio.
 - Salida: instituciones verificadas para ese caso, refugios más cercanos y pasos a seguir.
 - La plataforma no da seguimiento al folio: solo orienta a dónde acudir.
+- Sin fuentes verificadas, las listas de instituciones y refugios quedan vacías. Los
+  pasos generales no sustituyen indicaciones oficiales (P-05/P-07/P-24).
 
 ## 8. Moderación
 - El admin puede ocultar reportes; cada acción queda en `acciones_admin` con motivo.

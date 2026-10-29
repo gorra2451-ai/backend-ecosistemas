@@ -11,8 +11,8 @@
 │ Funciones RPC     → reglas de negocio     │
 │ Realtime          → mapa en vivo          │
 │ Storage           → fotos y videos        │
-│ pg_cron           → expirar reportes      │
-│ Edge Functions    → push y clima          │
+│ pg_cron           → expiración y avisos   │
+│ Edge Functions    → Web Push              │
 └──────────────────────────────────────────┘
         │
         ▼
@@ -27,9 +27,19 @@
 4. **Parámetros configurables** en la tabla `parametros` (D-004).
 5. **Realtime solo para lo que cambia en pantalla:** zonas y estado de reportes.
 
+### Broadcast del mapa (F3-T3)
+- La publicación `supabase_realtime` incluye `realtime.messages`, no `reportes` ni
+  `confirmaciones`; los triggers envían invalidaciones al cambiar reportes activos o
+  confirmaciones que afectan una zona.
+- Canales públicos `reportes` y `zonas`, evento `cambio`. El primero lleva `id` y `estado`;
+  el segundo solo `celda` (Realtime agrega un identificador del mensaje). Nunca se manda
+  `perfil_id`, una fila completa ni la ubicación exacta de un usuario.
+- El front vuelve a consultar las RPC/vistas autorizadas tras recibir el evento. Un cliente
+  podría enviar un Broadcast falso; la fuente de verdad siempre es la consulta a Postgres.
+
 ## Privacidad
 - Sin correo, teléfono, nombre ni edad.
-- El servidor no guarda dónde está el usuario; solo dónde está cada reporte (D-006).
+- La ubicación de un reporte se guarda sin exponer su autor. Diego aprobó (D-017) que una suscripción por celda (~300 m) esté vinculada a `perfil_id`; representa ubicación aproximada, no un punto exacto. El endpoint y sus claves no tienen lectura pública ni del cliente. La suscripción se borra al darse de baja o borrar el perfil. Un job diario de `pg_cron` borra suscripciones tras 30 días sin renovar el endpoint ni recibir un aviso entregado; el plazo vive en `parametros.dias_retencion_suscripcion`. La fecha del último aviso exitoso se guarda en la suscripción para que la limpieza del historial de avisos (7 días) no acorte la retención.
 - La autoría de un reporte nunca se expone a otros usuarios.
 - Fotos: el front debe quitar metadatos de ubicación (EXIF) antes de subir. POR CONFIRMAR cómo.
 
@@ -45,9 +55,13 @@
 - Contraseñas (solo admins): mínimo 12, con minúsculas, mayúsculas y dígitos.
 - El front usa solo la llave **publicable**; la `secret` nunca sale de la compu de Diego.
 - Revisión desde fuera tras cada `supabase db push`: `bash scripts/probar-nube.sh`.
-- Pendiente (P-16): captcha y sesión anónima (F1-T2); registro por correo abierto (ver abajo).
+- P-16: Auth anónima permanece apagada en la nube hasta contar con captcha y límites; en local se usa para pruebas. Registro por correo abierto (ver abajo).
 
 ## Riesgos conocidos
+- `celda_mapa` recalcula `st_transform` de todos los reportes activos en cada cambio de zona (costo O(N)); requiere medición e índice/materialización si aumenta el volumen.
+- Los canales Broadcast públicos pueden recibir eventos falsificados; el cliente solo debe usarlos para recargar y consultar la fuente autorizada.
+- Storage comprueba el MIME declarado por el cliente, no el contenido binario; tampoco hay limpieza automática de objetos de reportes expirados. El front debe eliminar EXIF (P-19) y el equipo debe definir retención.
+- **Nube:** no habilitar Auth anónima hasta resolver captcha y límites de altas de P-16.
 - **Registro por correo abierto:** Supabase no permite apagar el alta por correo sin apagar también
   la anónima. Quien confirme un correo obtiene los mismos permisos que una sesión anónima (no admin).
   El correo integrado de Supabase limita a 2 envíos por hora, lo que frena el abuso (P-16).
@@ -55,4 +69,5 @@
   reporte. Antes de abrir a público: captcha y límite de inicios anónimos en Supabase Auth (P-16).
 - El plan gratuito pausa proyectos inactivos: programar un uso semanal o reactivarlo antes de testeos.
 - Push en iPhone solo funciona si la web se instala en pantalla de inicio (verificar en Fase 4).
-- La fuente oficial de clima puede no tener API: plan B es carga manual por el admin.
+- La fuente oficial de clima sigue pendiente (P-06): la carga local es manual por
+  servicio autorizado, con fuente HTTPS y verificación. No hay ingesta automática.

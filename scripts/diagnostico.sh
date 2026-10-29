@@ -32,7 +32,7 @@ echo "Repo:"
   || falla "git sin user.name" "git config --global user.name \"Tu Nombre\""
 [ "$(git config core.hooksPath)" = ".githooks" ] && bien "hooks activos (.githooks)" \
   || falla "hooks desactivados" "corre: bash scripts/instalar.sh"
-if grep -lq $'\r' scripts/*.sh .githooks/* 2>/dev/null; then
+if grep -lqU $'\r' scripts/*.sh .githooks/* 2>/dev/null; then
   falla "fin de línea CRLF en scripts (rompe bash)" "rm scripts/*.sh .githooks/* && git checkout -- scripts .githooks"
 else
   bien "fin de línea LF en scripts"
