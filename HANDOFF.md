@@ -3,8 +3,9 @@
 
 **Última actualización:** 2026-10-28 · LeoFigo74z (con Codex)
 **Fase actual:** revisión del PR y despliegue controlado por Diego
-**Rama activa:** `feat/c-mitad-leo`
+**Rama activa:** `feat/c-mitad-leo` (publicada, PR #12)
 **Repo:** https://github.com/gorra2451-ai/backend-ecosistemas
+**PR de Leo:** https://github.com/gorra2451-ai/backend-ecosistemas/pull/12
 
 ## Estado verificado
 - Diego fusionó PR #10 y #11; `main` está en `088907f`. La rama de Leo
@@ -28,12 +29,10 @@
   lint local sin errores.
 
 ## Siguiente paso
-1. Publicar solo `feat/c-mitad-leo` con `PUSH_AUTORIZADO=1` y abrir PR
-   para Diego. La autorización está en su mensaje del 28-oct.
-2. Diego revisa el PR y decide el merge. No hacer merge propio.
-3. Solo Diego, tras merge, decide aplicar migraciones a Supabase remoto
+1. Diego revisa PR #12 y decide el merge. Leo no hace merge propio.
+2. Solo Diego, tras merge, decide aplicar migraciones a Supabase remoto
    y verificar con `scripts/probar-nube.sh`. No encender Auth anónima
    remota antes de captcha y límites.
-4. Para uso público siguen pendientes fuentes y catálogos oficiales
+3. Para uso público siguen pendientes fuentes y catálogos oficiales
    (P-05/P-06/P-07/P-23), EXIF (P-19), proveedores/VAPID y push real
    (P-20), polígonos municipales (P-21) e integración con los frontends.
