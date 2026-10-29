@@ -110,3 +110,11 @@ Lo hace cumplir el arnés: con `git config arnes.soloLocal true`, `pre-push` blo
 `guardar.sh` solo hace commit local; con autorización se sube con `PUSH_AUTORIZADO=1`.
 Al terminar cada tarea de `docs/PLAN.md` le manda a Diego un resumen y espera; las dudas van a Diego.
 **Por qué:** Diego integra y revisa todo el backend; así nada llega a GitHub sin pasar por él.
+
+## D-016 · Endurecimiento del proyecto en la nube
+**Estado:** Aceptada (Diego) · 2026-10-23
+**Decisión:** llave HS256 heredada revocada (su secreto se expuso en una sesión local de la IA al
+consultar la API de administración; las sesiones ya usaban ES256), SSL obligatorio en Postgres,
+contraseñas de 12+ con mayúsculas, minúsculas y dígitos (también en `config.toml`), y
+`scripts/probar-nube.sh` como revisión externa tras cada `supabase db push`.
+**Por qué:** auditoría F5-T2. Lo que falta (captcha, alta por correo) queda en P-16.
