@@ -1,5 +1,5 @@
 import webpush from 'npm:web-push@3.6.7'
-import { contextoServidor, igualConstante, json, uuid, type Entorno } from '../_shared/servidor.ts'
+import { contextoServidor, igualConstante, json, parametroEntero, uuid, type Entorno } from '../_shared/servidor.ts'
 type Suscripcion = { endpoint: string; p256dh: string; auth: string }
 export function endpointPermitido(raw: string) {
   try {
@@ -45,11 +45,15 @@ export function crearHandler(env: Entorno, solicitar: typeof fetch = fetch) {
       s = filas[0]
     } catch { return json({ error: 'lectura_suscripcion_fallida' }, 502) }
     if (!endpointPermitido(s.endpoint)) return json({ error: 'proveedor_push_no_permitido' }, 422)
+    let ttl: number
+    try {
+      ttl = await parametroEntero(url, headers, 'ttl_enviar_push_seg', 2419200, solicitar)
+    } catch { return json({ error: 'parametros_no_disponibles' }, 502) }
     try {
       const solicitud = webpush.generateRequestDetails({ endpoint: s.endpoint,
         keys: { p256dh: s.p256dh, auth: s.auth } },
       JSON.stringify({ title: titulo.trim(), body: mensaje.trim(), ...(tag ? { tag } : {}) }), {
-        vapidDetails: { subject: asunto, publicKey: publica, privateKey: privada }, TTL: 60,
+        vapidDetails: { subject: asunto, publicKey: publica, privateKey: privada }, TTL: ttl,
       })
       const respuesta = await solicitar(solicitud.endpoint, {
         method: solicitud.method, headers: solicitud.headers,

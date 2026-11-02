@@ -23,3 +23,18 @@ export function igualConstante(a: string, b: string) {
   return distinto === 0
 }
 export const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export async function parametroEntero(url: string, headers: Record<string, string>,
+  clave: string, maximo: number, solicitar: typeof fetch): Promise<number> {
+  const respuesta = await solicitar(
+    `${url}/rest/v1/parametros?clave=eq.${encodeURIComponent(clave)}&select=valor`,
+    { headers, signal: AbortSignal.timeout(5000) })
+  if (!respuesta.ok) throw new Error('parametros_no_disponibles')
+  const filas: unknown = await respuesta.json()
+  if (!Array.isArray(filas) || filas.length !== 1) throw new Error('parametros_invalidos')
+  const valor: unknown = filas[0]?.valor
+  if (typeof valor !== 'number' || !Number.isInteger(valor) || valor < 1 || valor > maximo) {
+    throw new Error('parametros_invalidos')
+  }
+  return valor
+}

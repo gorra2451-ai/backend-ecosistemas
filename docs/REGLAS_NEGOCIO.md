@@ -53,6 +53,8 @@
 - Se notifica por **cambio de estado** (zona nueva activa, zona resuelta) y por alerta de clima.
 - Nunca más de 1 aviso por zona cada `minutos_entre_avisos` (30) por usuario **(propuesta)**.
 - Solo a quien se suscribió y aceptó permisos.
+- `procesar-avisos` reclama hasta `lote_procesar_avisos` (20) por ejecución;
+  `enviar-push` usa `ttl_enviar_push_seg` (3600 s) para el proveedor Web Push.
 - Los avisos por reporte se agrupan por celda; sin polígonos oficiales no se asigna un
   municipio al reporte (P-21). Las alertas climáticas manuales sí declaran municipio,
   requieren fuente HTTPS, verificación y vigencia antes de aparecer o encolarse (P-06/P-23).

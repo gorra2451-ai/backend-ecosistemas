@@ -16,7 +16,7 @@ Deno.test('la librería prepara un mensaje cifrado y firmado para el navegador',
   }, JSON.stringify({ title: 'Prueba', body: 'Mensaje local' }), {
     vapidDetails: { subject: 'mailto:dev@example.invalid',
       publicKey: vapid.publicKey, privateKey: vapid.privateKey },
-    TTL: 60,
+    TTL: 3600,
   })
   if (!solicitud.body || solicitud.body.length === 0) {
     throw new Error('No se generó un cuerpo cifrado')

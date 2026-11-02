@@ -2,6 +2,23 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-02 · LeoFigo74z · Codex (ajustes solicitados en PR #12)
+**Hecho**
+- Migración nueva: `lote_procesar_avisos=20` y `ttl_enviar_push_seg=3600`
+  en `parametros`; ambos handlers leen el valor vigente y rechazan
+  configuraciones inválidas antes de procesar o enviar.
+- Comentario junto a `enable_anonymous_sign_ins = true` en `config.toml`:
+  NO hacer `supabase config push` ni activar Auth anónima remota antes de P-16.
+- Modelo de datos y reglas de notificaciones actualizados. Se conservan los
+  informes históricos opcionales de `docs/`.
+- Pruebas antes del arreglo: Edge detectó lote 5 y TTL 60; pgTAP detectó
+  ausencia de ambos parámetros. Después: reset local limpio, 380/380 pgTAP
+  en 20 archivos, arnés SQL 20/20, Edge 13/13, lectura REST local,
+  smoke de concurrencia y lint sin errores.
+
+**Pendiente**
+- Revisión y merge del PR #12; la nube no se modificó.
+
 ## 2026-10-28 · LeoFigo74z · cierre feat/c-mitad-leo
 **Hecho**
 - PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/12

@@ -49,7 +49,7 @@ Deno.test('trabajador entrega tag estable y registra envío exitoso', async () =
     igual(body.p_exito, true); igual(body.p_descartado, false)
     return json(true)
   }
-  const r = await procesar(env, simulada)(req())
+  const r = await procesar(env, conParametros(simulada))(req())
   igual(r.status, 200); igual((await r.json()).enviados, 1)
 })
 Deno.test('trabajador tolera cascada tras suscripción caducada sin marcar envío', async () => {
@@ -60,7 +60,7 @@ Deno.test('trabajador tolera cascada tras suscripción caducada sin marcar enví
     igual(body.p_exito, false); igual(body.p_descartado, true)
     return json(false)
   }
-  const r = await procesar(env, simulada)(req())
+  const r = await procesar(env, conParametros(simulada))(req())
   igual(r.status, 200); igual((await r.json()).descartados, 1)
 })
 Deno.test('trabajador registra fallo de envío y controla caída durante cierre', async () => {
@@ -69,7 +69,7 @@ Deno.test('trabajador registra fallo de envío y controla caída durante cierre'
     if (String(url).endsWith('/enviar-push')) return json({ error: 'envio_fallido' }, 502)
     throw new Error('base caída')
   }
-  igual((await procesar(env, simulada)(req())).status, 502)
+  igual((await procesar(env, conParametros(simulada))(req())).status, 502)
 })
 Deno.test('baja de proveedor caducado compara claves para proteger una renovación', async () => {
   const vapid = webpush.generateVAPIDKeys()
@@ -89,5 +89,66 @@ Deno.test('baja de proveedor caducado compara claves para proteger una renovaci�
   }
   const configurada = (n: string) => n === 'VAPID_PUBLIC_KEY' ? vapid.publicKey :
     n === 'VAPID_PRIVATE_KEY' ? vapid.privateKey : env(n)
-  igual((await enviar(configurada, simulada)(req(cuerpo))).status, 410)
+  igual((await enviar(configurada, conParametros(simulada))(req(cuerpo))).status, 410)
+})
+
+const conParametros = (siguiente: typeof fetch): typeof fetch => async (url, init) => {
+  if (String(url).includes('/parametros?')) {
+    return json([{ valor: String(url).includes('lote_procesar_avisos') ? 20 : 3600 }])
+  }
+  return siguiente(url, init)
+}
+
+Deno.test('el lote se lee de parametros y llega a tomar_avisos_push', async () => {
+  let lote: number | undefined
+  const simulada: typeof fetch = async (url, init) => {
+    if (String(url).includes('/parametros?')) return json([{ valor: 17 }])
+    if (String(url).endsWith('/tomar_avisos_push')) {
+      lote = JSON.parse(String((init as RequestInit).body)).p_lote
+      return json([])
+    }
+    throw new Error('solicitud inesperada')
+  }
+  igual((await procesar(env, simulada)(req())).status, 200)
+  igual(lote, 17)
+})
+
+Deno.test('el TTL se lee de parametros y se envía al proveedor', async () => {
+  const vapid = webpush.generateVAPIDKeys()
+  const receptor = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits'])
+  const raw = new Uint8Array(await crypto.subtle.exportKey('raw', receptor.publicKey))
+  const b64 = (x: Uint8Array) => btoa(String.fromCharCode(...x)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','')
+  const p256dh = b64(raw), auth = b64(crypto.getRandomValues(new Uint8Array(16)))
+  let ttl: string | undefined
+  const simulada: typeof fetch = async (url, init) => {
+    if (String(url).includes('/parametros?')) return json([{ valor: 1800 }])
+    if (String(url).includes('/rest/v1/suscripciones_push')) {
+      return json([{ endpoint: 'https://fcm.googleapis.com/fcm/send/test', p256dh, auth }])
+    }
+    ttl = new Headers((init as RequestInit).headers).get('TTL') ?? undefined
+    return new Response(null, { status: 201 })
+  }
+  const configurada = (n: string) => n === 'VAPID_PUBLIC_KEY' ? vapid.publicKey :
+    n === 'VAPID_PRIVATE_KEY' ? vapid.privateKey : env(n)
+  igual((await enviar(configurada, simulada)(req(cuerpo))).status, 200)
+  igual(ttl, '1800')
+})
+
+Deno.test('valor inválido de parametros bloquea procesamiento y envío', async () => {
+  let consultas = 0, llamadasIndebidas = 0
+  const invalida: typeof fetch = async (url) => {
+    if (String(url).includes('/parametros?')) {
+      consultas++
+      return json([{ valor: -1 }])
+    }
+    if (String(url).includes('/rest/v1/suscripciones_push')) {
+      return json([{ endpoint: 'https://fcm.googleapis.com/test', p256dh: 'x', auth: 'y' }])
+    }
+    llamadasIndebidas++
+    throw new Error('no se debe contactar a la cola ni al proveedor')
+  }
+  igual((await procesar(env, invalida)(req())).status, 502)
+  igual((await enviar(env, invalida)(req(cuerpo))).status, 502)
+  igual(consultas, 2)
+  igual(llamadasIndebidas, 0)
 })

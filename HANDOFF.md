@@ -1,38 +1,36 @@
 # HANDOFF — Estado actual
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas.
 
-**Última actualización:** 2026-10-28 · LeoFigo74z (con Codex)
-**Fase actual:** revisión del PR y despliegue controlado por Diego
+**Última actualización:** 2026-11-02 · LeoFigo74z (con Codex)
+**Fase actual:** revisión final del PR #12
 **Rama activa:** `feat/c-mitad-leo` (publicada, PR #12)
-**Repo:** https://github.com/gorra2451-ai/backend-ecosistemas
-**PR de Leo:** https://github.com/gorra2451-ai/backend-ecosistemas/pull/12
+**PR:** https://github.com/gorra2451-ai/backend-ecosistemas/pull/12
 
 ## Estado verificado
-- Diego fusionó PR #10 y #11; `main` está en `088907f`. La rama de Leo
-  ya incorporó ese `main` (merge local `7a36974`).
-- Según Diego, la migración de auditoría `20261023000600` está en Supabase
-  remoto y `probar-nube.sh` pasó 12/12. Ninguna migración de Leo se aplicó
-  en la nube.
-- Las ocho tareas de Leo (50%) están implementadas y verificadas localmente:
-  identidad/entradas, evidencias, Realtime, refugios, Web Push, avisos por
-  zona, alertas climáticas y derivación.
-- Correcciones pedidas por Diego incluidas: activación sin suscriptores,
-  fin de zona, proveedor push y límite de entradas.
-- P-25: 20 entradas por perfil/hora en `parametros`, aprobado.
-- P-26: celda de ~300 m vinculada al perfil, aprobada con borrado al darse
-  de baja o tras 30 días sin renovación ni aviso entregado. Nueva migración:
-  parámetro, fecha de última entrega, trigger y job diario. Ver D-017.
-- P-16: Auth anónima apagada en la nube hasta captcha y límites; local sí
-  puede estar encendida.
-- Validación local integrada: `supabase db reset`; 378 pgTAP en 19 archivos;
-  arnés SQL 19/19; Edge 10/10; concurrencia HTTP; diagnóstico 56/0;
-  lint local sin errores.
+- PR #10 y #11 fusionados; `main` estaba en `088907f` al integrar
+  la rama de Leo (merge `7a36974`).
+- La migración de auditoría `20261023000600` está en la nube según
+  el compañero; ninguna migración de Leo se aplicó remoto.
+- Las ocho tareas de Leo (50%) están implementadas: perfiles/entradas,
+  evidencias, Realtime, refugios, Web Push, avisos de zona, clima y
+  derivación. El mapa visual corresponde a los equipos de frontend.
+- P-25: 20 entradas por perfil/hora. P-26: suscripciones por celda de
+  ~300 m, baja inmediata o tras 30 días sin renovación ni entrega.
+  Las decisiones están en D-017.
+- Ajuste solicitado en PR #12: nueva migración con
+  `lote_procesar_avisos=20` y `ttl_enviar_push_seg=3600`.
+  `procesar-avisos` y `enviar-push` leen los valores de `parametros`.
+- P-16: Auth anónima sigue apagada en la nube. `config.toml` permite
+  pruebas locales y advierte NO hacer `supabase config push` hasta
+  resolver captcha y límites.
+- Validación local: `supabase db reset`, 380/380 pgTAP en 20 archivos,
+  arnés SQL 20/20, Edge 13/13 y lectura REST interna de ambos parámetros.
+  Concurrencia HTTP y lint local en verde; diagnóstico previo 56/0.
 
 ## Siguiente paso
-1. Diego revisa PR #12 y decide el merge. Leo no hace merge propio.
-2. Solo Diego, tras merge, decide aplicar migraciones a Supabase remoto
-   y verificar con `scripts/probar-nube.sh`. No encender Auth anónima
-   remota antes de captcha y límites.
-3. Para uso público siguen pendientes fuentes y catálogos oficiales
-   (P-05/P-06/P-07/P-23), EXIF (P-19), proveedores/VAPID y push real
-   (P-20), polígonos municipales (P-21) e integración con los frontends.
+1. El compañero revisa estos dos ajustes y decide aprobar/mergear PR #12.
+2. Tras el merge, él decide aplicar migraciones a Supabase remoto y
+   verifica con `scripts/probar-nube.sh`. Leo no hace merge ni toca nube.
+3. Para uso público siguen pendientes P-16, fuentes/catálogos oficiales,
+   EXIF, VAPID y prueba push real, polígonos municipales e integración
+   con frontend. Ver `PREGUNTAS.md`.

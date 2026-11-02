@@ -59,6 +59,8 @@ Valores iniciales (**5 y 30 salieron de clase; el resto son propuestas** a ajust
 | `area_max_consulta_km2` | 2500 | tope del rectángulo en `reportes_activos_en_area` |
 | `minutos_entre_avisos` | 30 | máx. 1 aviso por zona por usuario en este lapso (módulo C) |
 | `max_intentos_push` / `minutos_reintento_push` / `minutos_bloqueo_aviso_push` / `dias_retencion_avisos_push` | 3 / 5 / 2 / 7 | cola de avisos (P-22) |
+| `lote_procesar_avisos` | 20 | máximo de avisos reclamados por ejecución del trabajador |
+| `ttl_enviar_push_seg` | 3600 | segundos de retención del mensaje en el proveedor Web Push |
 | `radio_refugios_derivacion_m` / `max_refugios_derivacion` | 20000 / 5 | límites de orientación (P-24) |
 
 ### limites_zmg [D]
