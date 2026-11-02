@@ -1,38 +1,36 @@
 # HANDOFF — Estado actual
-> Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
+> Foto corta para retomar en una sesión nueva. Máx. ~60 líneas.
 
-**Última actualización:** 2026-10-23 · Diego (con Claude Code)
-**Fase actual:** módulos de Diego terminados y en la nube; LeoFigo74z arrancando (F1-T2)
-**Rama activa:** ninguna de Diego; PRs #10 y #11 esperan aprobación de LeoFigo74z
-**Repo:** https://github.com/gorra2451-ai/backend-ecosistemas (público, `main` protegida, 1 revisión)
+**Última actualización:** 2026-11-02 · LeoFigo74z (con Codex)
+**Fase actual:** revisión final del PR #12
+**Rama activa:** `feat/c-mitad-leo` (publicada, PR #12)
+**PR:** https://github.com/gorra2451-ai/backend-ecosistemas/pull/12
 
-## Dónde quedamos
-- **Todas las tareas D de `docs/PLAN.md` están hechas** (50% de Diego): base, reportes,
-  confirmación/activación/expiración (pg_cron cada 5 min), zonas de calor, admin y seed.
-- 8 migraciones, 7 suites pgTAP: **161 pruebas** en verde (local y CI).
-- **Nube (D-014):** proyecto `hdaolwqvxofmvqahzjvp` (us-west-1), sin seed. Se pausó
-  `encuesta-zmg-equipo2` para liberar cupo. Endurecida (D-016): HS256 revocada, SSL obligatorio,
-  contraseñas 12+. `bash scripts/probar-nube.sh` → 12/12.
-- `docs/API.md` **v1 congelada** (✅ disponible / ⏳ pendiente por módulo).
-- **LeoFigo74z** aceptó la invitación. Trabaja en modo solo local (D-015, AGENTS §3.13): no sube
-  nada sin autorización de Diego; al terminar cada tarea le manda un resumen por WhatsApp.
+## Estado verificado
+- PR #10 y #11 fusionados; `main` estaba en `088907f` al integrar
+  la rama de Leo (merge `7a36974`).
+- La migración de auditoría `20261023000600` está en la nube según
+  el compañero; ninguna migración de Leo se aplicó remoto.
+- Las ocho tareas de Leo (50%) están implementadas: perfiles/entradas,
+  evidencias, Realtime, refugios, Web Push, avisos de zona, clima y
+  derivación. El mapa visual corresponde a los equipos de frontend.
+- P-25: 20 entradas por perfil/hora. P-26: suscripciones por celda de
+  ~300 m, baja inmediata o tras 30 días sin renovación ni entrega.
+  Las decisiones están en D-017.
+- Ajuste solicitado en PR #12: nueva migración con
+  `lote_procesar_avisos=20` y `ttl_enviar_push_seg=3600`.
+  `procesar-avisos` y `enviar-push` leen los valores de `parametros`.
+- P-16: Auth anónima sigue apagada en la nube. `config.toml` permite
+  pruebas locales y advierte NO hacer `supabase config push` hasta
+  resolver captcha y límites.
+- Validación local: `supabase db reset`, 380/380 pgTAP en 20 archivos,
+  arnés SQL 20/20, Edge 13/13 y lectura REST interna de ambos parámetros.
+  Concurrencia HTTP y lint local en verde; diagnóstico previo 56/0.
 
-## Siguiente paso (en este orden)
-1. LeoFigo74z aprueba PR #10 (auditoría: utilidades invoker + índice) y PR #11 (seguridad nube).
-2. Tras mergear #10: `supabase db push` desde `main` y `bash scripts/probar-nube.sh`.
-3. LeoFigo74z construye F1-T2 (sesión anónima + captcha P-16). Cuando Diego autorice el push,
-   revisar su PR con `prompts/revision_pr.md` antes de aprobar.
-4. Diego comparte `docs/API.md` v1 + URL + llave publicable con los 5 equipos (F1-T6).
-5. Próxima clase: P-01 (umbral), P-13 (polígono ZMG), P-16 (anti-spam); luego P-02/03/14/15
-   con Reporte y Confirmación; P-04..07 con Mapa y Notificaciones.
-
-## Bloqueos
-- Escritura desde el front: requiere F1-T2 (LeoFigo74z).
-- Merges de Diego: requieren la aprobación de LeoFigo74z.
-
-## No olvidar
-- Cada sesión: `bash scripts/sync.sh`; git solo con `scripts/`. BD local: `supabase db start`
-  (puertos 554xx; no chocar con `consultorio-britanico`). Pruebas rápidas: `bash scripts/probar-db.sh`.
-  Tras cada `supabase db push`: `bash scripts/probar-nube.sh` (seguridad de la nube desde fuera).
-- Las funciones nuevas nacen sin EXECUTE: cada RPC lleva su `grant` explícito.
-- Contraseña de Postgres de la nube y llaves: solo en `.env` de Diego.
+## Siguiente paso
+1. El compañero revisa estos dos ajustes y decide aprobar/mergear PR #12.
+2. Tras el merge, él decide aplicar migraciones a Supabase remoto y
+   verifica con `scripts/probar-nube.sh`. Leo no hace merge ni toca nube.
+3. Para uso público siguen pendientes P-16, fuentes/catálogos oficiales,
+   EXIF, VAPID y prueba push real, polígonos municipales e integración
+   con frontend. Ver `PREGUNTAS.md`.

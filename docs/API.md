@@ -3,7 +3,8 @@
 > Si cambias algo aquí, avisa a los equipos y registra en PROGRESO.md.
 > Estado: **v1 congelada (F1-T6, 2026-10-23)**. Cambios que rompan algo → v2, avisando a los 5 equipos.
 > Sin sesión (`anon`) solo se lee lo público; toda escritura pide sesión anónima.
-> ✅ = ya funciona en la nube · ⏳ = contrato fijo, implementación pendiente (fase indicada).
+> Las secciones indican por separado lo probado **localmente** y lo disponible **en nube**.
+> Las incorporaciones de Leo siguen locales hasta revisión y publicación autorizada.
 
 ## Conexión
 ```js
@@ -15,26 +16,49 @@ const supabase = createClient(
 ```
 Nunca uses la llave `secret`/`service_role` en el front.
 
-## Arranque (Equipo Registro) ⏳ F1-T2
+## Arranque (Equipo Registro) ✅ local · ⏳ nube (F1-T2)
 ```js
 const { data } = await supabase.auth.signInAnonymously()
 await supabase.rpc('registrar_entrada', { medio: 'auto' })        // peaton|bici|auto|transporte_publico
 await supabase.rpc('guardar_accesibilidad', { prefs: { daltonismo: true } })
 ```
+Auth crea el perfil automáticamente al abrir la sesión. Cada llamada a `registrar_entrada`
+guarda una visita nueva; ambas RPC devuelven `null` al completarse. Un perfil puede registrar hasta `max_entradas_por_hora` visitas por hora (20, D-017); el exceso devuelve `limite_entradas`. Para `prefs`, v1 acepta
+`{}` o `{ daltonismo: boolean }`; otras claves o valores no booleanos dan
+`parametros_invalidos`. Sin sesión no se pueden llamar las RPC (`42501` sin token;
+`sin_sesion` si el rol llega sin usuario). Solo el dueño puede leer su perfil y sus entradas.
+La sesión anónima está habilitada en la configuración **local**. Diego debe habilitarla también
+en Auth del proyecto remoto al publicar F1-T2; captcha y límite de altas siguen en P-16.
 
 ## Reportar (Equipo Reporte) ✅
 ```js
-await supabase.rpc('crear_reporte', {
+const { data: reporte } = await supabase.rpc('crear_reporte', {
   p_id: crypto.randomUUID(),   // UUID v4 generado en el front (nunca v1: incluye la MAC); reintentar con el mismo id no duplica
   p_tipo: 'calle',             // calle|casa|coche|persona_en_riesgo
   p_pasan_carros: false,
   p_lat: 20.6597, p_lng: -103.3496, p_precision_m: 15
 })
 // → { id, estado: 'pendiente' | 'activo' }   ✅ (requiere sesión anónima: F1-T2)
-// Evidencia opcional ⏳ F2-T4: subir a Storage bucket 'evidencias/<reporte_id>/<archivo>'
-// y luego rpc('agregar_evidencia', { p_reporte_id, p_ruta, p_tipo: 'foto' })
+// Evidencia opcional ✅ local · ⏳ nube (F2-T4): después de crear el reporte,
+// quitar metadatos EXIF de la foto en el front (P-19) y subir al bucket privado:
+const ruta = `${reporte.id}/${crypto.randomUUID()}.png`
+await supabase.storage.from('evidencias').upload(ruta, archivoSinExif,
+  { contentType: 'image/png', upsert: false })
+await supabase.rpc('agregar_evidencia',
+  { p_reporte_id: reporte.id, p_ruta: ruta, p_tipo: 'foto' }) // → UUID de evidencia
 ```
 Errores (en `error.message`): `sin_sesion`, `parametros_invalidos`, `fuera_de_zmg`, `limite_por_hora`, `duplicado_cercano`, `id_en_uso`.
+La ruta de evidencia siempre es `<reporte_uuid>/<archivo_uuid>.<extensión>`; acepta
+`jpg|jpeg|png|webp` para `foto` y `mp4|webm` para `video`. Tamaño máximo provisional:
+10 MiB por archivo y 3 archivos por reporte (`parametros`, P-18). Solo el autor puede subir;
+no se permite sobrescribir. La RPC exige que el objeto exista en Storage y sea suyo;
+repetirla con la misma ruta devuelve el mismo UUID. Errores adicionales:
+`reporte_no_existe`, `reporte_no_autorizado`, `reporte_no_activo`, `archivo_no_existe`,
+`tipo_archivo_invalido`, `archivo_invalido`, `limite_evidencias`.
+El bucket es privado: para leer una evidencia autorizada se usa
+`supabase.storage.from('evidencias').download(ruta_storage)` (no `getPublicUrl`).
+El autor puede leer su evidencia pendiente; las evidencias de reportes activos son públicas.
+Archivos subidos por error y todavía sin registrar pueden borrarse por su dueño.
 
 ## Confirmar (Equipo Confirmación) ✅
 ```js
@@ -46,25 +70,74 @@ await supabase.rpc('marcar_falso', { p_reporte_id })                       // �
 Errores de confirmar/marcar_falso: `sin_sesion`, `parametros_invalidos` (p_sigue nulo), `reporte_no_existe`, `propio_reporte`, `reporte_no_activo`.
 `es_propio = true` → el front no debe ofrecer confirmar ese reporte.
 
-## Mapa (Equipo Mapa) ✅ zonas y reportes · ⏳ refugios y tiempo real (F3)
+## Mapa (Equipo Mapa) ✅ zonas y reportes · ✅ realtime y refugios locales · ⏳ nube (F3)
 ```js
 await supabase.from('zonas_publicas').select('*')   // celda, lat, lng, nivel, total_reportes, total_confirmaciones, alguno_no_pasan_carros, actualizado_en
 // celda = '<ix>_<iy>' (enteros: coordenada UTM 13N / tamano_celda_m), p. ej. '2240_7617'. Mismo formato en notificaciones.
 await supabase.rpc('reportes_activos_en_area', { min_lat, min_lng, max_lat, max_lng })
 // → [{ id, tipo, pasan_carros, lat, lng, ultima_confirmacion, creado_en }]   errores: parametros_invalidos (min ≥ max, fuera de rango), area_demasiado_grande
 await supabase.from('refugios_publicos').select('*')
-// Tiempo real por Broadcast (no postgres_changes: filtraría el autor). Canal y payload: F3-T3.
-supabase.channel('reportes').on('broadcast', { event: 'cambio' }, cb).subscribe()
+// → [{ id, nombre, lat, lng, direccion, municipio, capacidad, fuente, verificado_en }]
+// Puede devolver [] hasta que el equipo aporte fuentes oficiales verificadas (P-07).
+// Broadcast público de invalidación, sin postgres_changes ni filas privadas.
+supabase.channel('reportes').on('broadcast', { event: 'cambio' }, ({ payload }) => {
+  // payload = { id: reporte_uuid, estado: 'activo'|'resuelto'|'oculto'|'en_revision'|'borrado' }
+  // Consultar de nuevo reportes_activos_en_area; quitar el id si salió del mapa.
+}).subscribe()
+supabase.channel('zonas').on('broadcast', { event: 'cambio' }, ({ payload }) => {
+  // payload = { celda: '<ix>_<iy>', id: uuid_del_mensaje }
+  // Consultar de nuevo zonas_publicas para esa celda (puede haber desaparecido).
+}).subscribe()
 // Rutas alternas: el front arma link a Waze/Google Maps con lat/lng (no pasa por el backend)
 ```
 
 ## Notificaciones y derivación (Equipo 5) ⏳ F4
 ```js
-await supabase.rpc('suscribir_push', { p_endpoint, p_p256dh, p_auth, p_municipio })   // interés por municipio/celda, nunca un punto
+await supabase.rpc('suscribir_push', {
+  p_endpoint, p_p256dh, p_auth, p_municipio: 'Guadalajara'
+}) // → UUID de suscripción; interés por municipio, nunca un punto
+// Opción por celda: p_municipio: null, p_celda: '2240_7617'.
+await supabase.rpc('baja_push', { p_endpoint }) // → boolean
 await supabase.from('alertas_clima_vigentes').select('*')
+// → [{ id, fuente, fuente_url, nivel: 'bajo'|'medio'|'alto', titulo, descripcion,
+//       municipio, vigente_desde, vigente_hasta, verificado_en }]
 await supabase.rpc('derivar', { p_caso: 'casa', p_municipio: 'Zapopan', p_lat, p_lng })
-// → { instituciones: [...], refugios: [...], pasos: [...] }
+// → { instituciones: [{id,nombre,tipos_caso,telefono,url,municipio,horario,fuente,verificado_en}],
+//     refugios: [{id,nombre,direccion,municipio,capacidad,fuente,verificado_en,lat,lng,distancia_m}],
+//     pasos: [string,...] }
 ```
+**Push ✅ local, ⏳ nube (F4-T1):** el navegador pide permiso al usuario y obtiene
+`endpoint`, `p256dh` y `auth` de `PushSubscription`. Convierte las claves a base64url.
+La RPC requiere sesión anónima, acepta exactamente un ámbito (`municipio` o `celda`),
+normaliza municipio a minúsculas y devuelve el mismo UUID al reintentar con el mismo
+endpoint. El front no puede consultar endpoints ni claves; solo puede dar de baja el
+suyo con `baja_push`. Renovar el mismo endpoint cuenta como uso. Una suscripción
+sin renovación ni aviso entregado durante 30 días se borra automáticamente (D-017;
+plazo configurable en `parametros`). Tras caducar, una nueva alta devuelve un UUID
+nuevo. Errores: `sin_sesion`, `parametros_invalidos`,
+`proveedor_push_no_permitido`, `suscripcion_en_uso`, `limite_suscripciones` (5 dispositivos provisionales, P-20). Solo se aceptan endpoints HTTPS de FCM, Mozilla, Apple o subdominios de `.notify.windows.com`, sin puerto explícito.
+La Edge Function `enviar-push` es **interna**: solo el servidor la invoca con `apikey`
+secreta. El front nunca recibe esa clave. Requiere VAPID configurado en el entorno
+servidor; no hay credenciales de producción en el repo.
+**Avisos por zona ✅ local, ⏳ nube (F4-T2):** al aparecer el primer reporte activo
+de una celda, o resolverse el último, se encola un aviso por suscripción a esa celda.
+El límite `minutos_entre_avisos` (30 minutos provisionales) solo suprime nuevas activaciones de la misma celda y suscripción; el aviso de fin de zona siempre se encola cuando desaparece el último reporte activo, también al pasar a `oculto` o `en_revision`.
+El trabajador interno `procesar-avisos` reclama lotes, invoca `enviar-push` y reintenta
+fallos. Antes de reclamar descarta estados obsoletos, alertas vencidas o retiradas y
+avisos de intereses anteriores del dispositivo. El payload Web Push incluye `tag`
+estable por entrega: el Service Worker debe usarlo al mostrar la notificación para
+reemplazar duplicados de reintentos. El front no llama al trabajador ni lee la cola. Por ahora las suscripciones por
+municipio no reciben este evento: falta una delimitación municipal verificada (P-21).
+**Clima ✅ local, ⏳ nube (F4-T3):** la vista solo entrega alertas verificadas y
+vigentes, cargadas manualmente por el servicio con URL HTTPS de la fuente, municipio y
+fechas. Un trabajo programado encola el aviso para suscripciones de ese municipio.
+El catálogo empieza vacío mientras se confirma la fuente (P-06) y la escala (P-23).
+**Derivación ✅ local, ⏳ nube (F4-T4):** `derivar` acepta
+`casa|coche|persona_herida|tercero|otro`, municipio y coordenadas válidas. Solo entrega
+instituciones verificadas para ese caso y municipio y hasta cinco refugios verificados
+dentro de 20 km (límites provisionales P-24). Si no hay fichas verificadas, devuelve
+listas vacías y pasos generales. La consulta no guarda ubicación ni crea folios.
+Error: `parametros_invalidos`. El catálogo oficial está pendiente de P-05/P-07.
 
 ## Admin (panel interno) ✅
 ```js
