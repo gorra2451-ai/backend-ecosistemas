@@ -2,6 +2,20 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-05 · Diego · Claude Code
+**Hecho**
+- Verificado: nube al día con `main` (8 migraciones), `probar-nube.sh` 12/12, 161 pruebas locales en verde.
+- Clase 5-nov registrada en `PREGUNTAS.md` (P-01 respondida; P-17 a P-23 nuevas).
+
+**Decidido en clase (5-nov)**
+- La app se llama **¡Aguas!** (con signos de exclamación).
+- Se usa la paleta, tipografía y componentes del design system de Diego; un solo prototipo unificado.
+- Los equipos entregan lo testeado a Diego y LeoFigo74z para integrarlo. Segundo testeo: 5 cosas con 10 personas, ya en digital.
+- Testeo: con 5 confirmaciones la gente confía en un reporte (coincide con `umbral_activacion` = 5).
+
+**Pendiente**
+- Mandar API v1 a los equipos (F1-T6). F1-T2 de LeoFigo74z sigue bloqueando la escritura desde el front.
+
 ## 2026-10-23 · Diego · Claude Code (cierre de sesión)
 **Hecho**
 - Proyecto en la nube creado y con las 7 migraciones (D-014); `docs/API.md` v1 congelada (PR #8).
