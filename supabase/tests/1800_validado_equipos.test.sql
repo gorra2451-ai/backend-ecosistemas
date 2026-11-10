@@ -268,8 +268,9 @@ reset role;
 -- -----------------------------------------------------------------------------
 -- Evidencias: video .mov
 -- -----------------------------------------------------------------------------
-select ok((select 'video/quicktime' = any(allowed_mime_types) from storage.buckets where id = 'evidencias'),
-  'el bucket acepta video/quicktime');
+-- PR #14: video deshabilitado TEMPORALMENTE (20261110195640, ver 2100_evidencias_sin_video).
+select ok(not (select 'video/quicktime' = any(allowed_mime_types) from storage.buckets where id = 'evidencias'),
+  'el bucket ya no acepta video/quicktime (temporal, PR #14)');
 insert into storage.objects (bucket_id, name, owner_id, metadata) values
   ('evidencias', '18000000-0000-4000-8000-000000000003/28000000-0000-4000-8000-000000000001.mov',
    '00000000-0000-0000-0000-0000000018a0', '{"mimetype":"video/quicktime","size":1000}'),
@@ -279,9 +280,9 @@ select pg_temp.como('00000000-0000-0000-0000-0000000018a0');
 set local role authenticated;
 select ok(public.puede_subir_evidencia(
   '18000000-0000-4000-8000-000000000003/28000000-0000-4000-8000-000000000003.mov'), 'Storage permite subir .mov');
-select lives_ok($$ select public.agregar_evidencia('18000000-0000-4000-8000-000000000003',
+select throws_ok($$ select public.agregar_evidencia('18000000-0000-4000-8000-000000000003',
   '18000000-0000-4000-8000-000000000003/28000000-0000-4000-8000-000000000001.mov', 'video') $$,
-  'agregar_evidencia registra .mov con video/quicktime');
+  'P0001', 'video_deshabilitado', '.mov con video/quicktime se rechaza (temporal, PR #14)');
 select throws_ok($$ select public.agregar_evidencia('18000000-0000-4000-8000-000000000003',
   '18000000-0000-4000-8000-000000000003/28000000-0000-4000-8000-000000000002.mov', 'video') $$,
   'P0001', 'tipo_archivo_invalido', '.mov con otro MIME se rechaza');

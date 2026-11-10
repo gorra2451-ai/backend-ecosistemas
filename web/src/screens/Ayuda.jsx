@@ -92,7 +92,6 @@ export function AcudoRespuesta() {
   const caso = normalizarCaso(params?.caso)
   const s = SITUACIONES[caso]
   const [res, setRes] = useState(null) // { pasos, instituciones, fallo }
-  const [lugar, setLugar] = useState(null)
   const [personas, setPersonas] = useState(1)
   const [guia, setGuia] = useState(false)
 
@@ -107,14 +106,9 @@ export function AcudoRespuesta() {
     return () => { vivo = false }
   }, [caso, municipio, ubic.lat, ubic.lng])
 
-  useEffect(() => {
-    let vivo = true
-    setLugar(null)
-    if (ubic.real) direccionDe(ubic.lat, ubic.lng).then(({ data }) => { if (vivo && data) setLugar(data) })
-    return () => { vivo = false }
-  }, [ubic.lat, ubic.lng, ubic.real])
-
-  const msg = mensajeLlamada({ say: s.say, lugar: lugar || municipio, personas })
+  // PRIVACIDAD: el GPS del dispositivo no va a Nominatim. El mensaje usa el municipio; la ubicación exacta
+  // solo sale si la persona toca "compartir ubicación" (liga de Google Maps que ella misma envía).
+  const msg = mensajeLlamada({ say: s.say, lugar: municipio, personas })
   const copiar = async () => {
     try { await navigator.clipboard.writeText(msg); avisar('Mensaje copiado') } catch { avisar('No se pudo copiar') }
   }
@@ -285,7 +279,8 @@ function AlertasInicio() {
 }
 
 // ---------------------------------------------------------------- Monitoreo vial (calles) + ¿Puedo pasar?
-// Carga zonas públicas + reportes cercanos y arma las vías. Nombres de calle por Nominatim, uno por segundo.
+// Carga zonas públicas + reportes cercanos y arma las vías. Nombres de calle por Nominatim, uno por segundo:
+// v.lat/v.lng son el centro de una zona pública o de un reporte (ya públicos), nunca el GPS del dispositivo.
 function useVias(activo = true) {
   const { ubic } = useApp()
   const [estado, setEstado] = useState({ vias: null, error: false })

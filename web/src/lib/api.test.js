@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { codigoError, mensajeError, nivelDeZona, bboxAlrededor } from './api.js'
+import { codigoError, mensajeError, nivelDeZona, bboxAlrededor, textoBusqueda } from './api.js'
 
 describe('codigoError', () => {
   it('saca el código del mensaje de Postgres', () => {
@@ -19,6 +19,28 @@ describe('mensajeError', () => {
     expect(mensajeError('limite_por_hora').titulo).toBe('Ya enviaste varios reportes esta hora')
     expect(mensajeError('duplicado_cercano').titulo).toBe('Ya reportaste este punto')
     expect(mensajeError('xyz').titulo).toBeTruthy()
+  })
+})
+
+describe('errores de evidencia y confirmación (backend PR #14)', () => {
+  it('reconoce video_deshabilitado y reporte_no_activo', () => {
+    expect(codigoError({ message: 'ERROR: video_deshabilitado' })).toBe('video_deshabilitado')
+    expect(codigoError({ message: 'reporte_no_activo' })).toBe('reporte_no_activo')
+  })
+  it('copy claro para la persona', () => {
+    expect(mensajeError('video_deshabilitado').titulo).toBe('Por ahora solo fotos: los videos guardan tu ubicación.')
+    expect(mensajeError('reporte_no_activo').titulo).toBe('Este reporte ya cerró: no se puede confirmar.')
+  })
+})
+
+describe('textoBusqueda (Nominatim: solo al enviar, mínimo 3 letras)', () => {
+  it('recorta y exige 3 letras', () => {
+    expect(textoBusqueda('  Zapopan ')).toBe('Zapopan')
+    expect(textoBusqueda('ab')).toBe(null)
+    expect(textoBusqueda('  ab  ')).toBe(null)
+    expect(textoBusqueda('')).toBe(null)
+    expect(textoBusqueda(null)).toBe(null)
+    expect(textoBusqueda('abc')).toBe('abc')
   })
 })
 

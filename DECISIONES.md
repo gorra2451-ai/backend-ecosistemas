@@ -201,3 +201,18 @@ la cercanía solo se exige en el front, así que el modo prueba no toca el esque
 D-021). No se guarda nada nuevo de la persona; `aguas.prueba` vive solo en su navegador.
 **Reversión:** al cerrar el testeo, nueva migración que regrese 1000 / 60 / 30, regresar
 `0000_base.test.sql` a 30 y quitar el bloque D-022 de `0200_confirmacion` y `1800_validado_equipos`.
+
+## D-023 · Privacidad y plazo tras la revisión del PR #14 (reemplaza en parte D-021)
+**Estado:** Aceptada por Diego · 2026-11-10 · a pedido de LeoFigo74z (revisión del PR #14)
+**Decisión:**
+- **Sin video (TEMPORAL):** los videos conservan GPS en sus metadatos y se podían descargar sin sesión. El bucket
+  `evidencias` acepta solo jpeg/png/webp y `agregar_evidencia` rechaza `video` (`video_deshabilitado`). Reemplaza
+  "video `.mov`" de D-021 hasta tener limpieza de metadatos en video. Las fotos ya se re-codifican sin EXIF.
+  El bucket de la nube estaba vacío (revisado 2026-11-10), no hubo videos que limpiar.
+- **Plazo bajo bloqueo:** `validar_confirmable` (lo usan `confirmar_reporte` y `marcar_falso`) rechaza con
+  `reporte_no_activo` un pendiente con la ventana vencida aunque el cron no haya corrido. No lo marca `resuelto`
+  ahí (la excepción revertiría el cambio); lo cierra `expirar_reportes`.
+- **Nominatim:** nunca se envían coordenadas del dispositivo (solo de reportes, ya públicas). La búsqueda por texto
+  se conserva (sin GPS es la única forma de ubicar un reporte), pero solo al presionar "Buscar", sin autocompletar
+  (reglas de uso de Nominatim). Tocar el mapa para elegir el punto queda para después del mid-fi.
+**Por qué:** privacidad (AGENTS.md §3.8) y que una zona no se publique fuera del plazo que dice la regla.

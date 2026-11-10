@@ -64,7 +64,7 @@ await supabase.rpc('mis_reportes')   // v2, requiere sesión; máx. 20, más rec
 // confirmaciones_no no incluye las marcas de falso (van en marcas_falso). nivel null = aún sin nivel.
 ```
 La ruta de evidencia siempre es `<reporte_uuid>/<archivo_uuid>.<extensión>`; acepta
-`jpg|jpeg|png|webp` para `foto` y `mp4|webm|mov` para `video` (`.mov` = `video/quicktime`, v2). Tamaño máximo provisional:
+`jpg|jpeg|png|webp` para `foto`. **Video deshabilitado (D-023, temporal):** el bucket solo acepta imágenes y `agregar_evidencia` con `video` lanza `video_deshabilitado` (los videos conservan GPS en sus metadatos). Tamaño máximo provisional:
 10 MiB por archivo y 3 archivos por reporte (`parametros`, P-18). Solo el autor puede subir;
 no se permite sobrescribir. La RPC exige que el objeto exista en Storage y sea suyo;
 repetirla con la misma ruta devuelve el mismo UUID. Errores adicionales:
@@ -85,7 +85,7 @@ await supabase.rpc('confirmar_reporte', { p_reporte_id, p_sigue: true })   // tr
 await supabase.rpc('marcar_falso', { p_reporte_id })                       // "Calle seca / Nunca hubo agua"
 // ambas → { reporte_id, estado }; estado pasa a 'activo' cuando el "sí" publica un pendiente
 ```
-Errores de confirmar/marcar_falso: `sin_sesion`, `parametros_invalidos` (p_sigue nulo), `reporte_no_existe`, `propio_reporte`, `reporte_no_activo` (v2: ni `pendiente` ni `activo`).
+Errores de confirmar/marcar_falso: `sin_sesion`, `parametros_invalidos` (p_sigue nulo), `reporte_no_existe`, `propio_reporte`, `reporte_no_activo` (v2: ni `pendiente` ni `activo`; D-023: también un `pendiente` cuya `ventana_activacion_min` ya venció, aunque el cron no haya corrido).
 `es_propio = true` → el front no debe ofrecer confirmar ese reporte.
 **Publicación (v2, D-021):** un reporte pasa a `activo` (visible en el mapa) al juntar
 `confirmaciones_para_publicar` (5) confirmaciones "sí" de otras personas. `persona_en_riesgo` se

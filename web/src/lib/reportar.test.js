@@ -5,7 +5,7 @@ import {
   linkMaps, linkWhatsApp, textoFamilia, leerCola, encolar, quitarDeCola, medidasMax, haceCuanto,
   GRAVEDAD_CALLE, pasanCarrosDeGravedad, pasosStepper, resumenReporte,
   unirMisReportes, filaMiReporte, filaCercano, textoUbicacion, extensionEvidencia, tipoEvidencia, estadoEnviado, mensajeEnviado,
-  validarArchivo, MAX_EVIDENCIA_BYTES, MENSAJE_ARCHIVO, tituloUbicacion, crearCandado, seguimientoReporte,
+  validarArchivo, MAX_EVIDENCIA_BYTES, MENSAJE_ARCHIVO, ACEPTA_EVIDENCIA, tituloUbicacion, crearCandado, seguimientoReporte,
 } from './reportar.js'
 import { supabase } from './supabase.js'
 
@@ -121,8 +121,8 @@ describe('ronda 2 · flujo del Equipo Reporte', () => {
         { icono: 'calle', texto: 'Calle inundada' }, { icono: 'barras', texto: 'Alto', patron: 'p-alto' },
         { icono: 'pin', texto: 'Av. Patria 123, Zapopan' }, { icono: 'imagen', texto: 'a.jpg' },
       ])
-    expect(resumenReporte({ tipo: 'casa', precision: 12.4 }).map((x) => x.texto)).toEqual(['Casa inundada', 'Tu ubicación actual ±12 m', 'Sin foto'])
-    expect(resumenReporte({ tipo: 'casa', evidenciaFallo: true }).at(-1).texto).toBe('La foto o video no se subió')
+    expect(resumenReporte({ tipo: 'casa', precision: 12.4 }).map((x) => x.texto)).toEqual(['Casa inundada', 'Tu ubicación (GPS) ±12 m', 'Sin foto'])
+    expect(resumenReporte({ tipo: 'casa', evidenciaFallo: true }).at(-1).texto).toBe('La foto no se subió')
     expect(resumenReporte(null)).toEqual([])
   })
   it('texto para la familia según gravedad', () => {
@@ -140,15 +140,21 @@ describe('ronda 3 · HTML validado del Equipo Reporte + contrato v2', () => {
   })
   it('texto de ubicación: dirección o precisión', () => {
     expect(textoUbicacion('Av. Patria 123', 9)).toBe('Av. Patria 123')
-    expect(textoUbicacion(null, 9.6)).toBe('Tu ubicación actual ±10 m')
-    expect(textoUbicacion(null, 0)).toBe('Tu ubicación actual')
+    // Sin dirección: el GPS del dispositivo nunca va a Nominatim (privacidad), se muestra genérico.
+    expect(textoUbicacion(null, 9.6)).toBe('Tu ubicación (GPS) ±10 m')
+    expect(textoUbicacion(null, 0)).toBe('Tu ubicación (GPS)')
   })
-  it('evidencia: extensión (incluye .mov) y tipo', () => {
-    expect(extensionEvidencia('video/quicktime')).toBe('mov')
+  it('evidencia: solo fotos jpeg/png/webp (los videos guardan GPS en sus metadatos)', () => {
     expect(extensionEvidencia('image/jpeg')).toBe('jpg')
+    expect(extensionEvidencia('image/png')).toBe('png')
+    expect(extensionEvidencia('image/webp')).toBe('webp')
+    expect(extensionEvidencia('video/quicktime')).toBe(null)
+    expect(extensionEvidencia('video/mp4')).toBe(null)
     expect(extensionEvidencia('application/pdf')).toBe(null)
-    expect(tipoEvidencia('video/mp4')).toBe('video')
     expect(tipoEvidencia('image/png')).toBe('foto')
+    expect(tipoEvidencia('video/mp4')).toBe(null)
+    expect(tipoEvidencia('image/gif')).toBe(null)
+    expect(ACEPTA_EVIDENCIA).toBe('image/jpeg,image/png,image/webp')
   })
   it('enviado: copy honesto según estado', () => {
     expect(mensajeEnviado('pendiente')).toBe('Tu reporte ya está en el mapa. Te avisamos cuando lo confirmen.')
@@ -182,11 +188,20 @@ describe('ronda 3 · HTML validado del Equipo Reporte + contrato v2', () => {
 describe('validarArchivo (refleja parametros.max_evidencia_bytes)', () => {
   it('límite de 10 MB igual al bucket', () => expect(MAX_EVIDENCIA_BYTES).toBe(10485760))
   it('justo en el límite pasa; un byte más es muy_grande', () => {
-    expect(validarArchivo({ size: 10485760, type: 'video/mp4' })).toBeNull()
-    expect(validarArchivo({ size: 10485761, type: 'video/mp4' })).toBe('muy_grande')
+    expect(validarArchivo({ size: 10485760, type: 'image/jpeg' })).toBeNull()
+    expect(validarArchivo({ size: 10485761, type: 'image/jpeg' })).toBe('muy_grande')
+  })
+  it('solo fotos: un video se rechaza aunque pese poco; otro tipo tampoco pasa', () => {
+    expect(validarArchivo({ size: 1000, type: 'image/png' })).toBeNull()
+    expect(validarArchivo({ size: 1000, type: 'image/webp' })).toBeNull()
+    expect(validarArchivo({ size: 1000, type: 'video/mp4' })).toBe('solo_fotos')
+    expect(validarArchivo({ size: 1000, type: 'video/quicktime' })).toBe('solo_fotos')
+    expect(validarArchivo({ size: 1000, type: 'application/pdf' })).toBe('tipo_invalido')
   })
   it('mensaje para la persona', () => {
     expect(MENSAJE_ARCHIVO.muy_grande).toBe('El archivo pesa más de 10 MB. Elige uno más ligero o envía sin foto.')
+    expect(MENSAJE_ARCHIVO.solo_fotos).toBe('Por ahora solo fotos: los videos guardan tu ubicación.')
+    expect(MENSAJE_ARCHIVO.tipo_invalido).toMatch(/JPG, PNG o WEBP/)
   })
 })
 

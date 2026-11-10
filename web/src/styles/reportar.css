@@ -41,6 +41,7 @@
 .rp-loc span{display:block;font:var(--t-small);color:var(--mu);overflow-wrap:anywhere}
 .rp-buscar{display:flex;flex-direction:column;gap:8px;background:var(--s1);border:var(--bw) solid var(--line);border-radius:var(--r-btn);padding:12px}
 .rp-buscar-fila{display:flex;gap:8px}
+.rp-buscar-btn{flex:none;min-height:52px;padding:0 16px}
 .rp-buscar input{flex:1;min-width:0;min-height:52px;border:var(--bw) solid var(--line);border-radius:var(--r-field);background:var(--bg);
   color:var(--tx);font:var(--t-body);padding:0 12px}
 .rp-resultados{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}

@@ -44,7 +44,7 @@ export const PRECISION_LUGAR_BUSCADO = 50
 
 // Texto de ubicación: dirección real (Nominatim) o, si no hay, la precisión del GPS.
 export const textoUbicacion = (direccion, precision) =>
-  direccion || (precision ? `Tu ubicación actual ±${Math.round(precision)} m` : 'Tu ubicación actual')
+  direccion || (precision ? `Tu ubicación (GPS) ±${Math.round(precision)} m` : 'Tu ubicación (GPS)')
 
 // Resumen "Tu reporte": tipo, nivel (con patrón), ubicación, foto. `patron` = clase p-bajo|p-medio|p-alto.
 const ICONO_TIPO = { calle: 'calle', casa: 'casa', coche: 'coche', persona_en_riesgo: 'riesgo' }
@@ -57,7 +57,7 @@ export function resumenReporte(rep) {
     { icono: iconoTipo(rep.tipo), texto: TIPO_LARGO[rep.tipo] || 'Reporte' },
     g && { icono: 'barras', texto: g.t, patron: PATRON[g.nivel] },
     { icono: 'pin', texto: textoUbicacion(rep.direccion, rep.precision) },
-    { icono: 'imagen', texto: rep.evidenciaFallo ? 'La foto o video no se subió' : rep.archivo || (rep.evidencia ? 'Con evidencia' : 'Sin foto') },
+    { icono: 'imagen', texto: rep.evidenciaFallo ? 'La foto no se subió' : rep.archivo || (rep.evidencia ? 'Con evidencia' : 'Sin foto') },
   ].filter(Boolean)
 }
 
@@ -284,16 +284,27 @@ export async function seguimientoReporte(id) {
   return { data: { estado: rep.data.estado, ultima: rep.data.ultima_confirmacion, confirmaciones }, error: null }
 }
 
-// Evidencia: foto o video. El contrato v2 acepta .mov (video/quicktime); api.subirEvidencia lo nombraría ".quicktime".
-const EXT_EVIDENCIA = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' }
+// Evidencia: SOLO fotos (privacidad, PR #14). Los videos guardan GPS en sus metadatos y no los limpiamos;
+// el backend los rechaza con `video_deshabilitado`. A las fotos se les quita el EXIF antes de subir.
+const EXT_EVIDENCIA = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
+export const ACEPTA_EVIDENCIA = Object.keys(EXT_EVIDENCIA).join(',')
 export const extensionEvidencia = (mime) => EXT_EVIDENCIA[mime] || null
-export const tipoEvidencia = (mime) => (String(mime).startsWith('video/') ? 'video' : String(mime).startsWith('image/') ? 'foto' : null)
+export const tipoEvidencia = (mime) => (EXT_EVIDENCIA[mime] ? 'foto' : null)
 
 // Refleja parametros.max_evidencia_bytes (y el límite del bucket `evidencias`): 10 MB. Si cambia allá, cambia aquí.
 export const MAX_EVIDENCIA_BYTES = 10485760
-export const MENSAJE_ARCHIVO = { muy_grande: 'El archivo pesa más de 10 MB. Elige uno más ligero o envía sin foto.' }
+export const MENSAJE_ARCHIVO = {
+  muy_grande: 'El archivo pesa más de 10 MB. Elige uno más ligero o envía sin foto.',
+  solo_fotos: 'Por ahora solo fotos: los videos guardan tu ubicación.',
+  tipo_invalido: 'Ese archivo no es una foto. Elige una JPG, PNG o WEBP.',
+}
 // null = sirve; si no, el código del problema (clave de MENSAJE_ARCHIVO).
-export const validarArchivo = (archivo) => (archivo?.size > MAX_EVIDENCIA_BYTES ? 'muy_grande' : null)
+export function validarArchivo(archivo) {
+  const tipo = String(archivo?.type || '')
+  if (tipo.startsWith('video/')) return 'solo_fotos'
+  if (!EXT_EVIDENCIA[tipo]) return 'tipo_invalido'
+  return archivo.size > MAX_EVIDENCIA_BYTES ? 'muy_grande' : null
+}
 
 export async function subirEvidenciaReporte(reporteId, archivo) {
   const ext = extensionEvidencia(archivo.type)

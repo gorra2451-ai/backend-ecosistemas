@@ -3,13 +3,13 @@
 // mireporte, riesgo, error. <ColaReportes/> (reintento de la cola sin señal) se monta en App. HojaEnviado ya no se usa.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApp } from '../lib/store.jsx'
-import { crearReporte, reportesCercanos, mensajeError, misReportes as apiMisReportes, buscarLugar, direccionDe } from '../lib/api.js'
+import { crearReporte, reportesCercanos, mensajeError, misReportes as apiMisReportes, buscarLugar, textoBusqueda } from '../lib/api.js'
 import {
   armarReporte, etiquetaReporte, chipEstado, mensajeEnviado, estadoEnviado, lineaDeTiempo, casoAcudo, haceCuanto,
   linkWhatsApp, textoFamilia, textoRiesgo, encolar, leerCola, quitarDeCola, quitarExif, subirEvidenciaReporte, tipoEvidencia,
   seguimientoReporte, soltarSesion, TIPO_LABEL, TIPOS_REPORTE, GRAVEDAD, pasosStepper, resumenReporte, textoUbicacion,
   unirMisReportes, filaMiReporte, filaCercano, iconoTipo, PRECISION_LUGAR_BUSCADO,
-  validarArchivo, MENSAJE_ARCHIVO, tituloUbicacion, crearCandado,
+  validarArchivo, MENSAJE_ARCHIVO, ACEPTA_EVIDENCIA, tituloUbicacion, crearCandado,
 } from '../lib/reportar.js'
 import { Screen, Btn } from '../components/ui.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
@@ -55,25 +55,24 @@ async function enviar(app, { payload, rep }) {
 }
 
 // Reporte + evidencia elegida ANTES (contrato v2): se sube justo después de crear_reporte.
-// Si la subida falla, el reporte se queda y se avisa. Foto → sin EXIF; video tal cual.
+// Si la subida falla, el reporte se queda y se avisa. Solo fotos, y siempre sin EXIF (privacidad).
 async function enviarConEvidencia(app, armado, archivo) {
   const res = await enviar(app, armado)
   if (res.error || !archivo) return res
   const rep = { ...armado.rep, estado: res.estado }
   if (res.estado === 'cola') {
     app.agregarMiReporte({ ...rep, evidenciaFallo: true })
-    app.avisar('Sin señal: tu reporte se guardó, la foto o video no')
+    app.avisar('Sin señal: tu reporte se guardó, la foto no')
     return res
   }
   let error
   try {
-    const tipo = tipoEvidencia(archivo.type)
-    const limpio = tipo === 'foto' ? await quitarExif(archivo) : archivo
+    const limpio = await quitarExif(archivo)
     error = (await subirEvidenciaReporte(rep.id, limpio)).error
   } catch { error = 'archivo_invalido' }
   if (error) {
     app.agregarMiReporte({ ...rep, evidenciaFallo: true })
-    app.avisar(`Tu reporte se envió, pero la foto o video no se subió (${mensajeError(error).titulo})`)
+    app.avisar(`Tu reporte se envió, pero la foto no se subió (${mensajeError(error).titulo})`)
   } else {
     app.agregarMiReporte({ ...rep, evidencia: tipoEvidencia(archivo.type), archivo: archivo.name })
   }
@@ -245,42 +244,46 @@ export function Paso2() {
   return <Detalles />
 }
 
-// Búsqueda de lugar (Nominatim vía api.buscarLugar, debounce 600 ms).
+// Búsqueda de lugar (Nominatim vía api.buscarLugar). Solo al enviar (Enter o "Buscar"): sus reglas
+// prohíben autocompletar. Es la única forma de reportar sin GPS.
 function BuscarLugar({ onElegir, onCerrar }) {
   const [q, setQ] = useState('')
   const [res, setRes] = useState({ estado: 'idle', lista: [] })
-  useEffect(() => {
-    if (q.trim().length < 3) { setRes({ estado: 'idle', lista: [] }); return }
-    let ok = true
-    const t = setTimeout(async () => {
-      setRes((r) => ({ ...r, estado: 'buscando' }))
-      const { data, error } = await buscarLugar(q)
-      if (ok) setRes({ estado: error ? 'error' : 'listo', lista: data || [] })
-    }, 600)
-    return () => { ok = false; clearTimeout(t) }
-  }, [q])
+  const pedido = useRef(0)
+  useEffect(() => () => { pedido.current++ }, [])
+  const buscar = async (e) => {
+    e.preventDefault()
+    const texto = textoBusqueda(q)
+    const n = ++pedido.current
+    if (!texto) { setRes({ estado: 'corto', lista: [] }); return }
+    setRes((r) => ({ ...r, estado: 'buscando' }))
+    const { data, error } = await buscarLugar(texto)
+    if (n === pedido.current) setRes({ estado: error ? 'error' : 'listo', lista: data || [] })
+  }
   return (
-    <div className="rp-buscar">
+    <form className="rp-buscar" role="search" onSubmit={buscar}>
       <label htmlFor="rp-q"><b>Escribe la ubicación</b></label>
       <div className="rp-buscar-fila">
-        <input id="rp-q" type="search" autoFocus value={q} onChange={(e) => setQ(e.target.value)}
+        <input id="rp-q" type="search" autoFocus value={q} onChange={(e) => setQ(e.target.value)} enterKeyHint="search"
           placeholder="Calle, colonia o lugar" autoComplete="off" />
-        <button className="btn-icon rp-back" aria-label="Cerrar búsqueda" onClick={onCerrar}><Icon name="cerrar" size={20} /></button>
+        <button type="submit" className="btn rp-buscar-btn" disabled={res.estado === 'buscando'}>Buscar</button>
+        <button type="button" className="btn-icon rp-back" aria-label="Cerrar búsqueda" onClick={onCerrar}><Icon name="cerrar" size={20} /></button>
       </div>
       <p className="rp-sub" role="status" aria-live="polite">
         {res.estado === 'buscando' ? 'Buscando…' : res.estado === 'error' ? 'No pudimos buscar ahora. Intenta de nuevo.'
-          : res.estado === 'listo' && !res.lista.length ? 'Sin resultados en la ZMG.' : ''}
+          : res.estado === 'corto' ? 'Escribe al menos 3 letras y toca Buscar.'
+            : res.estado === 'listo' && !res.lista.length ? 'Sin resultados en la ZMG.' : ''}
       </p>
       {!!res.lista.length && (
         <ul className="rp-resultados">
           {res.lista.map((x) => (
             <li key={`${x.lat},${x.lng}`}>
-              <button onClick={() => onElegir(x)}><Icon name="pin" size={20} />{x.nombre}</button>
+              <button type="button" onClick={() => onElegir(x)}><Icon name="pin" size={20} />{x.nombre}</button>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </form>
   )
 }
 
@@ -290,21 +293,13 @@ function Detalles() {
   const [gravedad, setGravedad] = useState(params.gravedad || null)
   const [lugar, setLugar] = useState(params.lugar?.elegido ? params.lugar : null)
   const [editar, setEditar] = useState(false)
-  const [dir, setDir] = useState(null)
   const [buscandoGps, setBuscandoGps] = useState(!ubic.real)
 
   useEffect(() => { if (!ubic.real) pedirUbicacion().catch(() => {}).finally(() => setBuscandoGps(false)) }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  // Dirección real del GPS (Nominatim reverse). Si falla, se queda el texto con la precisión.
-  useEffect(() => {
-    if (!ubic.real || lugar) return
-    let ok = true
-    direccionDe(ubic.lat, ubic.lng).then(({ data }) => { if (ok && data) setDir(data) })
-    return () => { ok = false }
-  }, [ubic.real, ubic.lat, ubic.lng, lugar])
-
-  const punto = lugar || (ubic.real ? { lat: ubic.lat, lng: ubic.lng, precision: ubic.precision, direccion: dir } : null)
+  // PRIVACIDAD: el GPS del dispositivo NO va a Nominatim (tercero). Se muestra "Tu ubicación (GPS) ±N m".
+  const punto = lugar || (ubic.real ? { lat: ubic.lat, lng: ubic.lng, precision: ubic.precision } : null)
   const textoPunto = lugar ? lugar.direccion
-    : ubic.real ? textoUbicacion(dir, ubic.precision)
+    : ubic.real ? textoUbicacion(null, ubic.precision)
     : buscandoGps ? 'Buscando tu ubicación…' : 'No tenemos tu ubicación. Toca el lápiz para escribirla.'
   const elegir = (x) => { setLugar({ lat: x.lat, lng: x.lng, precision: PRECISION_LUGAR_BUSCADO, direccion: x.nombre, elegido: true }); setEditar(false) }
 
@@ -346,7 +341,7 @@ function Detalles() {
 }
 
 // ---------- paso2 · fase 'evidencia' (opcional; se elige ANTES de enviar) ----------
-const ACEPTA = 'image/*,video/mp4,video/webm,video/quicktime'
+// Solo fotos jpeg/png/webp: los videos guardan GPS en sus metadatos (ACEPTA_EVIDENCIA en lib/reportar.js).
 
 function Evidencia() {
   const { ir, params } = useApp()
@@ -365,7 +360,6 @@ function Evidencia() {
     setAviso(problema ? MENSAJE_ARCHIVO[problema] : '')
     if (!problema) setArchivo(f)
   }
-  const esVideo = archivo && tipoEvidencia(archivo.type) === 'video'
   const enviarYa = () => mandar(armarReporte({ tipo, gravedad, ubic: lugar, direccion: lugar?.direccion }), archivo)
 
   return (
@@ -376,15 +370,15 @@ function Evidencia() {
       <p className="rp-lead">Ayuda a que otros vecinos confirmen tu reporte más rápido.</p>
       <button className={'rp-drop' + (archivo ? ' ok' : '')} disabled={enviando} onClick={() => input.current?.click()}>
         <Ico name={archivo ? 'check' : 'imagen'} size={40} stroke={1.8} />
-        <b>{archivo ? (esVideo ? 'Video agregado' : 'Foto agregada') : 'Subir foto o video'}</b>
-        <small>{archivo ? archivo.name : 'Toca para elegir un archivo'}</small>
+        <b>{archivo ? 'Foto agregada' : 'Subir foto'}</b>
+        <small>{archivo ? archivo.name : 'Toca para elegir una foto (JPG, PNG o WEBP)'}</small>
       </button>
-      <input ref={input} type="file" accept={ACEPTA} hidden onChange={elegir} />
+      <input ref={input} type="file" accept={ACEPTA_EVIDENCIA} hidden onChange={elegir} />
       {aviso && <p className="rp-nota" role="alert">{aviso}</p>}
-      {archivo && <button className="btn-text" disabled={enviando} onClick={() => setArchivo(null)}>Quitar archivo</button>}
-      <p className="rp-hint"><Ico name="info" size={20} /><span>Es opcional. Cuida que no se vean caras ni placas.{!esVideo && ' A las fotos les quitamos los datos ocultos (lugar, hora, equipo).'}</span></p>
+      {archivo && <button className="btn-text" disabled={enviando} onClick={() => setArchivo(null)}>Quitar foto</button>}
+      <p className="rp-hint"><Ico name="info" size={20} /><span>Es opcional. Cuida que no se vean caras ni placas. A las fotos les quitamos los datos ocultos (lugar, hora, equipo).</span></p>
       <div className="rp-spacer" />
-      <Estado texto={enviando ? (archivo ? 'Enviando tu reporte y tu archivo…' : 'Enviando tu reporte…') : ''} />
+      <Estado texto={enviando ? (archivo ? 'Enviando tu reporte y tu foto…' : 'Enviando tu reporte…') : ''} />
       <Btn variant="primary" disabled={enviando} onClick={enviarYa}>{archivo ? 'Enviar reporte' : 'Enviar sin foto'}</Btn>
     </Screen>
   )

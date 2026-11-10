@@ -1,18 +1,18 @@
 // MÓDULO C · Mapa (Equipo Mapa · Cauce ZMG). Barra superior con búsqueda, hoja inferior (min/mid/full = "Alertas"),
 // sidebar de escritorio, detalle de alerta (Zona), Buscar y Más. Ronda 3: flujo y copy del equipo; look del design system.
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { useApp } from '../lib/store.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
 import { Screen, PorConfirmar } from '../components/ui.jsx'
 import {
-  zonasPublicas, reportesEnArea, alertasClima, reportesCercanos, bboxAlrededor, mensajeError, buscarLugar, direccionDe,
+  zonasPublicas, reportesEnArea, alertasClima, reportesCercanos, bboxAlrededor, mensajeError, buscarLugar, textoBusqueda, direccionDe,
 } from '../lib/api.js'
 import {
   loCercano, filaCercana, estadoZona, lluviaPara, textoLluvia, distanciaM, formatoDist, hace,
   rutaGoogle, textoWhatsApp, reporteParaConfirmar, textoNivel, RADIO_TU_ZONA_M, nivelV2, categoria, transito,
   leerCapas, suscribirCapas, cambiarCapa, restablecerCapas, capasModificadas, filtrarCapas,
-  centrarEn, debounce, partirLugar,
+  centrarEn, partirLugar,
 } from '../lib/mapa.js'
 import { urlRutaAlterna, grupoMedio } from '../lib/ayuda.js'
 import '../styles/mapa.css'
@@ -461,6 +461,7 @@ function describir({ zona, reporte }) {
   }
 }
 
+// punto = zona o reporte (ubicación ya pública), nunca el GPS del dispositivo.
 function useDireccion(punto) {
   const [dir, setDir] = useState(null)
   useEffect(() => {
@@ -569,6 +570,7 @@ export function Zona() {
 
 // ---------- Buscar un lugar · equipo Mapa, pantalla 4 ----------
 // Nombres del equipo como atajos: al tocarlos se buscan en OpenStreetMap (no guardamos coordenadas propias).
+// Sin autocompletar (reglas de Nominatim): se busca solo al enviar (Enter o "Buscar") o al tocar un atajo.
 const SUGERENCIAS = ['Centro Histórico, Guadalajara', 'Zapopan Centro', 'Colonia Americana', 'Av. López Mateos',
   'Plaza del Sol', 'Expo Guadalajara', 'Parque Revolución', 'Glorieta Minerva']
 
@@ -581,22 +583,25 @@ export function Buscar() {
   const pedido = useRef(0)
   const inputRef = useRef(null)
 
-  const buscar = useMemo(() => debounce(async (texto) => {
+  async function buscar(v) {
+    const texto = textoBusqueda(v)
     const n = ++pedido.current
+    if (!texto) { setRes({ estado: v.trim() ? 'corto' : 'vacio', lista: [] }); return }
+    setRes((r) => ({ ...r, estado: 'buscando' }))
     let r
     try { r = await buscarLugar(texto) } catch { r = { data: null, error: 'sin_red' } }
-    if (n !== pedido.current) return // llegó tarde: ya se escribió otra cosa
+    if (n !== pedido.current) return // llegó tarde: ya se buscó otra cosa
     setRes(r.error ? { estado: 'error', lista: [] } : { estado: 'listo', lista: r.data || [] })
-  }, 600), [])
-  useEffect(() => () => buscar.cancelar(), [buscar])
-  useEffect(() => { inputRef.current?.focus(); if (q) escribir(q) }, []) // eslint-disable-line
+  }
+  useEffect(() => () => { pedido.current++ }, [])
+  useEffect(() => { inputRef.current?.focus(); if (q) buscar(q) }, []) // eslint-disable-line
 
+  // Teclear solo cambia el texto; si se borra todo, vuelven los atajos. No consulta a Nominatim.
   function escribir(v) {
     setQ(v); setLugar(null)
-    if (v.trim().length < 3) { buscar.cancelar(); pedido.current++; setRes({ estado: 'vacio', lista: [] }); return }
-    setRes((r) => ({ ...r, estado: 'buscando' }))
-    buscar(v)
+    if (!v.trim()) { pedido.current++; setRes({ estado: 'vacio', lista: [] }) }
   }
+  const atajo = (s) => { setQ(s); setLugar(null); buscar(s) }
   const elegir = (l) => { setLugar(l); centrarEn(l) }
   const cancelar = () => (q ? (escribir(''), inputRef.current?.focus()) : ir(null))
 
@@ -605,13 +610,14 @@ export function Buscar() {
 
   return (
     <Screen titulo="Buscar un lugar" label="Buscar un lugar">
-      <form className="mp-buscar" role="search" onSubmit={(e) => { e.preventDefault(); inputRef.current?.blur() }}>
+      <form className="mp-buscar" role="search" onSubmit={(e) => { e.preventDefault(); inputRef.current?.blur(); buscar(q) }}>
         <label className="mp-buscar-campo">
           <IcoLupa />
           <span className="sr-only">Buscar dirección, colonia o lugar</span>
           <input ref={inputRef} type="search" value={q} onChange={(e) => escribir(e.target.value)} enterKeyHint="search"
             placeholder="Buscar dirección, colonia o lugar" autoComplete="off" />
         </label>
+        <button type="submit" className="btn-text mp-cancelar" disabled={res.estado === 'buscando'}>Buscar</button>
         <button type="button" className="btn-text mp-cancelar" onClick={cancelar}>Cancelar</button>
       </form>
 
@@ -637,6 +643,7 @@ export function Buscar() {
       ) : (
         <div aria-live="polite">
           {res.estado === 'buscando' && <p className="mp-cargando" role="status">Buscando…</p>}
+          {res.estado === 'corto' && <p className="mp-aviso">Escribe al menos 3 letras y toca Buscar.</p>}
           {res.estado === 'error' && <p className="mp-aviso">No pudimos buscar. Revisa tu conexión y vuelve a intentar.</p>}
           {res.estado === 'listo' && !res.lista.length && <p className="mp-aviso">No encontramos ese lugar en la zona metropolitana de Guadalajara.</p>}
           {res.estado === 'listo' && res.lista.length > 0 && (
@@ -655,10 +662,10 @@ export function Buscar() {
           )}
           {res.estado === 'vacio' && (
             <>
-              <p className="mp-cargando">Escribe al menos 3 letras, o elige un lugar:</p>
+              <p className="mp-cargando">Escribe al menos 3 letras y toca Buscar, o elige un lugar:</p>
               <ul className="mp-res">
                 {SUGERENCIAS.map((s) => (
-                  <li key={s}><button type="button" onClick={() => escribir(s)}><Icon name="pin" size={22} /><span><b>{s}</b></span></button></li>
+                  <li key={s}><button type="button" onClick={() => atajo(s)}><Icon name="pin" size={22} /><span><b>{s}</b></span></button></li>
                 ))}
               </ul>
             </>

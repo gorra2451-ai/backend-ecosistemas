@@ -3,7 +3,7 @@
 import { supabase } from './supabase.js'
 
 const CODIGOS = [ // códigos reales de supabase/migrations (los más largos primero: se busca por substring)
-  'reporte_no_autorizado', 'proveedor_push_no_permitido', 'tipo_archivo_invalido', 'area_demasiado_grande',
+  'reporte_no_autorizado', 'proveedor_push_no_permitido', 'video_deshabilitado', 'tipo_archivo_invalido', 'area_demasiado_grande',
   'parametros_invalidos', 'limite_suscripciones', 'suscripcion_en_uso', 'duplicado_cercano', 'limite_evidencias',
   'reporte_no_activo', 'reporte_no_existe', 'archivo_no_existe', 'archivo_invalido', 'limite_entradas',
   'limite_por_hora', 'motivo_requerido', 'estado_invalido', 'propio_reporte', 'no_autorizado', 'fuera_de_zmg',
@@ -27,6 +27,8 @@ const MENSAJES = {
   sin_sesion: { titulo: 'Se cerró tu sesión anónima', texto: 'Abrimos una nueva sin pedirte datos y enviamos tu reporte.' },
   sin_red: { titulo: 'No hay señal', texto: 'Tu acción se guardó y se envía sola cuando vuelva la conexión.' },
   limite_entradas: { titulo: 'Demasiadas entradas en una hora', texto: 'Espera unos minutos y vuelve a intentar.' },
+  video_deshabilitado: { titulo: 'Por ahora solo fotos: los videos guardan tu ubicación.', texto: 'Elige una foto (JPG, PNG o WEBP) o envía sin foto.' },
+  reporte_no_activo: { titulo: 'Este reporte ya cerró: no se puede confirmar.', texto: 'Puedes revisar el mapa para ver los reportes activos cerca de ti.' },
 }
 export function mensajeError(codigo) {
   return MENSAJES[codigo] || { titulo: 'Algo salió mal', texto: 'Vuelve a intentar en un momento. Si es emergencia, llama al 911.' }
@@ -74,8 +76,9 @@ export async function crearReporte({ id, tipo, pasanCarros, gravedad, lat, lng, 
 }
 export async function misReportes() { await asegurarSesion(); return r(supabase.rpc('mis_reportes')) }
 export async function subirEvidencia(reporteId, archivo) {
+  if (String(archivo.type).startsWith('video/')) return { data: null, error: 'video_deshabilitado' } // solo fotos (privacidad)
   const ext = (archivo.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg')
-  const tipo = archivo.type.startsWith('video') ? 'video' : 'foto'
+  const tipo = 'foto'
   const ruta = `${reporteId}/${crypto.randomUUID()}.${ext}`
   const up = await r(supabase.storage.from('evidencias').upload(ruta, archivo, { contentType: archivo.type, upsert: false }))
   if (up.error) return up
@@ -136,12 +139,18 @@ export function etiquetaLugar(x) {
   const muni = a.city || a.town || a.municipality || a.village || ''
   return [calle || x?.name, a.suburb, muni].filter(Boolean).join(', ') || x?.display_name || ''
 }
+// Política de Nominatim: nada de autocompletar. Las pantallas llaman a buscarLugar SOLO al enviar
+// (Enter o botón "Buscar"), nunca mientras se teclea. textoBusqueda: texto recortado o null si < 3 letras.
+export const textoBusqueda = (q) => { const t = String(q ?? '').trim(); return t.length >= 3 ? t : null }
 export async function buscarLugar(q) {
-  if (!q || q.trim().length < 3) return { data: [], error: null }
-  const u = `${NOMI}/search?format=jsonv2&addressdetails=1&countrycodes=mx&viewbox=-103.60,20.85,-103.15,20.45&bounded=1&limit=5&q=${encodeURIComponent(q.trim())}`
+  const t = textoBusqueda(q)
+  if (!t) return { data: [], error: null }
+  const u = `${NOMI}/search?format=jsonv2&addressdetails=1&countrycodes=mx&viewbox=-103.60,20.85,-103.15,20.45&bounded=1&limit=5&q=${encodeURIComponent(t)}`
   const { data, error } = await nomi(u)
   return { data: (data || []).map((x) => ({ nombre: etiquetaLugar(x), lat: +x.lat, lng: +x.lon })), error }
 }
+// PRIVACIDAD: solo coordenadas de reportes (o zonas), nunca del dispositivo. La ubicación de un reporte
+// ya es pública; la del GPS de la persona no se manda a terceros (se muestra "Tu ubicación (GPS)").
 export async function direccionDe(lat, lng) {
   const { data, error } = await nomi(`${NOMI}/reverse?format=jsonv2&addressdetails=1&zoom=18&lat=${lat}&lon=${lng}`)
   return { data: data ? etiquetaLugar(data) : null, error }
