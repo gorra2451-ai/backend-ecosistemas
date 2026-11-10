@@ -1,51 +1,52 @@
 # HANDOFF — Estado actual
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
-**Última actualización:** 2026-11-10 tarde · Diego (con Claude Code)
-**Meta:** mid-fi de ¡Aguas! el 2026-11-11 a las 12:00 (liga para que los equipos testeen)
-**Rama activa:** `feat/f5-t3-front-midfi-web` → PR #14 (front `web/` + backend v2). `main` tiene PR #12 y #13.
+**Última actualización:** 2026-11-10 noche · Diego (con Claude Code)
+**Meta:** mid-fi de ¡Aguas! el 2026-11-11 a las 12:00. La maestra manda la liga a personas distintas,
+repartidas por la ZMG → la liga va con **`?prueba=1`**: https://aguas-zmg.netlify.app/?prueba=1
+**Rama activa:** `feat/f5-t3-front-midfi-web` → PR #14 (front `web/` + backend v2 + D-022). Falta aprobación de Leo.
 
 ## Dónde quedamos
-- **Manda lo validado por los equipos (D-021).** Material en `../06_Prototipos_Equipos/` (5 equipos + `admin.html`).
-- Backend v2 local: 4 migraciones `20261110000000..000300`, `supabase test db` 461/461. **No está en la nube.**
-- Front: 5 módulos con los flujos de los equipos y el look del design system; 115/115 vitest; en navegador
-  solo se probó la ronda 1. Netlify (`aguas-zmg`) sigue con la ronda 1.
-- Auth anónima remota: aceptada solo para los testeos (D-019) pero **aún apagada**.
+- Recorrido local completo en Chrome (escritorio + móvil 390 px, claro/oscuro/contraste): registro → reportar →
+  5 confirmaciones → zona activa en el mapa por Realtime. ~20 bugs corregidos (ver PROGRESO 2026-11-10 noche).
+- Modo prueba `?prueba=1` (D-022): "Cerca de ti" lista toda la ZMG y se confirma sin estar cerca.
+- Migración TEMPORAL `20261110192439_parametros_midfi` (D-022): radio 40000, ventana 1440, expiración 180;
+  `confirmaciones_para_publicar` sigue en 5. Local: `supabase test db` 465/465 · vitest 143/143 · build OK.
+- **Nada de esto está en la nube todavía.** Netlify sigue con la ronda 1. Auth anónima remota apagada.
 
 ## Siguiente paso (en este orden)
-1. LeoFigo74z aprueba PR #14 desde SU cuenta → merge (`gh pr merge 14 --merge`).
-2. Desde `main`: `supabase db push` (4 migraciones) → `bash scripts/probar-nube.sh`.
-3. Diego enciende Auth anónima (Dashboard → Sign In/Providers) y límite 30/h por IP.
+1. LeoFigo74z aprueba PR #14 desde SU cuenta (prompt que le mandó Diego).
+2. `gh pr merge 14 --merge` → `git checkout main && git pull` → `supabase db push` (5 migraciones)
+   → `bash scripts/probar-nube.sh`.
+3. Diego enciende Auth anónima (Authentication → Sign In / Providers) y revisa el límite por IP (Rate Limits).
 4. `cd web && npm run build && netlify deploy --prod --dir dist --site c8abb1d6-9180-4a14-9de8-9ee8894045be --no-build`.
-5. Recorrer la liga en móvil y escritorio, temas claro/oscuro/contraste: reportar → 5 confirmaciones → mapa.
-6. Panel de administración desde `admin.html` (reportes, zona, estadísticas, participación, inteligencia,
-   config, CSV) con RPC de admin + migración de estadísticas solo-admin. Sin métricas inventadas
-   (tiempo de respuesta, evacuados, afectados, "enviado al 911").
-7. Diego decide los DUPLICADOS de abajo y se eliminan.
+5. Humo en la nube con 2 celulares: liga con `?prueba=1` → reportar en uno → confirmar desde Reportes → "Cerca de ti"
+   en el otro. Probar Safari iPhone (colores de zonas) y Realtime.
+6. Después del testeo: **revertir D-022** (nueva migración 1000/60/30; `0000_base` a 30; quitar bloque D-022 de
+   `0200_confirmacion` y `1800_validado_equipos`).
+7. Panel de admin desde `admin.html` (sin métricas inventadas) y los DUPLICADOS de abajo.
+
+## Decisiones abiertas de Diego
+- Nivel de zona sale de confirmaciones (D-021): quien reporta "Medio" ve "Bajo". Confunde.
+- Front con números fijos (5/10/15/20, `MIN_ATENUAR=60`): leerlos de `parametros` antes de bajar el 5.
+- "Mis avisos" por municipio promete zona nueva/despejada/cierres; solo entrega lluvia fuerte.
+- Municipio dice "detectado" y nunca se detecta. "Modo voz" promete leer alertas y no lo hace (ver abajo).
+- Reportar con voz NO existe; solo "Responder con voz" en Confirmar (Chrome/Android; iOS parcial).
 
 ## DUPLICADOS para decidir (cuál se queda)
-- Permisos: Registro paso 3 · Avisos→Preferencias (activar push) · ubicación del Mapa.
-- Accesibilidad: Registro paso 4 · Ajustes (Avisos).
-- Medio de transporte: Registro "medio de hoy" · Monitoreo vial Manejo/Camino/Camión (Avisos) · Más (Mapa).
-- Listas de cercanos: "Lo cercano" (Mapa) · "Reportes de otros vecinos" (Mis reportes) · "Vías cercanas"
-  (Avisos) · tarjeta "cerca de ti" (Mapa/Inicio).
-- Seguimiento de mi reporte: sondeo en Confirmación · Mis reportes / Mi reporte.
-- 911: pantalla roja `riesgo` · aviso 911 dentro de Detalles (HTML del equipo).
-- Ayuda: pestaña "Ayuda"/"Me pasó algo" · "¿A quién acudo?" del Mapa. Pantalla `alertas` (Avisos) vs
-  "Todas las alertas" (hoja del Mapa).
-- Rutas alternativas: Inicio · detalle de zona · ¿Puedo pasar?
-- `Inicio` ya no está en la barra (Mapa·Reportes·Ayuda, HTML del equipo): solo aparece tras el registro.
-- Código: "hace X" ×3, distancia ×2, link de ruta ×2, texto de nivel ×2, `hablar()` ×2,
-  `elegirCercano` vs `reporteParaConfirmar`; `HojaEnviado` muerto; `MUNICIPIOS_ZMG` sin uso.
+- Permisos: Registro paso 3 · Avisos→Preferencias · ubicación del Mapa. Accesibilidad: Registro paso 4 · Ajustes.
+- Medio de transporte: Registro · Monitoreo vial (Avisos) · Más (Mapa).
+- Listas de cercanos: "Lo cercano" · "Reportes de otros vecinos" · "Vías cercanas" · tarjeta "cerca de ti".
+- Seguimiento de mi reporte: sondeo en Confirmación · Mis reportes / Mi reporte. 911: pantalla `riesgo` · Detalles.
+- Ayuda: pestaña "Ayuda" · "¿A quién acudo?" del Mapa. `alertas` vs "Todas las alertas". Rutas alternativas ×3.
+- Código: "hace X" ×3, distancia ×2, `hablar()` ×2, `elegirCercano` vs `reporteParaConfirmar`, `HojaEnviado` muerto.
 
 ## Abiertos que cambian contrato
-- `solo_fuertes` no avisa si una zona sube de bajo a alto (no hay aviso de "escaló").
-- P-34: fuente oficial del 071 de CFE. Push: Edge Functions, VAPID y Vault sin configurar en la nube.
+- `solo_fuertes` no avisa si una zona escala. P-34: fuente oficial del 071 de CFE. Push: VAPID/Vault sin configurar.
 
 ## No olvidar
 - `bash scripts/sync.sh` al iniciar; git solo con `scripts/` (sin trailers de co-autor).
 - Pruebas: `supabase db reset && supabase test db`; front: `cd web && npm run build && npx vitest run`.
-- Supabase local con API: `supabase start -x studio,imgproxy,inbucket,analytics,vector,pooler,edge-runtime`;
-  front contra local: `VITE_SUPABASE_URL=http://127.0.0.1:55421 VITE_SUPABASE_KEY=<publishable local> npx vite`.
-- `?demo=1` en la liga muestra "Probar aviso de confirmación". Nunca `supabase config push`.
-- Diseño: canvas https://claude.ai/artifact/AyPk2ZURShcyQLpP6gVKGk (tokens en `web/src/styles/tokens.css`).
+- Front contra local: `VITE_SUPABASE_URL=http://127.0.0.1:55421 VITE_SUPABASE_KEY=<publishable local> npx vite`.
+- `?demo=1` = botón "Probar aviso de confirmación"; `?prueba=1` = modo prueba (`?prueba=0` lo apaga).
+- Nunca `supabase config push`. Diseño: https://claude.ai/artifact/AyPk2ZURShcyQLpP6gVKGk
