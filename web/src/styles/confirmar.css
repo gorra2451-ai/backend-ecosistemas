@@ -24,14 +24,46 @@
 .confirm-voz.activo{border-color:var(--acc);color:var(--acc)}
 .confirm-voz-msg{font:var(--t-small);margin:0;min-height:0}
 .confirm-voz-msg:empty{display:none}
-/* "Omitir" y "Es falso": enlaces separados y menos prominentes que "Ya no" (P-27 + auditoría del canvas). */
+/* "Omitir" / "Volver": enlaces menos prominentes que "Ya no" (equipo). "Es falso" vive en "¿Qué pasó en esta calle?". */
 .confirm-links{display:flex;justify-content:space-between;gap:var(--sp3);margin-top:var(--sp1)}
 .confirm-link{min-height:48px;padding:0 var(--sp2);border:0;background:transparent;
   color:var(--bg);font-size:15px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
-.confirm-bar>i.pausa{animation-play-state:paused}
 .confirm-probar{min-height:48px;border:0;background:transparent;color:var(--acc);font:700 15px var(--f-body);
   text-decoration:underline;cursor:pointer;padding:0 var(--sp2)}
 .confirm-probar:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+
+/* ---- Ronda 3 (flujo del Equipo 4 con el look del design system) ---- */
+.cf-card{max-height:calc(100% - 8px);overflow:auto}
+.cf-card h2{font:800 30px/1.08 var(--f-head);margin:0}
+.cf-etq{display:flex;align-items:center;gap:6px;font:var(--t-overline);letter-spacing:.12em;text-transform:uppercase;margin:0;opacity:.85}
+.cf-etq-alerta{opacity:1}
+.cf-calle,.cf-hora,.cf-nota{font:var(--t-small);margin:0}
+.cf-hora,.cf-nota{opacity:.85}
+.cf-calle b{font-weight:700}
+.cf-insignia{display:flex;align-items:center;gap:6px;font:700 15px/1.3 var(--f-body);margin:0}
+.cf-insignia svg{flex:none}
+.cf-insignia.antigua{opacity:.62}
+.cf-badges{display:flex;flex-wrap:wrap;gap:var(--sp2)}
+.cf-badge{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:2px 10px;border-radius:var(--r-pill);
+  border:2px solid color-mix(in srgb,var(--bg) 40%,transparent);font:700 14px var(--f-body)}
+.cf-sw{display:inline-block;width:16px;height:16px;border-radius:5px}
+.cf-sw-critico{background-color:var(--risk);background-image:repeating-linear-gradient(45deg,var(--bg) 0 2px,transparent 2px 6px),
+  repeating-linear-gradient(-45deg,var(--bg) 0 2px,transparent 2px 6px)}
+.confirm-no{padding:0 var(--sp4);text-align:center}
+.cf-centro{justify-content:center}
+.cf-final{display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--sp3)}
+.cf-final h2:focus{outline:none}
+.cf-final .confirm-si{align-self:stretch;margin-top:var(--sp2)}
+.cf-circulo{display:grid;place-items:center;width:72px;height:72px;border-radius:50%;background:var(--acc);color:var(--accTx)}
+.cf-impacto{font:var(--t-h3);margin:0}
+/* Vehículo en movimiento: solo lectura y voz; sin velo, el mapa sigue visible. */
+.overlay.cf-pasivo{background:transparent;pointer-events:none}
+.cf-pasivo .confirm{pointer-events:auto}
+.cf-bar-pasiva{animation-duration:20s!important}
+.cf-voz{display:flex;align-items:center;gap:10px;min-height:56px;padding:var(--sp2) var(--sp4);border-radius:18px;
+  border:2px solid color-mix(in srgb,var(--bg) 45%,transparent);font:700 16px/1.3 var(--f-body)}
+.cf-voz svg{flex:none}
+.cf-voz.activo{border-color:var(--acc)}
 
 @media (prefers-reduced-motion:reduce){ .confirm,.confirm-bar>i{animation:none} }
 [data-a11y~=motion] .confirm-bar>i{animation:none!important}

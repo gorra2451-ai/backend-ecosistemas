@@ -4,6 +4,7 @@ import {
   pasanCarrosPara, armarReporte, casoAcudo, chipEstado, lineaDeTiempo, etiquetaReporte,
   linkMaps, linkWhatsApp, textoFamilia, leerCola, encolar, quitarDeCola, medidasMax, haceCuanto,
   GRAVEDAD_CALLE, pasanCarrosDeGravedad, pasosStepper, resumenReporte,
+  unirMisReportes, filaMiReporte, filaCercano, textoUbicacion, extensionEvidencia, tipoEvidencia, estadoEnviado, mensajeEnviado,
 } from './reportar.js'
 
 const memoria = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) } }
@@ -35,7 +36,7 @@ describe('armarReporte', () => {
 
 describe('etiquetas y estado', () => {
   it('etiqueta tipo · detalle', () => {
-    expect(etiquetaReporte({ tipo: 'casa', detalle: 'rodilla' })).toBe('Mi casa · Agua a las rodillas')
+    expect(etiquetaReporte({ tipo: 'casa', detalle: 'rodilla' })).toBe('Casa inundada · Agua a las rodillas')
     expect(etiquetaReporte({ tipo: 'persona_en_riesgo' })).toBe('Persona en riesgo')
   })
   it('caso de ¿A quién acudo? solo para casa y coche', () => {
@@ -97,7 +98,7 @@ describe('medidasMax (foto ≤ 1600 px)', () => {
 
 describe('ronda 2 · flujo del Equipo Reporte', () => {
   it('gravedad de calle → p_pasan_carros (solo "Paso bloqueado" manda false)', () => {
-    expect(GRAVEDAD_CALLE.map((g) => g.k)).toEqual(['bloqueado', 'limitado', 'sin_riesgo'])
+    expect(GRAVEDAD_CALLE.map((g) => `${g.t}:${g.k}`)).toEqual(['Bajo:sin_riesgo', 'Medio:limitado', 'Alto:bloqueado'])
     expect(pasanCarrosDeGravedad('bloqueado')).toBe(false)
     expect(pasanCarrosDeGravedad('limitado')).toBe(true)
     expect(pasanCarrosDeGravedad('sin_riesgo')).toBe(true)
@@ -112,14 +113,66 @@ describe('ronda 2 · flujo del Equipo Reporte', () => {
     expect(pasosStepper(3).map((p) => p.k)).toEqual(['done', 'done', 'done', 'done'])
     expect(pasosStepper(1)[1].label).toBe('Detalles')
   })
-  it('resumen: tipo, ubicación con precisión, gravedad y foto', () => {
-    expect(resumenReporte({ tipo: 'calle', detalle: 'bloqueado', precision: 12.4, foto: true }).map((x) => x.texto))
-      .toEqual(['Calle', 'Tu ubicación al reportar (±12 m)', 'Paso bloqueado', 'Con foto (sin datos ocultos)'])
-    expect(resumenReporte({ tipo: 'casa' }).map((x) => x.texto)).toEqual(['Mi casa', 'Tu ubicación al reportar'])
+  it('resumen: tipo, nivel con patrón, dirección o precisión, foto', () => {
+    expect(resumenReporte({ tipo: 'calle', gravedad: 'bloqueado', direccion: 'Av. Patria 123, Zapopan', archivo: 'a.jpg' }))
+      .toEqual([
+        { icono: 'calle', texto: 'Calle inundada' }, { icono: 'barras', texto: 'Alto', patron: 'p-alto' },
+        { icono: 'pin', texto: 'Av. Patria 123, Zapopan' }, { icono: 'imagen', texto: 'a.jpg' },
+      ])
+    expect(resumenReporte({ tipo: 'casa', precision: 12.4 }).map((x) => x.texto)).toEqual(['Casa inundada', 'Tu ubicación actual ±12 m', 'Sin foto'])
+    expect(resumenReporte({ tipo: 'casa', evidenciaFallo: true }).at(-1).texto).toBe('La foto o video no se subió')
     expect(resumenReporte(null)).toEqual([])
   })
   it('texto para la familia según gravedad', () => {
     expect(textoFamilia({ tipo: 'calle', detalle: 'bloqueado', lat: 1, lng: 2 })).toMatch(/^Se inundó la calle, no se puede pasar\./)
     expect(textoFamilia({ tipo: 'calle', detalle: 'sin_riesgo', lat: 1, lng: 2 })).toMatch(/^Se inundó la calle\. Aquí/)
+  })
+})
+
+describe('ronda 3 · HTML validado del Equipo Reporte + contrato v2', () => {
+  it('armarReporte con gravedad: la manda y deduce pasan_carros; guarda dirección', () => {
+    const { payload, rep } = armarReporte({ tipo: 'casa', gravedad: 'bloqueado', ubic, direccion: 'Av. X', id: 'g', ahora: 1 })
+    expect(payload).toEqual({ id: 'g', tipo: 'casa', pasanCarros: false, gravedad: 'bloqueado', lat: ubic.lat, lng: ubic.lng, precision: 8 })
+    expect(rep).toMatchObject({ gravedad: 'bloqueado', detalle: 'bloqueado', direccion: 'Av. X' })
+    expect(armarReporte({ tipo: 'calle', gravedad: 'sin_riesgo', ubic, id: 'h' }).payload.pasanCarros).toBe(true)
+  })
+  it('texto de ubicación: dirección o precisión', () => {
+    expect(textoUbicacion('Av. Patria 123', 9)).toBe('Av. Patria 123')
+    expect(textoUbicacion(null, 9.6)).toBe('Tu ubicación actual ±10 m')
+    expect(textoUbicacion(null, 0)).toBe('Tu ubicación actual')
+  })
+  it('evidencia: extensión (incluye .mov) y tipo', () => {
+    expect(extensionEvidencia('video/quicktime')).toBe('mov')
+    expect(extensionEvidencia('image/jpeg')).toBe('jpg')
+    expect(extensionEvidencia('application/pdf')).toBe(null)
+    expect(tipoEvidencia('video/mp4')).toBe('video')
+    expect(tipoEvidencia('image/png')).toBe('foto')
+  })
+  it('enviado: copy honesto según estado', () => {
+    expect(mensajeEnviado('pendiente')).toBe('Tu reporte ya está en el mapa. Te avisamos cuando lo confirmen.')
+    expect(estadoEnviado('pendiente')).toBe('Sin confirmar · esperando a otros vecinos')
+    expect(estadoEnviado('cola')).toMatch(/En cola/)
+  })
+  it('unirMisReportes: servidor manda, local aporta dirección y lo que el servidor no tiene', () => {
+    const local = [
+      { id: 'a', tipo: 'casa', estado: 'pendiente', direccion: 'Av. A', creado: 1000 },
+      { id: 'c', tipo: 'calle', estado: 'cola', creado: 3000 },
+    ]
+    const srv = [{ id: 'a', tipo: 'casa', gravedad: 'limitado', estado: 'activo', confirmaciones_si: 6, nivel: 'bajo', creado_en: new Date(2000).toISOString() }]
+    const l = unirMisReportes(srv, local)
+    expect(l.map((r) => r.id)).toEqual(['c', 'a'])
+    expect(l[1]).toMatchObject({ estado: 'activo', direccion: 'Av. A', confirmacionesSi: 6, nivel: 'bajo', creado: 2000 })
+    expect(unirMisReportes(null, local).map((r) => r.id)).toEqual(['c', 'a'])
+  })
+  it('filaMiReporte: estado, confirmaciones, nivel con patrón y hace cuánto', () => {
+    const f = filaMiReporte({ tipo: 'coche', estado: 'pendiente', confirmacionesSi: 1, creado: 1 }, 5 * 60000)
+    expect(f).toEqual({ titulo: 'Coche atrapado', estado: 'Esperando 5 confirmaciones', confirmaciones: '1 confirmación “sí”', nivel: null, hace: 'hace 5 min' })
+    expect(filaMiReporte({ tipo: 'calle', estado: 'activo', nivel: 'critico', confirmacionesSi: 21 }).nivel).toEqual({ texto: 'Nivel crítico', patron: 'p-alto' })
+    expect(filaMiReporte({ tipo: 'calle', estado: 'en_revision' }).estado).toBe('En revisión')
+  })
+  it('filaCercano: distancia, estado y nivel', () => {
+    const f = filaCercano({ tipo: 'calle', distancia_m: 120.4, estado: 'pendiente', gravedad: 'bloqueado', ultima_confirmacion: null, creado_en: new Date(0).toISOString() }, 7 * 60000)
+    expect(f).toEqual({ titulo: 'Calle inundada', lugar: 'A 120 m de ti', estado: 'Sin confirmar', nivel: { texto: 'Alto', patron: 'p-alto' }, hace: 'Actualizado hace 7 min' })
+    expect(filaCercano({ tipo: 'casa', estado: 'activo', nivel: 'medio' }).nivel).toEqual({ texto: 'Medio', patron: 'p-medio' })
   })
 })

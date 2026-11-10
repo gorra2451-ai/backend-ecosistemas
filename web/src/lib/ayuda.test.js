@@ -8,7 +8,11 @@ describe('normalizarCaso', () => {
     expect(normalizarCaso('casa')).toBe('casa')
     expect(normalizarCaso('persona_herida')).toBe('persona_herida')
     expect(normalizarCaso('herida')).toBe('persona_herida')
-    expect(normalizarCaso('calle')).toBe('otro')
+    expect(normalizarCaso('calle')).toBe('calle')
+    expect(normalizarCaso('carro')).toBe('coche')
+    expect(normalizarCaso('luz')).toBe('riesgo_electrico')
+    expect(normalizarCaso('arbol')).toBe('arbol_caido')
+    expect(normalizarCaso('raro')).toBe('otro')
     expect(normalizarCaso(undefined)).toBe('otro')
   })
 })
@@ -49,7 +53,7 @@ describe('push', () => {
 describe('alertas de clima', async () => {
   const { nivelAlerta, textoHace, textoVigencia, mensajeAlerta, urlWhatsApp, urlSms, silenciado, DOS_HORAS_MS } = await import('./ayuda.js')
   it('nivel con número y palabra, cae en bajo si no lo conoce', () => {
-    expect(nivelAlerta('alto').texto).toBe('Nivel 3 de 3 · Alto')
+    expect(nivelAlerta('alto').texto).toBe('Nivel 3 de 3 (intensa)')
     expect(nivelAlerta('medio').num).toBe(2)
     expect(nivelAlerta('raro').clave).toBe('bajo')
   })
@@ -67,7 +71,7 @@ describe('alertas de clima', async () => {
   })
   it('mensaje y enlaces para compartir', () => {
     const m = mensajeAlerta({ titulo: 'Lluvia fuerte', municipio: 'Zapopan', nivel: 'alto', fuente: 'SMN' }, 'https://x.mx')
-    expect(m).toBe('¡Aguas! Lluvia fuerte en Zapopan (nivel 3 de 3 · alto). Fuente: SMN. https://x.mx')
+    expect(m).toBe('¡Aguas! Lluvia fuerte en Zapopan (nivel 3 de 3, intensa). Fuente: SMN. https://x.mx')
     expect(urlWhatsApp('a b')).toBe('https://wa.me/?text=a%20b')
     expect(urlSms('a&b')).toBe('sms:?&body=a%26b')
   })
@@ -75,5 +79,62 @@ describe('alertas de clima', async () => {
     expect(silenciado({ silencioHasta: 1000 + DOS_HORAS_MS }, 1000)).toBe(true)
     expect(silenciado({ silencioHasta: 500 }, 1000)).toBe(false)
     expect(silenciado({}, 1000)).toBe(false)
+  })
+})
+
+describe('ronda 3 · me pasó algo', async () => {
+  const { SITUACIONES, CASOS_EQUIPO, mensajeLlamada, urlUbicacion, mensajeUbicacion } = await import('./ayuda.js')
+  it('los 6 casos del equipo tienen situación y solo CFE trae teléfono propio', () => {
+    expect(CASOS_EQUIPO).toHaveLength(6)
+    CASOS_EQUIPO.forEach((c) => expect(SITUACIONES[c].say).toBeTruthy())
+    expect(CASOS_EQUIPO.filter((c) => SITUACIONES[c].tel)).toEqual(['riesgo_electrico'])
+  })
+  it('qué decir al llamar', () => {
+    expect(mensajeLlamada({ say: 'hay una persona herida', lugar: 'Zapopan', personas: 2 }))
+      .toBe('Estoy en Zapopan. Hay una persona herida. Somos 2 personas.')
+    expect(mensajeLlamada({ say: 'x' })).toBe('X. Somos 1 persona.')
+  })
+  it('ubicación para WhatsApp', () => {
+    expect(urlUbicacion(20.123456, -103.4)).toBe('https://www.google.com/maps?q=20.12346,-103.40000')
+    expect(mensajeUbicacion('Hola.', 1, 2)).toBe('Hola. Mi ubicación: https://www.google.com/maps?q=1.00000,2.00000')
+  })
+})
+
+describe('ronda 3 · calles y ¿puedo pasar?', async () => {
+  const { grupoMedio, puedoPasar, viasCercanas, claseNivel, urlRutaAlterna, argsPreferencias } = await import('./ayuda.js')
+  it('medio → vista', () => {
+    expect(grupoMedio('moto')).toBe('manejo')
+    expect(grupoMedio('bici')).toBe('camino')
+    expect(grupoMedio('transporte_publico')).toBe('camion')
+    expect(grupoMedio(undefined)).toBe('camino')
+  })
+  it('veredicto por nivel y gravedad (gana lo peor)', () => {
+    expect(puedoPasar({ nivel: 'critico' })).toBe('no')
+    expect(puedoPasar({ nivel: 'bajo', gravedad: 'bloqueado' })).toBe('no')
+    expect(puedoPasar({ nivel: 'medio' })).toBe('precaucion')
+    expect(puedoPasar({ nivel: 'bajo', gravedad: 'limitado' })).toBe('precaucion')
+    expect(puedoPasar({ nivel: 'bajo', gravedad: 'sin_riesgo' })).toBe('si')
+    expect(claseNivel('critico')).toBe('ay-p-critico')
+    expect(claseNivel('medio')).toBe('p-medio')
+  })
+  it('vías cercanas: zonas enriquecidas, filtradas y ordenadas', () => {
+    const ubic = { lat: 20.65, lng: -103.4 }
+    const zonas = [
+      { celda: 'a', lat: 20.66, lng: -103.4, nivel: 'bajo', total_reportes: 5 },
+      { celda: 'b', lat: 20.651, lng: -103.4, nivel: 'bajo', total_reportes: 6 },
+      { celda: 'lejos', lat: 21, lng: -103.4, nivel: 'alto' },
+    ]
+    const reportes = [{ id: 1, estado: 'activo', tipo: 'calle', lat: 20.6511, lng: -103.4, gravedad: 'bloqueado' }]
+    const v = viasCercanas({ zonas, reportes, ubic })
+    expect(v.map((x) => x.id)).toEqual(['zb', 'za'])
+    expect(v[0].veredicto).toBe('no')
+    expect(v[1].veredicto).toBe('si')
+    const sinZonas = viasCercanas({ zonas: [], reportes: [...reportes, { id: 2, estado: 'pendiente', tipo: 'calle', lat: 20.65, lng: -103.4 }], ubic })
+    expect(sinZonas.map((x) => x.id)).toEqual(['r1'])
+  })
+  it('ruta alterna y preferencias push', () => {
+    expect(urlRutaAlterna({ lat: 1, lng: 2 }, 'camion')).toBe('https://www.google.com/maps/dir/?api=1&origin=1,2&travelmode=transit')
+    expect(argsPreferencias({ soloCambios: true, silencioHasta: 1000 + 90 * 60000 }, 1000)).toEqual({ soloCambios: true, soloFuertes: false, silenciarMin: 90 })
+    expect(argsPreferencias({ soloFuertes: true }, 1000).silenciarMin).toBe(0)
   })
 })

@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
   distanciaM, formatoDist, hace, lluviaPara, loCercano, filaCercana, estadoZona, tituloHoja,
   rutaGoogle, textoWhatsApp, reporteParaConfirmar,
+  nivelV2, textoNivel, transito, categoria, centrarEn, leerCentro, suscribirCentro, debounce, partirLugar,
   CAPAS_INICIALES, leerCapas, cambiarCapa, restablecerCapas, suscribirCapas, capasModificadas, filtrarCapas,
 } from './mapa.js'
 
@@ -68,9 +69,11 @@ describe('loCercano', () => {
   it('filas con nivel en palabra y patrón', () => {
     const ahora = Date.parse('2026-11-10T12:00:00Z')
     const [f] = loCercano({ zonas: [zona(200, 'alto', { alguno_no_pasan_carros: true, total_reportes: 1 })], ubic: TU }).map((i) => filaCercana(i, ahora))
-    expect(f).toMatchObject({ lvl: 'Alto', cls: 'p-alto', t: 'Zona con agua a 200 m', m: 'No pasan carros · 1 reporte · act. hace 10 min' })
-    const [g] = loCercano({ zonas: [zona(200, 'bajo', { actualizado_en: null })], ubic: TU }).map((i) => filaCercana(i, ahora))
-    expect(g.m).toBe('Pasan carros · 2 reportes')
+    expect(f).toMatchObject({ lvl: 'Alto', nivel: 'Riesgo alto', cls: 'p-alto', t: 'Inundación', lugar: 'A 200 m de ti',
+      transito: { txt: 'No transitable', cls: 'no' }, m: 'Actualizado hace 10 min · 1 reporte' })
+    const [g] = loCercano({ zonas: [zona(200, 'critico', { actualizado_en: null })], ubic: TU }).map((i) => filaCercana(i, ahora, 'del lugar'))
+    expect(g).toMatchObject({ m: '2 reportes', nivel: 'Riesgo crítico', cls: 'p-critico', lugar: 'A 200 m del lugar' })
+    expect(g.transito.txt).toBe('Transitable con precaución')
   })
 })
 
@@ -101,7 +104,7 @@ describe('textos y enlaces', () => {
     expect(tituloHoja('auto', true)).toBe('Todo en calma')
   })
   it('ruta y WhatsApp', () => {
-    expect(rutaGoogle(20.1, -103.2)).toBe('https://www.google.com/maps/dir/?api=1&destination=20.1,-103.2')
+    expect(rutaGoogle(20.1, -103.2)).toBe('https://www.google.com/maps/dir/?api=1&destination=20.1,-103.2&travelmode=driving')
     expect(textoWhatsApp({ titulo: 'Zona Alto', lat: 1, lng: 2 })).toMatch(/^https:\/\/wa\.me\/\?text=/)
   })
   it('reporteParaConfirmar: excluye propios, prefiere id, si no el más cercano', () => {
@@ -141,5 +144,59 @@ describe('capas del mapa (store + filtro)', () => {
     expect(f.reportes.map((r) => r.id)).toEqual(['c'])
     expect(f.refugios).toEqual([]); expect(f.misReportes).toEqual([])
     expect(filtrarCapas(datos, CAPAS_INICIALES).zonas).toHaveLength(2)
+  })
+})
+
+describe('niveles v2 y copy del equipo', () => {
+  it('nivelV2 reconoce crítico con o sin acento', () => {
+    expect(nivelV2({ nivel: 'critico' })).toBe('critico')
+    expect(nivelV2({ nivel: 'Crítico' })).toBe('critico')
+    expect(nivelV2({ nivel: 'x' })).toBe('bajo')
+    expect(textoNivel('critico')).toBe('Crítico')
+  })
+  it('crítico gana a alto en "tu zona"', () => {
+    const e = estadoZona({ zonas: [zona(100, 'alto'), zona(200, 'critico')], ubic: TU })
+    expect(e.sub).toBe('No cruces: zona Alto a 100 m')
+    const f = estadoZona({ zonas: [zona(100, 'medio'), zona(200, 'critico')], ubic: TU })
+    expect(f.sub).toBe('No cruces: zona Crítico a 200 m')
+  })
+  it('categoría y tránsito por gravedad', () => {
+    expect(categoria({ gravedad: 'bloqueado' })).toBe('Cierre vial')
+    expect(categoria({ gravedad: 'sin_riesgo' })).toBe('Encharcamiento')
+    expect(categoria({ tipo: 'persona_en_riesgo' })).toBe('Persona en riesgo')
+    expect(categoria({})).toBe('Inundación')
+    expect(transito({ gravedad: 'bloqueado' }).txt).toBe('No transitable')
+    expect(transito({ gravedad: 'limitado' }).cls).toBe('prec')
+    expect(transito({}).txt).toBe('Sin información suficiente')
+  })
+  it('capas: crítico se puede ocultar', () => {
+    const f = filtrarCapas({ zonas: [zona(1, 'critico'), zona(2, 'bajo')] }, { ...CAPAS_INICIALES, critico: false })
+    expect(f.zonas.map((z) => z.nivel)).toEqual(['bajo'])
+  })
+})
+
+describe('buscar: centrarEn, debounce y partirLugar', () => {
+  it('centrarEn avisa y numera; null limpia', () => {
+    let n = 0
+    const q = suscribirCentro(() => n++)
+    centrarEn({ lat: 20.6, lng: -103.3, nombre: 'Minerva' })
+    const a = leerCentro()
+    centrarEn({ lat: 20.6, lng: -103.3 })
+    expect(leerCentro().seq).toBe(a.seq + 1)
+    centrarEn({ lat: NaN, lng: 1 })
+    expect(leerCentro()).toBe(null)
+    expect(n).toBe(3); q()
+  })
+  it('debounce llama una vez con el último valor', () => {
+    vi.useFakeTimers()
+    const f = vi.fn(); const d = debounce(f, 600)
+    d('a'); d('ab'); vi.advanceTimersByTime(599); expect(f).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1); expect(f).toHaveBeenCalledWith('ab'); expect(f).toHaveBeenCalledTimes(1)
+    d('x'); d.cancelar(); vi.advanceTimersByTime(1000); expect(f).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+  it('partirLugar', () => {
+    expect(partirLugar('Plaza del Sol, Jardines del Sol, Zapopan')).toEqual({ t: 'Plaza del Sol', sub: 'Jardines del Sol, Zapopan' })
+    expect(partirLugar('')).toEqual({ t: 'Lugar sin nombre', sub: '' })
   })
 })

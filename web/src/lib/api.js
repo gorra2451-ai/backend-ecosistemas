@@ -34,7 +34,7 @@ export function mensajeError(codigo) {
 
 export function nivelDeZona(z) {
   const n = String(z?.nivel || '').toLowerCase()
-  return ['bajo', 'medio', 'alto'].includes(n) ? n : 'bajo'
+  return ['bajo', 'medio', 'alto', 'critico'].includes(n) ? n : 'bajo'
 }
 
 export function bboxAlrededor(lat, lng, radioM) {
@@ -62,13 +62,17 @@ export const registrarEntrada = (medio) => r(supabase.rpc('registrar_entrada', {
 export const guardarAccesibilidad = (daltonismo) => r(supabase.rpc('guardar_accesibilidad', { prefs: { daltonismo: !!daltonismo } }))
 
 // ---------- Reportar ----------
-export async function crearReporte({ id, tipo, pasanCarros, lat, lng, precision }) {
+// v2: gravedad = bloqueado | limitado | sin_riesgo (si viene, el backend deduce pasan_carros)
+export async function crearReporte({ id, tipo, pasanCarros, gravedad, lat, lng, precision }) {
   await asegurarSesion()
-  return r(supabase.rpc('crear_reporte', {
-    p_id: id, p_tipo: tipo, p_pasan_carros: pasanCarros ?? null,
+  const args = {
+    p_id: id, p_tipo: tipo, p_pasan_carros: pasanCarros ?? (gravedad ? null : true),
     p_lat: lat, p_lng: lng, p_precision_m: Math.round(precision || 30),
-  }))
+  }
+  if (gravedad) args.p_gravedad = gravedad
+  return r(supabase.rpc('crear_reporte', args))
 }
+export async function misReportes() { await asegurarSesion(); return r(supabase.rpc('mis_reportes')) }
 export async function subirEvidencia(reporteId, archivo) {
   const ext = (archivo.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg')
   const tipo = archivo.type.startsWith('video') ? 'video' : 'foto'
@@ -110,3 +114,35 @@ export async function suscribirPush(sub, municipio) {
   return r(supabase.rpc('suscribir_push', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_municipio: municipio }))
 }
 export const bajaPush = (endpoint) => r(supabase.rpc('baja_push', { p_endpoint: endpoint }))
+
+export async function preferenciasPush(endpoint, { soloCambios, soloFuertes, silenciarMin }) {
+  await asegurarSesion()
+  return r(supabase.rpc('preferencias_push', { p_endpoint: endpoint, p_solo_cambios: !!soloCambios, p_solo_fuertes: !!soloFuertes, p_silenciar_min: silenciarMin ?? null }))
+}
+
+// ---------- Lugares (Nominatim de OpenStreetMap, D-020): máx. 1 petición/s, sin datos personales ----------
+const NOMI = 'https://nominatim.openstreetmap.org'
+let ultimaNomi = 0
+async function nomi(url) {
+  const espera = Math.max(0, ultimaNomi + 1100 - Date.now())
+  if (espera) await new Promise((res) => setTimeout(res, espera))
+  ultimaNomi = Date.now()
+  try { const res = await fetch(url, { headers: { 'Accept-Language': 'es' } }); return { data: res.ok ? await res.json() : null, error: res.ok ? null : 'desconocido' } }
+  catch (e) { return { data: null, error: codigoError(e) } }
+}
+export function etiquetaLugar(x) {
+  const a = x?.address || {}
+  const calle = [a.road || a.pedestrian || a.neighbourhood, a.house_number].filter(Boolean).join(' ')
+  const muni = a.city || a.town || a.municipality || a.village || ''
+  return [calle || x?.name, a.suburb, muni].filter(Boolean).join(', ') || x?.display_name || ''
+}
+export async function buscarLugar(q) {
+  if (!q || q.trim().length < 3) return { data: [], error: null }
+  const u = `${NOMI}/search?format=jsonv2&addressdetails=1&countrycodes=mx&viewbox=-103.60,20.85,-103.15,20.45&bounded=1&limit=5&q=${encodeURIComponent(q.trim())}`
+  const { data, error } = await nomi(u)
+  return { data: (data || []).map((x) => ({ nombre: etiquetaLugar(x), lat: +x.lat, lng: +x.lon })), error }
+}
+export async function direccionDe(lat, lng) {
+  const { data, error } = await nomi(`${NOMI}/reverse?format=jsonv2&addressdetails=1&zoom=18&lat=${lat}&lon=${lng}`)
+  return { data: data ? etiquetaLugar(data) : null, error }
+}

@@ -3,13 +3,47 @@
 // Los 6 municipios que muestra el canvas (Avisos). Nombres cortos, como en la app.
 export const MUNICIPIOS_ZMG = ['Guadalajara', 'Zapopan', 'Tlaquepaque', 'Tonalá', 'Tlajomulco', 'El Salto']
 
-// Nombres del Equipo Registro (ronda 2). Sin 'moto': no existe en el enum medio_transporte (P-28).
+// Ronda 3: opciones, orden y consejos del Equipo Registro. 'moto' ya existe en medio_transporte (contrato v2).
 export const MEDIOS = [
-  { id: 'peaton', titulo: 'Caminando', sub: 'Cruces de riesgo' },
-  { id: 'bici', titulo: 'Bicicleta', sub: 'Cruces de riesgo' },
-  { id: 'auto', titulo: 'Automóvil', sub: 'Modo manejo llega en la siguiente versión' },
-  { id: 'transporte_publico', titulo: 'Transporte público', sub: 'Estado de tu zona' },
+  { id: 'peaton', titulo: 'Caminando (peatón)', tip: 'Con agua en movimiento es fácil perder el equilibrio. Te mostramos calles más seguras a pie.' },
+  { id: 'moto', titulo: 'Motocicleta', tip: 'Con agua se pierde tracción y no se ven los baches. Te avisamos qué zonas evitar.' },
+  { id: 'bici', titulo: 'Bicicleta', tip: 'El agua esconde baches y alcantarillas. Te sugerimos rutas más altas.' },
+  { id: 'auto', titulo: 'Automóvil', tip: 'Con unos 30 cm de agua un auto puede flotar. Te avisamos qué calles evitar.' },
+  { id: 'transporte_publico', titulo: 'Transporte público', tip: 'Las rutas pueden cambiar o suspenderse. Te avisamos con tiempo.' },
 ]
+export const tituloMedio = (id) => MEDIOS.find((m) => m.id === id)?.titulo || 'sin elegir'
+
+// Ajustes de accesibilidad del paso 4 (Equipo Registro), con los mismos valores que usa el Módulo E:
+// 'grande' y 'dalton' viven en prefs.a11y; 'voz' es prefs.voz (booleano).
+export const AJUSTES_A11Y = [
+  { k: 'grande', titulo: 'Texto grande', desc: 'Letras más grandes en toda la app.' },
+  { k: 'voz', titulo: 'Modo voz', desc: 'La app lee en voz alta las alertas.' },
+  { k: 'dalton', titulo: 'Modo para daltonismo', desc: 'Cambia los colores del mapa para que se distingan mejor.' },
+]
+export const a11yActivo = (prefs, k) => (k === 'voz' ? !!prefs?.voz : (prefs?.a11y || []).includes(k))
+export function alternarA11y(prefs, k) {
+  const p = prefs || {}
+  const v = !a11yActivo(p, k)
+  if (k === 'voz') return { ...p, voz: v }
+  const a = p.a11y || []
+  return { ...p, a11y: v ? [...a, k] : a.filter((x) => x !== k) }
+}
+// "texto grande, modo voz" o "ninguna activada" (resumen final del equipo)
+export function resumenA11y(prefs) {
+  const n = { grande: 'texto grande', voz: 'modo voz', dalton: 'daltonismo' }
+  return AJUSTES_A11Y.filter((a) => a11yActivo(prefs, a.k)).map((a) => n[a.k]).join(', ') || 'ninguna activada'
+}
+
+// "#A7F3B2": 6 primeros caracteres del id de la sesión anónima, en mayúsculas. null si no hay sesión.
+export function idCorto(session) {
+  const id = session?.user?.id
+  return typeof id === 'string' && id.length >= 6 ? '#' + id.slice(0, 6).toUpperCase() : null
+}
+
+// ¿Ya terminó la primera vez? (misma llave que store.jsx)
+export function yaEntro() {
+  try { return JSON.parse(localStorage.getItem('aguas.onboarded') || 'false') === true } catch { return false }
+}
 
 // Resuelve con { data:null, error:'sin_red' } si la promesa tarda más de `ms`: el onboarding nunca se traba.
 export function conTiempo(promesa, ms = 5000) {

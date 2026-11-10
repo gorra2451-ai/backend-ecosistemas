@@ -1,20 +1,38 @@
-// MÓDULO B · Reportar (Equipo Reporte). Pantallas: tipo, paso2, riesgo, mireporte, error.
-// `paso2` cubre los pasos 2–4 del stepper con params.fase: (sin fase) Detalles · 'evidencia' · 'enviado' (escritorio).
-// Hoja "enviado" (sheet === 'sent', móvil) y <ColaReportes/> (reintento de la cola sin señal; se monta en App).
+// MÓDULO B · Reportar (Equipo Reporte, ronda 3: manda el HTML validado del equipo).
+// Pantallas: inicio, tipo, paso2 (params.fase: (sin fase) Detalles · 'evidencia' · 'enviado'), misreportes ("Cerca de ti"),
+// mireporte, riesgo, error. <ColaReportes/> (reintento de la cola sin señal) se monta en App. HojaEnviado ya no se usa.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApp } from '../lib/store.jsx'
-import { crearReporte, subirEvidencia, reportesCercanos, mensajeError } from '../lib/api.js'
+import { crearReporte, reportesCercanos, mensajeError, misReportes as apiMisReportes, buscarLugar, direccionDe } from '../lib/api.js'
 import {
-  armarReporte, etiquetaReporte, chipEstado, mensajeEnviado, lineaDeTiempo, casoAcudo, haceCuanto,
-  linkWhatsApp, textoFamilia, textoRiesgo, encolar, leerCola, quitarDeCola, quitarExif,
-  seguimientoReporte, soltarSesion, TIPO_LABEL, GRAVEDAD_CALLE, pasosStepper, resumenReporte,
+  armarReporte, etiquetaReporte, chipEstado, mensajeEnviado, estadoEnviado, lineaDeTiempo, casoAcudo, haceCuanto,
+  linkWhatsApp, textoFamilia, textoRiesgo, encolar, leerCola, quitarDeCola, quitarExif, subirEvidenciaReporte, tipoEvidencia,
+  seguimientoReporte, soltarSesion, TIPO_LABEL, TIPOS_REPORTE, GRAVEDAD, pasosStepper, resumenReporte, textoUbicacion,
+  unirMisReportes, filaMiReporte, filaCercano, iconoTipo, PRECISION_LUGAR_BUSCADO,
 } from '../lib/reportar.js'
 import { Screen, Btn } from '../components/ui.jsx'
-import Icon from '../components/Icon.jsx'
+import Icon, { Logo } from '../components/Icon.jsx'
 import '../styles/reportar.css'
 
+// Íconos propios del módulo (mismo estilo de línea que Icon.jsx); el resto viene de Icon.jsx.
+const PROPIOS = {
+  barras: <path d="M5 20v-4M10 20v-8M15 20v-12M20 20V4" />,
+  imagen: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9.5" r="1.5" /><path d="M21 16l-5-5-9 9" /></>,
+  lapiz: <path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" />,
+  info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.5" /></>,
+  anonimo: <><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" /><path d="M9 12l2 2 4-4" /></>,
+  rutas: <><circle cx="6.5" cy="5.5" r="2.5" /><circle cx="17.5" cy="18.5" r="2.5" /><path d="M9 5.5h6.5a3.5 3.5 0 0 1 0 7h-7a3.5 3.5 0 0 0 0 7H15" /></>,
+}
+function Ico({ name, size = 24, stroke = 2 }) {
+  if (!PROPIOS[name]) return <Icon name={name} size={size} stroke={stroke} />
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke}
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: 'none' }}>{PROPIOS[name]}</svg>
+  )
+}
+const Muestra = ({ patron }) => <span className={'rp-sw ' + patron} aria-hidden="true" />
+
 // ---------- Envío compartido ----------
-const esEscritorio = () => typeof window !== 'undefined' && !!window.matchMedia?.('(min-width:1024px)').matches
 const sinRed = () => typeof navigator !== 'undefined' && navigator.onLine === false
 
 // Manda un reporte. Éxito → mis reportes + refrescar. Sin red → cola local (mismo id). Otro error → { error }.
@@ -34,27 +52,53 @@ async function enviar(app, { payload, rep }) {
   return { error }
 }
 
+// Reporte + evidencia elegida ANTES (contrato v2): se sube justo después de crear_reporte.
+// Si la subida falla, el reporte se queda y se avisa. Foto → sin EXIF; video tal cual.
+async function enviarConEvidencia(app, armado, archivo) {
+  const res = await enviar(app, armado)
+  if (res.error || !archivo) return res
+  const rep = { ...armado.rep, estado: res.estado }
+  if (res.estado === 'cola') {
+    app.agregarMiReporte({ ...rep, evidenciaFallo: true })
+    app.avisar('Sin señal: tu reporte se guardó, la foto o video no')
+    return res
+  }
+  let error
+  try {
+    const tipo = tipoEvidencia(archivo.type)
+    const limpio = tipo === 'foto' ? await quitarExif(archivo) : archivo
+    error = (await subirEvidenciaReporte(rep.id, limpio)).error
+  } catch { error = 'archivo_invalido' }
+  if (error) {
+    app.agregarMiReporte({ ...rep, evidenciaFallo: true })
+    app.avisar(`Tu reporte se envió, pero la foto o video no se subió (${mensajeError(error).titulo})`)
+  } else {
+    app.agregarMiReporte({ ...rep, evidencia: tipoEvidencia(archivo.type), archivo: archivo.name })
+  }
+  return res
+}
+
 function useMandar() {
   const app = useApp()
   const [enviando, setEnviando] = useState(false)
-  const mandar = useCallback(async (armado) => {
+  const mandar = useCallback(async (armado, archivo = null) => {
     setEnviando(true)
-    const res = await enviar(app, armado)
+    const res = await enviarConEvidencia(app, armado, archivo)
     setEnviando(false)
-    if (res.error) return app.ir('error', { codigo: res.error, ...armado })
-    // El reporte ya quedó creado en el 3er toque; la evidencia se ofrece DESPUÉS (agregar_evidencia necesita el id).
-    // Sin señal no hay id en el servidor todavía: se salta la evidencia.
-    if (res.estado === 'cola') return terminarReporte(app, armado.rep.id)
-    app.ir('paso2', { tipo: armado.rep.tipo, fase: 'evidencia', id: armado.rep.id })
+    if (res.error) return app.ir('error', { codigo: res.error, ...armado, archivo })
+    app.ir('paso2', { fase: 'enviado', id: armado.rep.id })
   }, [app])
   return { mandar, enviando }
 }
 
-// Último paso: móvil → hoja "enviado" sobre el mapa (se ve el punto); escritorio → pantalla "¡Reporte enviado!".
-function terminarReporte(app, id) {
-  if (esEscritorio()) return app.ir('paso2', { fase: 'enviado', id })
-  app.ir(null)
-  app.setSheet('sent')
+// Encabezado del flujo: ← Reportar inundación
+function Cabeza({ onBack, disabled }) {
+  return (
+    <div className="rp-head">
+      <button className="btn-icon rp-back" aria-label="Regresar" onClick={onBack} disabled={disabled}><Icon name="atras" /></button>
+      <span className="rp-head-t">Reportar inundación</span>
+    </div>
+  )
 }
 
 // Stepper visual del flujo (Tipo · Detalles · Evidencia · Enviado).
@@ -72,13 +116,15 @@ function Stepper({ actual }) {
   )
 }
 
-// Resumen del reporte enviado (tipo · ubicación · gravedad · foto).
+// Resumen "Tu reporte" (tipo · nivel · ubicación · foto).
 function Resumen({ rep }) {
   return (
     <div className="rp-resumen">
-      <b>Resumen de tu reporte</b>
+      <b>Tu reporte</b>
       <ul>
-        {resumenReporte(rep).map((x) => <li key={x.texto}><Icon name={x.icono} size={20} />{x.texto}</li>)}
+        {resumenReporte(rep).map((x) => (
+          <li key={x.icono}><Ico name={x.icono} size={20} />{x.patron && <Muestra patron={x.patron} />}{x.texto}</li>
+        ))}
       </ul>
     </div>
   )
@@ -89,7 +135,7 @@ function useSeguimiento(rep) {
   const { version, agregarMiReporte } = useApp()
   const [seg, setSeg] = useState(null)
   const id = rep?.id
-  const vivo = rep && ['pendiente', 'activo', 'en_revision'].includes(rep.estado)
+  const vivo = rep && !rep.deServidor && ['pendiente', 'activo', 'en_revision'].includes(rep.estado)
   useEffect(() => {
     if (!id || !vivo) return
     let ok = true
@@ -104,68 +150,89 @@ function useSeguimiento(rep) {
   return seg
 }
 
+// Mis reportes: mis_reportes() del backend (v2) unido al registro local; si el backend falla, solo lo local.
+function useMisReportes() {
+  const { misReportes: local, version } = useApp()
+  const [servidor, setServidor] = useState(null)
+  const [cargando, setCargando] = useState(true)
+  useEffect(() => {
+    let ok = true
+    apiMisReportes().then(({ data, error }) => {
+      if (!ok) return
+      if (!error && Array.isArray(data)) setServidor(data)
+      setCargando(false)
+    })
+    return () => { ok = false }
+  }, [version])
+  return { lista: unirMisReportes(servidor, local), cargando }
+}
+
 const Estado = ({ texto }) => <p className="rp-estado" role="status" aria-live="polite">{texto}</p>
 
+// ---------- inicio ----------
+// Ruteo propio no existe: "Rutas alternativas" abre Google Maps con tu punto como origen.
+const linkRutas = (u) => `https://www.google.com/maps/dir/?api=1&origin=${Number(u.lat).toFixed(5)},${Number(u.lng).toFixed(5)}&travelmode=driving`
+
+export function Inicio() {
+  const { ir, ubic, misReportes, setSheet } = useApp()
+  const ultimo = misReportes[0]
+  const reciente = ultimo && ['pendiente', 'cola'].includes(ultimo.estado) && Date.now() - (ultimo.creado || 0) < 3 * 3600e3
+  return (
+    <Screen onBack={false} label="Inicio">
+      <div className="rp-brand"><Logo size={44} /><span>¡Aguas!</span></div>
+      <p className="rp-tagline">Reportar, confirmar y ver inundaciones en la ZMG.</p>
+      <button className="rp-mini" onClick={() => { ir(null); setSheet('min') }} aria-label="Abrir el mapa">
+        <svg viewBox="0 0 344 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="344" height="220" fill="var(--s2)" />
+          <rect x="220" y="130" width="100" height="70" rx="12" fill="var(--s1)" />
+          <g stroke="var(--line)" strokeWidth="10" fill="none" strokeLinecap="round">
+            <path d="M-10 60L354 32" /><path d="M-10 150L354 128" /><path d="M150 -10L168 230" /><path d="M60 -10L40 230" /><path d="M270 -10L300 230" />
+          </g>
+        </svg>
+        <span className="rp-cell p-alto" style={{ left: '46%', top: '18%' }} />
+        <span className="rp-cell p-alto" style={{ left: '54%', top: '18%' }} />
+        <span className="rp-cell p-medio" style={{ left: '14%', top: '52%' }} />
+        <span className="rp-cell p-bajo" style={{ left: '76%', top: '40%' }} />
+        <span className="rp-me" style={{ left: '32%', top: '74%' }} />
+        <span className="rp-mini-cta"><Icon name="mapa" size={18} />Abrir el mapa</span>
+      </button>
+      {reciente && (
+        <p className="rp-nota">Tu reporte está en el mapa · <b className="rp-sinconf">{ultimo.estado === 'cola' ? 'en cola, sin señal' : 'sin confirmar'}</b></p>
+      )}
+      <div className="rp-spacer" />
+      <Btn variant="primary" icon="alerta" onClick={() => ir('tipo')}>Reportar inundación</Btn>
+      <a className="btn btn-ghost rp-link-btn" href={linkRutas(ubic)} target="_blank" rel="noopener noreferrer">
+        <Ico name="rutas" />Rutas alternativas<span className="sr-only"> (abre Google Maps)</span>
+      </a>
+    </Screen>
+  )
+}
+
 // ---------- tipo ----------
+const ICONO_TARJETA = { casa: 'casa', coche: 'coche', calle: 'calle', persona_en_riesgo: 'riesgo' }
+
 export function Tipo() {
   const { ir, ubic, pedirUbicacion } = useApp()
-  const [buscando, setBuscando] = useState(true)
-  const localizar = useCallback(() => { setBuscando(true); pedirUbicacion().finally(() => setBuscando(false)) }, [pedirUbicacion])
-  useEffect(() => { localizar() }, [localizar])
-
-  const sinUbic = !ubic.real
-  const persona = () => {
-    // Persona en riesgo: primero la pantalla roja; el aviso se manda desde ahí (sin ubicación real no se manda).
-    const armado = sinUbic ? null : armarReporte({ tipo: 'persona_en_riesgo', ubic })
-    ir('riesgo', { armado })
-  }
-  const elegir = (tipo) => ir('paso2', { tipo })
-
+  // Se pide la ubicación desde ya para que en Detalles esté lista.
+  useEffect(() => { if (!ubic.real) pedirUbicacion().catch(() => {}) }, []) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Screen onBack={false} label="Reportar inundación · paso 1 de 4 · Tipo">
-      <div className="rp-top">
-        <button className="rp-btn-top" onClick={() => ir(null)}>Cancelar</button>
-        <span className="rp-paso">Reportar inundación</span>
-      </div>
+      <Cabeza onBack={() => ir('inicio')} />
       <Stepper actual={0} />
-      <div className="rp-ubic">
-        <Icon name="pin" size={22} stroke={2} />
-        <div style={{ minWidth: 0, flex: 1 }}>
-          {sinUbic ? (
-            <>
-              <b>{buscando ? 'Buscando tu ubicación…' : 'Necesitamos tu ubicación'}</b>
-              <small>Para poner el reporte donde estás. Solo este punto, nunca tu recorrido.</small>
-            </>
-          ) : (
-            <>
-              <b>Tu ubicación actual</b>
-              <small>Tu ubicación (±{Math.round(ubic.precision || 0)} m) y la hora ya van puestas</small>
-            </>
-          )}
-        </div>
-      </div>
-      {sinUbic && !buscando && (
-        <Btn variant="outline-acc" icon="centrar" onClick={localizar}>Usar mi ubicación</Btn>
-      )}
       <h1 className="rp-h1">¿Qué se inundó?</h1>
       <div className="rp-tiles">
-        <button className="tile" disabled={sinUbic} onClick={() => elegir('calle')}><Icon name="calle" size={54} stroke={1.8} />La calle</button>
-        <button className="tile" disabled={sinUbic} onClick={() => elegir('casa')}><Icon name="casa" size={54} stroke={1.8} />Mi casa</button>
-        <button className="tile" disabled={sinUbic} onClick={() => elegir('coche')}><Icon name="coche" size={54} stroke={1.8} />Un coche</button>
-        <button className="tile tile--risk" onClick={persona}><Icon name="riesgo" size={54} stroke={1.8} />Persona<br />en riesgo<small>Abre 911</small></button>
+        {TIPOS_REPORTE.map((k) => (
+          <button key={k} className={'tile' + (k === 'persona_en_riesgo' ? ' tile--risk' : '')} onClick={() => ir('paso2', { tipo: k })}>
+            <Icon name={ICONO_TARJETA[k]} size={54} stroke={1.8} />{TIPO_LABEL[k]}
+          </button>
+        ))}
       </div>
-      {sinUbic && !buscando && <p className="rp-nota">Sin ubicación solo está disponible “Persona en riesgo” (abre el 911).</p>}
+      <p className="rp-hint"><Ico name="anonimo" size={20} /><span>Tu reporte es anónimo. No pedimos datos personales.</span></p>
     </Screen>
   )
 }
 
 // ---------- paso2 ----------
-const NIVELES = [
-  { k: 'tobillo', t: 'A los tobillos', d: 'Se puede caminar con cuidado', h: 18, cls: 'p-bajo' },
-  { k: 'rodilla', t: 'A las rodillas', d: 'Muebles y aparatos en riesgo', h: 44, cls: 'p-medio' },
-  { k: 'cintura', t: 'A la cintura o más', d: 'Sal a un lugar alto', h: 64, cls: 'p-alto' },
-]
-
 export function Paso2() {
   const { params } = useApp()
   if (params.fase === 'evidencia') return <Evidencia />
@@ -173,152 +240,171 @@ export function Paso2() {
   return <Detalles />
 }
 
+// Búsqueda de lugar (Nominatim vía api.buscarLugar, debounce 600 ms).
+function BuscarLugar({ onElegir, onCerrar }) {
+  const [q, setQ] = useState('')
+  const [res, setRes] = useState({ estado: 'idle', lista: [] })
+  useEffect(() => {
+    if (q.trim().length < 3) { setRes({ estado: 'idle', lista: [] }); return }
+    let ok = true
+    const t = setTimeout(async () => {
+      setRes((r) => ({ ...r, estado: 'buscando' }))
+      const { data, error } = await buscarLugar(q)
+      if (ok) setRes({ estado: error ? 'error' : 'listo', lista: data || [] })
+    }, 600)
+    return () => { ok = false; clearTimeout(t) }
+  }, [q])
+  return (
+    <div className="rp-buscar">
+      <label htmlFor="rp-q"><b>Escribe la ubicación</b></label>
+      <div className="rp-buscar-fila">
+        <input id="rp-q" type="search" autoFocus value={q} onChange={(e) => setQ(e.target.value)}
+          placeholder="Calle, colonia o lugar" autoComplete="off" />
+        <button className="btn-icon rp-back" aria-label="Cerrar búsqueda" onClick={onCerrar}><Icon name="cerrar" size={20} /></button>
+      </div>
+      <p className="rp-sub" role="status" aria-live="polite">
+        {res.estado === 'buscando' ? 'Buscando…' : res.estado === 'error' ? 'No pudimos buscar ahora. Intenta de nuevo.'
+          : res.estado === 'listo' && !res.lista.length ? 'Sin resultados en la ZMG.' : ''}
+      </p>
+      {!!res.lista.length && (
+        <ul className="rp-resultados">
+          {res.lista.map((x) => (
+            <li key={`${x.lat},${x.lng}`}>
+              <button onClick={() => onElegir(x)}><Icon name="pin" size={20} />{x.nombre}</button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 function Detalles() {
-  const { ir, params, ubic } = useApp()
+  const { ir, params, ubic, pedirUbicacion } = useApp()
   const tipo = params.tipo || 'calle'
-  const { mandar, enviando } = useMandar()
-  const go = (detalle, pasanCarros) => mandar(armarReporte({ tipo, detalle, pasanCarros, ubic }))
-  const conPersona = () => ir('riesgo', { armado: armarReporte({ tipo: 'persona_en_riesgo', detalle: 'dentro', ubic }), coche: true })
+  const [gravedad, setGravedad] = useState(params.gravedad || null)
+  const [lugar, setLugar] = useState(params.lugar?.elegido ? params.lugar : null)
+  const [editar, setEditar] = useState(false)
+  const [dir, setDir] = useState(null)
+  const [buscandoGps, setBuscandoGps] = useState(!ubic.real)
+
+  useEffect(() => { if (!ubic.real) pedirUbicacion().catch(() => {}).finally(() => setBuscandoGps(false)) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Dirección real del GPS (Nominatim reverse). Si falla, se queda el texto con la precisión.
+  useEffect(() => {
+    if (!ubic.real || lugar) return
+    let ok = true
+    direccionDe(ubic.lat, ubic.lng).then(({ data }) => { if (ok && data) setDir(data) })
+    return () => { ok = false }
+  }, [ubic.real, ubic.lat, ubic.lng, lugar])
+
+  const punto = lugar || (ubic.real ? { lat: ubic.lat, lng: ubic.lng, precision: ubic.precision, direccion: dir } : null)
+  const textoPunto = lugar ? lugar.direccion
+    : ubic.real ? textoUbicacion(dir, ubic.precision)
+    : buscandoGps ? 'Buscando tu ubicación…' : 'No tenemos tu ubicación. Toca el lápiz para escribirla.'
+  const elegir = (x) => { setLugar({ lat: x.lat, lng: x.lng, precision: PRECISION_LUGAR_BUSCADO, direccion: x.nombre, elegido: true }); setEditar(false) }
 
   return (
     <Screen onBack={false} label={`Reportar inundación · paso 2 de 4 · Detalles · ${TIPO_LABEL[tipo]}`}>
-      <div className="rp-top">
-        <button className="rp-btn-top" onClick={() => ir('tipo')} disabled={enviando}>← Atrás</button>
-        <span className="rp-paso">{TIPO_LABEL[tipo]}</span>
-      </div>
+      <Cabeza onBack={() => ir('tipo')} />
       <Stepper actual={1} />
-
-      {tipo === 'calle' && (
-        <>
-          <h1 className="rp-h1">¿Cómo está el paso?</h1>
-          <div className="rp-choices rp-choices--3">
-            {GRAVEDAD_CALLE.map((g) => g.pasanCarros ? (
-              <button key={g.k} className="choice" disabled={enviando} onClick={() => go(g.k, g.pasanCarros)}>{g.t}<small>{g.d}</small></button>
-            ) : (
-              <button key={g.k} className="choice choice--alto p-alto" disabled={enviando} onClick={() => go(g.k, g.pasanCarros)}>
-                <span><span>{g.t}</span><small>{g.d}</small></span>
-              </button>
-            ))}
-          </div>
-        </>
+      {tipo === 'persona_en_riesgo' && (
+        <div className="rp-emerg" role="alert">
+          <p className="rp-emerg-t"><span className="rp-sw rp-sw--riesgo" aria-hidden="true">!</span>Persona en riesgo</p>
+          <p>Si alguien está atrapado o herido, llama primero al 911. Después termina el reporte.</p>
+          <a className="btn btn-danger rp-link-btn" href="tel:911"><Icon name="telefono" />Llamar al 911</a>
+        </div>
       )}
-
-      {tipo === 'casa' && (
-        <>
-          <h1 className="rp-h1">¿Hasta dónde llegó el agua?</h1>
-          <div className="rp-choices" style={{ gap: 12 }}>
-            {NIVELES.map((n) => (
-              <button key={n.k} className="rp-nivel" disabled={enviando} onClick={() => go(n.k)}>
-                <span className="fig" aria-hidden="true">
-                  <svg width="56" height="96" viewBox="0 0 56 96"><circle cx="28" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="3" /><path d="M28 22v36M12 34l16-6 16 6M28 58l-10 30M28 58l10 30" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
-                  <span className={`agua ${n.cls}`} style={{ height: n.h }} />
-                </span>
-                <span><b>{n.t}</b><small>{n.d}</small></span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {tipo === 'coche' && (
-        <>
-          <h1 className="rp-h1 rp-h1--l">¿Hay alguien dentro del coche?</h1>
-          <div className="rp-choices">
-            <button className="choice choice--danger" disabled={enviando} onClick={conPersona}>Sí, hay alguien<small>Te llevamos a llamar al 911</small></button>
-            <button className="choice" disabled={enviando} onClick={() => go('vacio')}>No, está vacío<small>Se reporta y te decimos a quién acudir</small></button>
-          </div>
-        </>
-      )}
-      <Estado texto={enviando ? 'Enviando tu reporte…' : ''} />
+      <h1 className="rp-h1">¿Cuánta agua hay?</h1>
+      <div className="rp-opts" role="group" aria-label="¿Cuánta agua hay?">
+        {GRAVEDAD.map((g) => (
+          <button key={g.k} className={'rp-opt' + (gravedad === g.k ? ' sel' : '')} aria-pressed={gravedad === g.k} onClick={() => setGravedad(g.k)}>
+            <Muestra patron={`p-${g.nivel}`} />
+            <span className="txt"><b>{g.t}</b><small>{g.d}</small></span>
+            <span className="radio" aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+      <p className="rp-label">Ubicación</p>
+      <div className="rp-loc">
+        <Icon name="pin" size={24} />
+        <div className="txt"><b>{lugar ? 'Ubicación elegida' : 'Ubicación detectada'}</b><span>{textoPunto}</span></div>
+        <button className="btn-icon rp-back" aria-label="Cambiar ubicación" aria-expanded={editar} onClick={() => setEditar((v) => !v)}><Ico name="lapiz" size={20} /></button>
+      </div>
+      {editar && <BuscarLugar onElegir={elegir} onCerrar={() => setEditar(false)} />}
+      {lugar && <button className="btn-text" onClick={() => setLugar(null)}>Usar mi ubicación actual</button>}
+      <div className="rp-spacer" />
+      <Btn variant="primary" disabled={!gravedad || !punto}
+        onClick={() => ir('paso2', { tipo, gravedad, lugar: punto, fase: 'evidencia' })}>Continuar</Btn>
+      {(!gravedad || !punto) && <p className="rp-nota">{!gravedad ? 'Elige cuánta agua hay para continuar.' : 'Falta la ubicación para continuar.'}</p>}
     </Screen>
   )
 }
 
-// ---------- paso2 · fase 'evidencia' (opcional, el reporte YA está enviado) ----------
-function useSubirFoto(rep) {
-  const { agregarMiReporte } = useApp()
-  const [foto, setFoto] = useState(rep?.foto ? 'ok' : null) // null | 'subiendo' | 'ok' | código de error
-  const elegir = async (e) => {
-    const f = e.target.files?.[0]
-    e.target.value = ''
-    if (!f || !rep) return
-    setFoto('subiendo')
-    try {
-      const limpia = await quitarExif(f)
-      const { error } = await subirEvidencia(rep.id, limpia)
-      setFoto(error || 'ok')
-      if (!error) agregarMiReporte({ ...rep, foto: true })
-    } catch {
-      setFoto('archivo_invalido')
-    }
-  }
-  return { foto, elegir }
-}
+// ---------- paso2 · fase 'evidencia' (opcional; se elige ANTES de enviar) ----------
+const ACEPTA = 'image/*,video/mp4,video/webm,video/quicktime'
 
 function Evidencia() {
-  const app = useApp()
-  const { params, misReportes } = app
-  const rep = misReportes.find((r) => r.id === params.id) || misReportes[0]
-  const { foto, elegir } = useSubirFoto(rep)
+  const { ir, params } = useApp()
+  const { tipo, gravedad, lugar } = params
+  const [archivo, setArchivo] = useState(null)
   const input = useRef(null)
-  const listo = () => terminarReporte(app, rep?.id)
-  const subiendo = foto === 'subiendo'
-  const fallo = foto && !['subiendo', 'ok'].includes(foto)
+  const { mandar, enviando } = useMandar()
+  const volver = () => ir('paso2', { tipo, gravedad, lugar })
+  useEffect(() => { if (!lugar || !gravedad) volver() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const elegir = (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setArchivo(f) }
+  const esVideo = archivo && tipoEvidencia(archivo.type) === 'video'
+  const enviarYa = () => mandar(armarReporte({ tipo, gravedad, ubic: lugar, direccion: lugar?.direccion }), archivo)
 
   return (
     <Screen onBack={false} label="Reportar inundación · paso 3 de 4 · Evidencia">
-      <div className="rp-top">
-        <span className="rp-ok-linea" role="status"><Icon name="check" size={20} stroke={3} />Tu reporte ya está en el mapa</span>
-      </div>
+      <Cabeza onBack={volver} disabled={enviando} />
       <Stepper actual={2} />
       <h1 className="rp-h1">Agrega una foto</h1>
-      <p className="rp-lead">Una foto ayuda a que otros vecinos confirmen tu reporte.</p>
-      <button className={'rp-drop' + (foto === 'ok' ? ' ok' : '')} disabled={subiendo || foto === 'ok' || !rep} onClick={() => input.current?.click()}>
-        <Icon name={foto === 'ok' ? 'check' : 'camara'} size={44} stroke={1.8} />
-        <b>{foto === 'ok' ? 'Foto agregada' : subiendo ? 'Subiendo foto…' : fallo ? 'Elegir otra foto' : 'Subir foto'}</b>
-        <small>{foto === 'ok' ? 'Le quitamos los datos ocultos (lugar, hora, equipo)' : 'Toca para tomar o elegir una foto'}</small>
+      <p className="rp-lead">Ayuda a que otros vecinos confirmen tu reporte más rápido.</p>
+      <button className={'rp-drop' + (archivo ? ' ok' : '')} disabled={enviando} onClick={() => input.current?.click()}>
+        <Ico name={archivo ? 'check' : 'imagen'} size={40} stroke={1.8} />
+        <b>{archivo ? (esVideo ? 'Video agregado' : 'Foto agregada') : 'Subir foto o video'}</b>
+        <small>{archivo ? archivo.name : 'Toca para elegir un archivo'}</small>
       </button>
-      <input ref={input} type="file" accept="image/*" hidden onChange={elegir} />
-      <p className="rp-nota" role="status" aria-live="polite">
-        {fallo ? `No se subió la foto (${mensajeError(foto).titulo}). Tu reporte quedó igual.` : 'La foto es opcional. Antes de subirla le quitamos los datos ocultos.'}
-      </p>
+      <input ref={input} type="file" accept={ACEPTA} hidden onChange={elegir} />
+      {archivo && <button className="btn-text" disabled={enviando} onClick={() => setArchivo(null)}>Quitar archivo</button>}
+      <p className="rp-hint"><Ico name="info" size={20} /><span>Es opcional. Cuida que no se vean caras ni placas.{!esVideo && ' A las fotos les quitamos los datos ocultos (lugar, hora, equipo).'}</span></p>
       <div className="rp-spacer" />
-      <Btn variant="primary" disabled={foto !== 'ok'} onClick={listo}>Continuar</Btn>
-      <Btn variant="ghost" disabled={subiendo} onClick={listo}>Omitir</Btn>
+      <Estado texto={enviando ? (archivo ? 'Enviando tu reporte y tu archivo…' : 'Enviando tu reporte…') : ''} />
+      <Btn variant="primary" disabled={enviando} onClick={enviarYa}>{archivo ? 'Enviar reporte' : 'Enviar sin foto'}</Btn>
     </Screen>
   )
 }
 
-// ---------- paso2 · fase 'enviado' (escritorio; en móvil es la hoja) ----------
+// ---------- paso2 · fase 'enviado' ----------
 function Enviado() {
-  const { ir, params, misReportes } = useApp()
+  const { ir, params, misReportes, setSheet } = useApp()
   const rep = misReportes.find((r) => r.id === params.id) || misReportes[0]
   useSeguimiento(rep)
   if (!rep) return null
   const enCola = rep.estado === 'cola'
-  const caso = casoAcudo(rep.tipo)
   return (
     <Screen onBack={false} label="Reporte enviado">
+      <Cabeza onBack={() => ir('inicio')} />
       <Stepper actual={3} />
       <div className="rp-enviado">
         <span className={'rp-sent-ok grande' + (enCola ? ' cola' : '')}><Icon name={enCola ? 'alerta' : 'check'} size={40} stroke={2.8} /></span>
-        <h1 className="rp-h1">{enCola ? 'Reporte guardado' : '¡Reporte enviado!'}</h1>
-        <span className={`rp-chip ${chipEstado(rep.estado).clase}`}>{chipEstado(rep.estado).texto}</span>
+        <h1 className="rp-h1">{enCola ? 'Reporte guardado' : 'Reporte enviado'}</h1>
         <p className="rp-lead">{mensajeEnviado(rep.estado)}</p>
+        <span className={`rp-chip ${chipEstado(rep.estado).clase}`}>{estadoEnviado(rep.estado)}</span>
       </div>
       <Resumen rep={rep} />
-      {caso && <button className="rp-acudo" onClick={() => ir('acudoresp', { caso })}>Qué hacer ahora: ¿A quién acudo?</button>}
+      {rep.tipo === 'persona_en_riesgo' && <a className="rp-tel" href="tel:911"><Icon name="telefono" />Si es emergencia, llama al 911</a>}
       <div className="rp-spacer" />
-      <Btn variant="primary" icon="mapa" onClick={() => ir(null)}>Ver en el mapa</Btn>
-      <div className="rp-grid2">
-        <Btn onClick={() => ir('mireporte', { id: rep.id })}>Seguir mi reporte</Btn>
-        <Btn icon="mas" onClick={() => ir('tipo')}>Hacer otro reporte</Btn>
-      </div>
+      <Btn variant="primary" icon="mapa" onClick={() => { ir(null); setSheet('min') }}>Ver en el mapa</Btn>
+      <Btn variant="ghost" onClick={() => ir('tipo')}>Hacer otro reporte</Btn>
     </Screen>
   )
 }
 
 // ---------- riesgo ----------
+// Ronda 3: el HTML del equipo pone el 911 dentro de Detalles; esta pantalla roja queda registrada pero sin entrada desde el flujo.
 export function Riesgo() {
   const app = useApp()
   const { ir, params, ubic } = app
@@ -365,59 +451,125 @@ export function Riesgo() {
 }
 
 // ---------- hoja "enviado" (móvil) ----------
-export function HojaEnviado() {
-  const { misReportes, setSheet, ir } = useApp()
-  const rep = misReportes[0]
-  useSeguimiento(rep)
-  if (!rep) return null
+// Ronda 3: el equipo validó "Reporte enviado" como pantalla completa en móvil y escritorio. Ya no se usa.
+export function HojaEnviado() { return null }
 
-  const chip = chipEstado(rep.estado)
-  const enCola = rep.estado === 'cola'
-  const caso = casoAcudo(rep.tipo)
+// ---------- misreportes · "Cerca de ti" (pestaña Reportes) ----------
+function Chip({ texto, clase }) { return <span className={'rp-chip ' + clase}>{texto}</span> }
+
+export function MisReportes() {
+  const { ir, ubic, pedirUbicacion, setOverlay, version } = useApp()
+  const { lista, cargando } = useMisReportes()
+  const [cerca, setCerca] = useState({ estado: 'cargando', lista: [] })
+  useEffect(() => {
+    if (!ubic.real) { setCerca({ estado: 'sin_ubic', lista: [] }); return }
+    let ok = true
+    reportesCercanos(ubic.lat, ubic.lng).then(({ data, error }) => {
+      if (ok) setCerca({ estado: error ? 'error' : 'listo', lista: (data || []).filter((x) => !x.es_propio) })
+    })
+    return () => { ok = false }
+  }, [ubic.real, ubic.lat, ubic.lng, version])
+  const confirmar = (x) => { ir(null); setOverlay({ tipo: 'confirm', reporte: x }) }
 
   return (
-    <div className="sheet sheet--sent rp-sent rise" role="region" aria-label="Reporte enviado">
-      <div className="rp-sent-head">
-        <span className={'rp-sent-ok' + (enCola ? ' cola' : '')}><Icon name={enCola ? 'alerta' : 'check'} size={30} stroke={2.8} /></span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="rp-sent-tit"><b>{enCola ? 'Reporte guardado' : '¡Reporte enviado!'}</b><span className={`rp-chip ${chip.clase}`}>{chip.texto}</span></div>
-        </div>
-        <button className="rp-x" aria-label="Cerrar y ver el mapa" onClick={() => setSheet('min')}><Icon name="cerrar" size={20} /></button>
+    <Screen onBack={false} label="Reportes · Cerca de ti">
+      <div>
+        <h1 className="rp-h1">Cerca de ti</h1>
+        <p className="rp-sub">{ubic.real ? 'A 300 m de tu ubicación' : 'Activa tu ubicación para ver lo cercano'}</p>
       </div>
-      <p>{mensajeEnviado(rep.estado)}</p>
-      <Resumen rep={rep} />
-      {caso && <button className="rp-acudo" onClick={() => ir('acudoresp', { caso })}>Qué hacer ahora: ¿A quién acudo?</button>}
-      <div className="rp-grid2">
-        <Btn icon="mapa" onClick={() => setSheet('min')}>Ver en el mapa</Btn>
-        <Btn icon="mas" onClick={() => { setSheet('min'); ir('tipo') }}>Hacer otro reporte</Btn>
-      </div>
-      <Btn variant="ghost" onClick={() => ir('mireporte', { id: rep.id })}>Seguir mi reporte</Btn>
-    </div>
+
+      <h2 className="rp-label">Tus reportes</h2>
+      {!lista.length ? (
+        <p className="muted">{cargando ? 'Cargando tus reportes…' : 'Aún no has enviado reportes desde este celular.'}</p>
+      ) : (
+        <ul className="rp-items">
+          {lista.map((r) => {
+            const f = filaMiReporte(r)
+            return (
+              <li key={r.id}>
+                <button className="rp-item" onClick={() => ir('mireporte', { id: r.id })}>
+                  <span className="rp-badge"><Icon name={iconoTipo(r.tipo)} size={26} /></span>
+                  <span className="txt">
+                    <b>Tu reporte · {f.titulo}</b>
+                    {r.direccion && <span className="lugar">{r.direccion}</span>}
+                    <span className="tags">
+                      <Chip texto={f.estado} clase={chipEstado(r.estado).clase} />
+                      {f.nivel && <span className="rp-tag"><Muestra patron={f.nivel.patron} />{f.nivel.texto}</span>}
+                    </span>
+                    <small>Enviado {f.hace}{f.confirmaciones ? ` · ${f.confirmaciones}` : ''}</small>
+                  </span>
+                  <Icon name="chevron" size={20} />
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      <h2 className="rp-label">Reportes de otros vecinos</h2>
+      {cerca.estado === 'sin_ubic' && <Btn variant="outline-acc" icon="centrar" onClick={() => pedirUbicacion().catch(() => {})}>Usar mi ubicación</Btn>}
+      {cerca.estado === 'cargando' && <p className="muted">Buscando reportes cerca…</p>}
+      {cerca.estado === 'error' && <p className="muted">No pudimos cargar los reportes cercanos. Intenta en un momento.</p>}
+      {cerca.estado === 'listo' && !cerca.lista.length && <p className="muted">No hay reportes de otros vecinos cerca de ti.</p>}
+      {!!cerca.lista.length && (
+        <ul className="rp-items">
+          {cerca.lista.map((x) => {
+            const f = filaCercano(x)
+            return (
+              <li key={x.id}>
+                <button className="rp-item" onClick={() => confirmar(x)} aria-label={`${f.titulo}, ${f.lugar}. Confirmar si sigue`}>
+                  <span className={'rp-badge' + (x.tipo === 'persona_en_riesgo' ? ' riesgo' : '')}><Icon name={iconoTipo(x.tipo)} size={26} /></span>
+                  <span className="txt">
+                    <b>{f.titulo}</b>
+                    {f.lugar && <span className="lugar">{f.lugar}</span>}
+                    <span className="tags">
+                      <Chip texto={f.estado} clase={x.estado === 'activo' ? 'chip-act' : 'chip-pend'} />
+                      {f.nivel && <span className="rp-tag"><Muestra patron={f.nivel.patron} />{f.nivel.texto}</span>}
+                    </span>
+                    {f.hace && <small>{f.hace}</small>}
+                  </span>
+                  <Icon name="chevron" size={20} />
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      <a className="rp-item rp-item--link" href={linkRutas(ubic)} target="_blank" rel="noopener noreferrer">
+        <span className="rp-badge"><Ico name="rutas" size={26} /></span>
+        <span className="txt"><b>Rutas alternativas</b><small>Abre Google Maps con tu ubicación como punto de partida.</small></span>
+        <Icon name="chevron" size={20} />
+      </a>
+    </Screen>
   )
 }
 
 // ---------- mireporte ----------
 export function MiReporte() {
   const { ir, params, misReportes } = useApp()
-  const rep = misReportes.find((r) => r.id === params.id) || misReportes[0]
+  const { lista } = useMisReportes()
+  const rep = lista.find((r) => r.id === params.id) || misReportes.find((r) => r.id === params.id) || lista[0]
   const seg = useSeguimiento(rep)
 
   if (!rep) {
     return (
-      <Screen titulo="Mi reporte">
+      <Screen titulo="Mi reporte" onBack={() => ir('misreportes')}>
         <p className="muted">Aún no has enviado reportes desde este celular.</p>
-        <Btn variant="primary" icon="mas" onClick={() => ir('tipo')}>Reportar</Btn>
+        <Btn variant="primary" icon="mas" onClick={() => ir('tipo')}>Reportar inundación</Btn>
       </Screen>
     )
   }
   const pasos = lineaDeTiempo(rep.estado, rep.creado)
   const caso = casoAcudo(rep.tipo)
-  const confirmaciones = seg?.confirmaciones ?? (rep.estado === 'activo' ? '—' : 0)
+  const confirmaciones = rep.confirmacionesSi ?? seg?.confirmaciones ?? (rep.estado === 'activo' ? '—' : 0)
+  const ultima = rep.ultima ?? seg?.ultima
   const texto = textoFamilia(rep)
+  const f = filaMiReporte(rep)
 
   return (
-    <Screen titulo="Mi reporte">
-      <p className="rp-sub" style={{ marginTop: -10 }}>{etiquetaReporte(rep)} · <span className={`rp-chip ${chipEstado(rep.estado).clase}`}>{chipEstado(rep.estado).texto}</span></p>
+    <Screen titulo="Mi reporte" onBack={() => ir('misreportes')}>
+      <p className="rp-sub" style={{ marginTop: -10 }}>{etiquetaReporte(rep)} · <span className={`rp-chip ${chipEstado(rep.estado).clase}`}>{f.estado}</span></p>
+      {rep.direccion && <p className="rp-sub"><Icon name="pin" size={16} /> {rep.direccion}</p>}
       {rep.estado === 'no_enviado' && (
         <div className="card-ejemplo"><b>No se pudo enviar.</b> {mensajeError(rep.error).texto}</div>
       )}
@@ -436,9 +588,10 @@ export function MiReporte() {
         ))}
       </ol>
       <div className="rp-stats">
-        <div className="rp-stat"><b>{confirmaciones}</b><small>vecinos lo confirmaron</small></div>
-        <div className="rp-stat"><b>{haceCuanto(seg?.ultima)}</b><small>última confirmación</small></div>
+        <div className="rp-stat"><b>{confirmaciones}</b><small>confirmaciones “sí”</small></div>
+        <div className="rp-stat"><b>{haceCuanto(ultima)}</b><small>última confirmación</small></div>
       </div>
+      {f.nivel && <p className="rp-tag rp-tag--l"><Muestra patron={f.nivel.patron} />{f.nivel.texto}</p>}
       <a className="rp-wa" href={linkWhatsApp(texto)} target="_blank" rel="noopener noreferrer"><Icon name="compartir" />Avisar a mi familia por WhatsApp</a>
       <div className="rp-cita">“{texto}”</div>
       <Btn style={{ fontSize: 17 }} onClick={() => (caso ? ir('acudoresp', { caso }) : ir('acudo'))}>¿A quién acudo?</Btn>
@@ -451,13 +604,13 @@ export function MiReporte() {
 export function ErrorPantalla() {
   const app = useApp()
   const { ir, params, ubic, setOverlay, avisar } = app
-  const { codigo, payload, rep } = params
+  const { codigo, payload, rep, archivo } = params
   const { mandar, enviando } = useMandar()
   const msg = mensajeError(codigo)
   // id_en_uso: ese UUID ya lo usó otra persona → se reintenta con uno nuevo; en los demás, mismo id (idempotente).
   const reintentar = payload && rep ? () => {
     const id = codigo === 'id_en_uso' ? crypto.randomUUID() : payload.id
-    mandar({ payload: { ...payload, id }, rep: { ...rep, id } })
+    mandar({ payload: { ...payload, id }, rep: { ...rep, id } }, archivo)
   } : null
 
   const confirmarCercanos = async () => {
@@ -471,7 +624,7 @@ export function ErrorPantalla() {
   const accion = {
     fuera_de_zmg: { t: 'Entendido', f: () => ir(null), tel: true },
     limite_por_hora: { t: 'Confirmar reportes cercanos', f: confirmarCercanos },
-    duplicado_cercano: { t: 'Ver mi reporte', f: () => ir('mireporte') },
+    duplicado_cercano: { t: 'Ver mis reportes', f: () => ir('misreportes') },
     sin_sesion: reintentar && { t: 'Continuar y enviar', f: async () => { await soltarSesion(); reintentar() } },
   }[codigo] || (reintentar ? { t: 'Volver a intentar', f: reintentar, tel: true } : { t: 'Volver al mapa', f: () => ir(null), tel: true, sola: true })
 

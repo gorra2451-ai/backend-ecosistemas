@@ -3,59 +3,75 @@
 import { supabase } from './supabase.js'
 import { codigoError } from './api.js'
 
-// ---------- Tipos y etiquetas (copy de App.dc.html) ----------
-export const TIPO_LABEL = { calle: 'Calle', casa: 'Mi casa', coche: 'Coche', persona_en_riesgo: 'Persona en riesgo' }
+// ---------- Tipos y etiquetas (HTML validado del Equipo Reporte, ronda 3) ----------
+export const TIPO_LABEL = { casa: 'Casa', coche: 'Coche', calle: 'Calle', persona_en_riesgo: 'Persona en riesgo' } // tarjetas
+export const TIPO_LARGO = { casa: 'Casa inundada', coche: 'Coche atrapado', calle: 'Calle inundada', persona_en_riesgo: 'Persona en riesgo' }
+export const TIPOS_REPORTE = ['casa', 'coche', 'calle', 'persona_en_riesgo'] // orden de las tarjetas del equipo
+
+// "¿Cuánta agua hay?" (Bajo · Medio · Alto) → gravedad del contrato v2 (gravedad_reporte). Para TODOS los tipos.
+// Mapeo propio (el equipo no usa los nombres del contrato): Bajo → sin_riesgo · Medio → limitado · Alto → bloqueado.
+export const GRAVEDAD = [
+  { k: 'sin_riesgo', nivel: 'bajo', t: 'Bajo', d: 'Hay agua, se puede pasar con cuidado.', pasanCarros: true },
+  { k: 'limitado', nivel: 'medio', t: 'Medio', d: 'Agua a media llanta o a la rodilla. Mejor esperar.', pasanCarros: true },
+  { k: 'bloqueado', nivel: 'alto', t: 'Alto', d: 'No pasan carros. No cruzar.', pasanCarros: false },
+]
+export const GRAVEDAD_CALLE = GRAVEDAD // alias de la ronda 2
+export const pasanCarrosDeGravedad = (k) => GRAVEDAD.find((g) => g.k === k)?.pasanCarros ?? true
+export const gravedadInfo = (k) => GRAVEDAD.find((g) => g.k === k) || null
+
 export const DETALLE_LABEL = {
   si: 'Pasan carros', no: 'No pasan carros', // ronda 1 (se conservan para reportes ya guardados)
-  bloqueado: 'Paso bloqueado', limitado: 'Paso limitado', sin_riesgo: 'Sin riesgo · encharcamiento leve',
-  tobillo: 'Agua a los tobillos', rodilla: 'Agua a las rodillas', cintura: 'Agua a la cintura o más',
+  bloqueado: 'Nivel alto', limitado: 'Nivel medio', sin_riesgo: 'Nivel bajo',
+  tobillo: 'Agua a los tobillos', rodilla: 'Agua a las rodillas', cintura: 'Agua a la cintura o más', // ronda 1
   vacio: 'Coche sin nadie dentro', dentro: 'Hay alguien dentro de un coche',
 }
 export const etiquetaReporte = (rep) =>
-  [TIPO_LABEL[rep?.tipo] || 'Reporte', DETALLE_LABEL[rep?.detalle]].filter(Boolean).join(' · ')
+  [TIPO_LARGO[rep?.tipo] || 'Reporte', DETALLE_LABEL[rep?.gravedad || rep?.detalle]].filter(Boolean).join(' · ')
 
-// crear_reporte exige p_pasan_carros NO nulo (parametros_invalidos). Solo "La calle" lo pregunta;
-// para casa/coche/persona se manda `true` (neutro: no sube la zona a Alto por un dato que nadie dio).
-// POR CONFIRMAR con Diego (reportado al integrador).
+// Sin gravedad el backend v1 exige p_pasan_carros no nulo: se manda `true` (neutro).
 export function pasanCarrosPara(tipo, respuesta) {
   if (tipo === 'calle') return respuesta === true
   return true
 }
-
-// Gravedad de la calle (flujo que testeó el Equipo Reporte). El backend solo distingue pasan / no pasan carros:
-// "Paso limitado" y "Sin riesgo" viajan igual (p_pasan_carros = true); la diferencia queda solo en el front.
-export const GRAVEDAD_CALLE = [
-  { k: 'bloqueado', t: 'Paso bloqueado', d: 'No se puede transitar · la zona sube a nivel Alto', pasanCarros: false },
-  { k: 'limitado', t: 'Paso limitado', d: 'Se puede pasar con precaución', pasanCarros: true },
-  { k: 'sin_riesgo', t: 'Sin riesgo', d: 'Encharcamiento leve', pasanCarros: true },
-]
-export const pasanCarrosDeGravedad = (k) => GRAVEDAD_CALLE.find((g) => g.k === k)?.pasanCarros ?? true
 
 // Stepper del flujo: Tipo · Detalles · Evidencia · Enviado. k: done | now | next.
 export const PASOS_REPORTE = ['Tipo', 'Detalles', 'Evidencia', 'Enviado']
 export const pasosStepper = (actual) =>
   PASOS_REPORTE.map((label, i) => ({ label, k: i < actual || actual === PASOS_REPORTE.length - 1 && i === actual ? 'done' : i === actual ? 'now' : 'next' }))
 
-// Resumen de "¡Reporte enviado!": tipo, ubicación (sin dirección: el backend no geocodifica), gravedad, foto.
+// Precisión (m) que se manda cuando la persona elige el punto en la búsqueda en vez del GPS.
+export const PRECISION_LUGAR_BUSCADO = 50
+
+// Texto de ubicación: dirección real (Nominatim) o, si no hay, la precisión del GPS.
+export const textoUbicacion = (direccion, precision) =>
+  direccion || (precision ? `Tu ubicación actual ±${Math.round(precision)} m` : 'Tu ubicación actual')
+
+// Resumen "Tu reporte": tipo, nivel (con patrón), ubicación, foto. `patron` = clase p-bajo|p-medio|p-alto.
 const ICONO_TIPO = { calle: 'calle', casa: 'casa', coche: 'coche', persona_en_riesgo: 'riesgo' }
+const PATRON = { bajo: 'p-bajo', medio: 'p-medio', alto: 'p-alto', critico: 'p-alto' }
+export const iconoTipo = (tipo) => ICONO_TIPO[tipo] || 'alerta'
 export function resumenReporte(rep) {
   if (!rep) return []
-  const m = Math.round(rep.precision || 0)
+  const g = gravedadInfo(rep.gravedad || rep.detalle)
   return [
-    { icono: ICONO_TIPO[rep.tipo] || 'alerta', texto: TIPO_LABEL[rep.tipo] || 'Reporte' },
-    { icono: 'pin', texto: m ? `Tu ubicación al reportar (±${m} m)` : 'Tu ubicación al reportar' },
-    DETALLE_LABEL[rep.detalle] && { icono: 'alerta', texto: DETALLE_LABEL[rep.detalle] },
-    rep.foto && { icono: 'camara', texto: 'Con foto (sin datos ocultos)' },
+    { icono: iconoTipo(rep.tipo), texto: TIPO_LARGO[rep.tipo] || 'Reporte' },
+    g && { icono: 'barras', texto: g.t, patron: PATRON[g.nivel] },
+    { icono: 'pin', texto: textoUbicacion(rep.direccion, rep.precision) },
+    { icono: 'imagen', texto: rep.evidenciaFallo ? 'La foto o video no se subió' : rep.archivo || (rep.evidencia ? 'Con evidencia' : 'Sin foto') },
   ].filter(Boolean)
 }
 
 // Arma lo que se manda al backend y lo que se guarda en "mis reportes" (local).
-export function armarReporte({ tipo, detalle = null, pasanCarros, ubic, id = crypto.randomUUID(), ahora = Date.now() }) {
+// `ubic` puede ser el GPS o un lugar elegido en la búsqueda ({ lat, lng, precision }).
+export function armarReporte({ tipo, gravedad = null, detalle = null, pasanCarros, ubic, direccion = null, id = crypto.randomUUID(), ahora = Date.now() }) {
   const payload = {
-    id, tipo, pasanCarros: pasanCarrosPara(tipo, pasanCarros),
+    id, tipo, pasanCarros: gravedad ? pasanCarrosDeGravedad(gravedad) : pasanCarrosPara(tipo, pasanCarros),
     lat: ubic.lat, lng: ubic.lng, precision: ubic.precision,
   }
-  const rep = { id, tipo, detalle, lat: ubic.lat, lng: ubic.lng, precision: ubic.precision, creado: ahora }
+  if (gravedad) payload.gravedad = gravedad
+  const rep = { id, tipo, detalle: gravedad || detalle, lat: ubic.lat, lng: ubic.lng, precision: ubic.precision, creado: ahora }
+  if (gravedad) rep.gravedad = gravedad
+  if (direccion) rep.direccion = direccion
   return { payload, rep }
 }
 
@@ -68,13 +84,19 @@ export function chipEstado(estado) {
   if (estado === 'activo') return { clase: 'chip-act', texto: 'Activo' }
   if (estado === 'resuelto') return { clase: 'chip-res', texto: 'Resuelto' }
   if (estado === 'no_enviado') return { clase: 'chip-cola', texto: 'No se envió' }
+  if (estado === 'en_revision') return { clase: 'chip-pend', texto: 'En revisión' }
   return { clase: 'chip-pend', texto: 'Pendiente' }
 }
 
 export function mensajeEnviado(estado) {
   if (estado === 'cola') return 'No hay señal. Tu reporte se guardó y se envía solo cuando vuelva. No tienes que hacer nada.'
-  if (estado === 'activo') return 'Otros vecinos lo confirmaron: ya es una zona en el mapa y avisamos a quien se acerque.'
-  return 'Ya está en el mapa como punto sin confirmar (anillo punteado). Si otros vecinos lo confirman, se vuelve zona.'
+  return 'Tu reporte ya está en el mapa. Te avisamos cuando lo confirmen.'
+}
+// Línea de estado bajo el título (honesta: pendiente = sin confirmar).
+export function estadoEnviado(estado) {
+  if (estado === 'cola') return 'En cola · se envía al volver la señal'
+  if (estado === 'activo') return 'Publicado · visible para todos'
+  return 'Sin confirmar · esperando a otros vecinos'
 }
 
 // Pasos: Enviado → Pendiente → Activo → Resuelto. k: done | now | next.
@@ -84,10 +106,63 @@ export function lineaDeTiempo(estado, creado) {
   const k = (paso) => (paso < i ? 'done' : paso === i ? (paso === 3 ? 'done' : 'now') : 'next')
   return [
     { label: 'Enviado', desc: estado === 'cola' ? 'En cola: se envía cuando vuelva la señal' : horaCorta(creado), k: i === 0 ? 'now' : 'done' },
-    { label: 'Pendiente', desc: 'Esperando que otros vecinos lo confirmen', k: k(1) },
+    { label: estado === 'en_revision' ? 'En revisión' : 'Pendiente', desc: estado === 'en_revision' ? 'Lo está revisando el equipo' : `Esperando ${CONFIRMACIONES_PARA_PUBLICAR} confirmaciones de otros vecinos`, k: k(1) },
     { label: 'Activo', desc: 'Ya es zona en el mapa', k: k(2) },
     { label: 'Resuelto', desc: 'Cuando dejen de confirmarlo o digan “ya no”', k: k(3) },
   ]
+}
+
+// ---------- Mis reportes (contrato v2 · mis_reportes) ----------
+// Valor por defecto de parametros.confirmaciones_para_publicar (solo para el texto; el backend decide).
+export const CONFIRMACIONES_PARA_PUBLICAR = 5
+const NIVEL_LABEL = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto', critico: 'Crítico' }
+
+// Fila del servidor → misma forma que el registro local (creado en ms, detalle = gravedad).
+export function normalizarMiReporte(x) {
+  return {
+    id: x.id, tipo: x.tipo, gravedad: x.gravedad || null, detalle: x.gravedad || null, estado: x.estado || 'pendiente',
+    lat: x.lat, lng: x.lng, creado: x.creado_en ? new Date(x.creado_en).getTime() : null,
+    confirmacionesSi: x.confirmaciones_si ?? null, nivel: x.nivel || null, ultima: x.ultima_confirmacion || null,
+    deServidor: true,
+  }
+}
+
+// Une servidor + local: el servidor manda en estado y conteos; lo local aporta dirección/evidencia y lo que el
+// servidor no tiene (en cola, no enviado). Más recientes primero, máx. 20.
+export function unirMisReportes(servidor, local = []) {
+  const loc = new Map(local.map((r) => [r.id, r]))
+  const s = (servidor || []).map((x) => { const n = normalizarMiReporte(x); const l = loc.get(n.id); return l ? { ...l, ...n, creado: n.creado ?? l.creado } : n })
+  const ids = new Set(s.map((r) => r.id))
+  return [...s, ...local.filter((r) => !ids.has(r.id))].sort((a, b) => (b.creado || 0) - (a.creado || 0)).slice(0, 20)
+}
+
+// Texto de la fila en "Mis reportes".
+export function filaMiReporte(r, ahora = Date.now()) {
+  const estado = {
+    pendiente: `Esperando ${CONFIRMACIONES_PARA_PUBLICAR} confirmaciones`, activo: 'Activo · en el mapa', resuelto: 'Resuelto',
+    en_revision: 'En revisión', cola: 'En cola · sin señal', no_enviado: 'No se envió', oculto: 'Retirado',
+  }[r.estado] || 'Pendiente'
+  const n = r.confirmacionesSi
+  return {
+    titulo: TIPO_LARGO[r.tipo] || 'Reporte',
+    estado,
+    confirmaciones: n == null ? null : `${n} ${n === 1 ? 'confirmación' : 'confirmaciones'} “sí”`,
+    nivel: r.nivel && NIVEL_LABEL[r.nivel] ? { texto: `Nivel ${NIVEL_LABEL[r.nivel].toLowerCase()}`, patron: PATRON[r.nivel] } : null,
+    hace: r.creado ? haceCuanto(new Date(r.creado).toISOString(), ahora) : '—',
+  }
+}
+
+// Fila "Cerca de ti" para reportes de otros (reportes_cercanos v2).
+export function filaCercano(x, ahora = Date.now()) {
+  const g = gravedadInfo(x.gravedad)
+  const n = NIVEL_LABEL[x.nivel]
+  return {
+    titulo: TIPO_LARGO[x.tipo] || 'Inundación',
+    lugar: x.distancia_m != null ? `A ${Math.round(x.distancia_m)} m de ti` : '',
+    estado: x.estado === 'activo' ? 'Confirmado' : 'Sin confirmar',
+    nivel: n ? { texto: n, patron: PATRON[x.nivel] } : g ? { texto: g.t, patron: PATRON[g.nivel] } : null,
+    hace: x.ultima_confirmacion || x.creado_en ? `Actualizado ${haceCuanto(x.ultima_confirmacion || x.creado_en, ahora)}` : '',
+  }
 }
 
 export function horaCorta(ms) {
@@ -103,7 +178,8 @@ export function haceCuanto(iso, ahora = Date.now()) {
   const min = Math.max(0, Math.round((ahora - new Date(iso).getTime()) / 60000))
   if (min < 1) return 'ahora'
   if (min < 60) return `hace ${min} min`
-  return `hace ${Math.round(min / 60)} h`
+  if (min < 48 * 60) return `hace ${Math.round(min / 60)} h`
+  return `hace ${Math.round(min / 1440)} días`
 }
 
 // ---------- Enlaces para compartir ----------
@@ -192,6 +268,20 @@ export async function seguimientoReporte(id) {
     if (!error) confirmaciones = count ?? null
   } catch { /* sin red: se queda en null */ }
   return { data: { estado: rep.data.estado, ultima: rep.data.ultima_confirmacion, confirmaciones }, error: null }
+}
+
+// Evidencia: foto o video. El contrato v2 acepta .mov (video/quicktime); api.subirEvidencia lo nombraría ".quicktime".
+const EXT_EVIDENCIA = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' }
+export const extensionEvidencia = (mime) => EXT_EVIDENCIA[mime] || null
+export const tipoEvidencia = (mime) => (String(mime).startsWith('video/') ? 'video' : String(mime).startsWith('image/') ? 'foto' : null)
+
+export async function subirEvidenciaReporte(reporteId, archivo) {
+  const ext = extensionEvidencia(archivo.type)
+  if (!ext) return { data: null, error: 'tipo_archivo_invalido' }
+  const ruta = `${reporteId}/${crypto.randomUUID()}.${ext}`
+  const up = await r(supabase.storage.from('evidencias').upload(ruta, archivo, { contentType: archivo.type, upsert: false }))
+  if (up.error) return up
+  return r(supabase.rpc('agregar_evidencia', { p_reporte_id: reporteId, p_ruta: ruta, p_tipo: tipoEvidencia(archivo.type) }))
 }
 
 // Error `sin_sesion`: se tira la sesión local vencida para que crearReporte abra una anónima nueva.

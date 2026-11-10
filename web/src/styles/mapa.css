@@ -16,8 +16,6 @@
 .mp-sw--pend{width:12px;height:12px;border-radius:50%;border:2px dashed var(--acc)}
 .mp-sw--tu{width:12px;height:12px;border-radius:50%;background:var(--acc)}
 .mp-sw--risk{width:14px;height:14px;border-radius:50%;background:var(--risk)}
-.mp-a11y{align-self:flex-start;color:var(--tx);display:flex;align-items:center;gap:8px}
-.mp-a11y-ico{width:32px;height:32px;border-radius:50%;background:var(--acc);color:var(--accTx);display:flex;align-items:center;justify-content:center}
 .mp-legend-desk{position:absolute;left:0;top:0}
 
 /* ---------- Hoja inferior ---------- */
@@ -33,8 +31,7 @@
 .mp-list{display:flex;flex-direction:column;gap:8px;max-height:min(42vh,340px);overflow-y:auto;margin:0;padding:0;list-style:none}
 .mp-row{width:100%;color:var(--tx);text-align:left}
 .mp-row .row-swatch{flex:none;display:flex;align-items:center;justify-content:center}
-.mp-pill{background:rgba(255,255,255,.92);color:#0B1220;font:700 13px var(--f-body);padding:2px 6px;border-radius:6px}
-.c-risk .mp-pill{background:transparent;color:#fff}
+.mp-pill{background:var(--s1);color:var(--tx);font:700 13px var(--f-body);padding:2px 6px;border-radius:6px}
 .mp-row-t{display:block;font:700 16px/1.2 var(--f-body)}
 .mp-row-m{display:block;font-size:14px;color:var(--mu);margin-top:2px}
 .mp-row-tx{flex:1;min-width:0}
@@ -77,8 +74,8 @@
 .mp-z-dist{font-size:14px;color:var(--mu)}
 .mp-z-t{font:800 22px/1.1 var(--f-head)}
 .mp-z-nivel{border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:6px}
-.mp-z-lvl{align-self:flex-start;background:rgba(255,255,255,.94);color:#0B1220;padding:4px 12px;border-radius:10px;font:800 36px/1.1 var(--f-head)}
-.mp-z-consejo{align-self:flex-start;background:rgba(255,255,255,.94);color:#0B1220;padding:2px 10px;border-radius:8px;font:700 16px var(--f-body)}
+.mp-z-lvl{align-self:flex-start;background:var(--s1);color:var(--tx);padding:4px 12px;border-radius:10px;font:800 36px/1.1 var(--f-head)}
+.mp-z-consejo{align-self:flex-start;background:var(--s1);color:var(--tx);padding:2px 10px;border-radius:8px;font:700 16px var(--f-body)}
 .mp-z-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .mp-z-stat{background:var(--s1);border:var(--bw) solid var(--line);border-radius:14px;padding:10px}
 .mp-z-num{font:800 26px/1.1 var(--f-head)}
@@ -87,7 +84,7 @@
 .mp-link{min-height:56px;border-radius:18px;font:700 17px var(--f-body);display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;padding:0 16px;text-align:center}
 .mp-link--acc{min-height:60px;background:var(--acc);color:var(--accTx);font-size:18px}
 .mp-link--line{border:2px solid var(--line);color:var(--tx)}
-.mp-link--911{min-height:72px;border-radius:20px;background:var(--risk);color:#fff;font:800 20px var(--f-body)}
+.mp-link--911{min-height:72px;border-radius:20px;font:800 20px var(--f-body)}
 .mp-z-priv{font-size:14px;color:var(--mu);text-align:center}
 
 /* ---------- Capas y leyenda (panel) ---------- */
@@ -125,3 +122,101 @@
   .mp-capas-fondo{align-items:flex-start;justify-content:flex-end;padding:92px 16px 16px}
   .mp-capas{max-height:calc(100dvh - 108px)}
 }
+
+/* ---------- Ronda 3 (material del equipo Cauce ZMG con el look del design system) ---------- */
+/* Crítico (v2): rojo de riesgo, patrón cuadriculado (dos diagonales). Mismo trazo que .p-* de components.css. */
+.p-critico{background-color:var(--risk);
+  background-image:repeating-linear-gradient(45deg,rgba(11,18,32,.6) 0 2px,transparent 2px 7px),
+                   repeating-linear-gradient(-45deg,rgba(11,18,32,.6) 0 2px,transparent 2px 7px)}
+.mp-sw--lugar{width:14px;height:14px;border-radius:50%;border:3px solid var(--tx);background:var(--bg);flex:none}
+
+/* Búsqueda sobre el mapa + Más */
+.mp-search{flex:1;min-width:0;min-height:52px;border:var(--bw) solid var(--line);border-radius:var(--r-pill);background:var(--s1);color:var(--mu);
+  display:flex;align-items:center;gap:10px;padding:0 16px;font:400 16px var(--f-body);text-align:left;box-shadow:var(--sh-legend-light)}
+.mp-search span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-search svg{color:var(--tx);flex:none}
+.mp-search--side{flex:none;width:100%;box-shadow:none}
+.mp-mas{flex:none;min-width:64px;min-height:52px;border:var(--bw) solid var(--line);border-radius:18px;background:var(--s1);color:var(--tx);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:700 12px/1 var(--f-body);box-shadow:var(--sh-legend-light)}
+
+/* Filas de alertas: lugar + insignias */
+.mp-row-l{display:block;font-size:15px;color:var(--mu2);margin-top:2px}
+.mp-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.mp-badge{display:inline-flex;align-items:center;gap:5px;border-radius:var(--r-pill);padding:3px 10px;font:700 13px/1.2 var(--f-body)}
+.mp-badge--no{background:var(--s1);color:var(--tx);border:2px solid var(--ra)}
+.mp-badge--no svg{color:var(--ra)}
+.mp-badge--prec{background:var(--amber);color:var(--amberTx)}
+.mp-badge--sin{background:var(--s2);color:var(--mu2);border:var(--bw) dashed var(--line)}
+.mp-badge--ok{background:var(--chip);color:var(--acc)}
+.mp-badge--nivel{background:var(--s2);color:var(--tx);border:var(--bw) solid var(--line)}
+.mp-list--libre{max-height:none;overflow:visible}
+
+/* Tarjeta "… cerca de ti" en la hoja mínima */
+.mp-near{width:100%;border:var(--bw) solid var(--line);border-radius:var(--r-card);background:var(--bg);color:var(--tx);
+  padding:12px;display:flex;flex-direction:column;gap:8px;text-align:left}
+.mp-near-o{color:var(--acc)}
+.mp-near-row{display:flex;align-items:center;gap:12px}
+.mp-near .row-swatch{flex:none;display:flex;align-items:center;justify-content:center}
+.mp-mid-sub{font-size:14px;color:var(--mu);margin-top:2px}
+
+/* Detalle de alerta */
+.mp-z-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:-8px}
+.mp-z-head .mp-z-t{text-transform:uppercase;letter-spacing:.02em}
+.mp-z-lugar{display:flex;flex-direction:column;gap:2px}
+.mp-z-lugar b{font:700 17px/1.3 var(--f-body)}
+.mp-z-lugar span{font-size:14px;color:var(--mu)}
+.mp-card{background:var(--s1);border:var(--bw) solid var(--line);border-radius:var(--r-card);padding:16px;display:flex;flex-direction:column;gap:10px}
+.mp-card h2{font:800 19px/1.2 var(--f-head)}
+.mp-card p{font:var(--t-small);color:var(--mu2)}
+.mp-card ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font:var(--t-small)}
+.mp-card--acc{background:var(--chip);border-color:var(--acc)}
+.mp-dl{margin:0;display:flex;flex-direction:column;gap:8px}
+.mp-dl div{display:flex;justify-content:space-between;gap:12px}
+.mp-dl dt{color:var(--mu);font-size:15px}
+.mp-dl dd{margin:0;font:700 15px var(--f-body);text-align:right}
+.mp-z-nota{font-size:14px;color:var(--mu);text-align:center;margin-top:-4px}
+
+/* Buscar */
+.mp-buscar{display:flex;align-items:center;gap:8px}
+.mp-buscar-campo{flex:1;min-width:0;min-height:52px;border:var(--bw) solid var(--line);border-radius:var(--r-pill);background:var(--s2);
+  display:flex;align-items:center;gap:10px;padding:0 16px;color:var(--tx)}
+.mp-buscar-campo:focus-within{outline:3px solid var(--acc);outline-offset:2px}
+.mp-buscar-campo input{flex:1;min-width:0;min-height:48px;border:0;background:transparent;color:var(--tx);font:400 17px var(--f-body);outline:none}
+.mp-buscar-campo input::placeholder{color:var(--mu)}
+.mp-cancelar{flex:none;min-height:48px;text-decoration:none}
+.mp-res{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.mp-res li + li{border-top:var(--bw) solid var(--line)}
+.mp-res button{width:100%;min-height:64px;border:0;background:transparent;color:var(--tx);display:flex;align-items:center;gap:14px;padding:10px 4px;text-align:left}
+.mp-res button > svg{color:var(--acc);flex:none}
+.mp-res b{display:block;font:700 17px/1.25 var(--f-body)}
+.mp-res b + span{display:block;font-size:14px;color:var(--mu);margin-top:2px}
+.mp-aviso{font-size:16px;color:var(--mu2);padding:8px 2px}
+.mp-lugar{display:flex;align-items:center;gap:12px}
+.mp-lugar-ico{width:48px;height:48px;border-radius:14px;background:var(--chip);color:var(--acc);display:flex;align-items:center;justify-content:center;flex:none}
+.mp-lugar b{display:block;font:800 22px/1.15 var(--f-head)}
+.mp-lugar span{display:block;font-size:14px;color:var(--mu)}
+.mp-lugar-acc{display:flex;flex-direction:column;gap:8px}
+.mp-btn-prim{display:flex;align-items:center;justify-content:center;gap:10px;padding:0 16px}
+
+/* Filtros: chips de nivel y botones finales */
+.mp-chips{display:flex;flex-wrap:wrap;gap:8px}
+.mp-chip{min-height:48px;border:var(--bw) solid var(--line);border-radius:var(--r-pill);background:var(--s1);color:var(--mu);
+  display:flex;align-items:center;gap:6px;padding:0 14px;font:700 15px var(--f-body)}
+.mp-chip[aria-pressed=true]{border:2px solid var(--acc);color:var(--tx);background:var(--chip)}
+.mp-chip .mp-sw{width:16px;height:16px}
+.mp-capas-acc{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.mp-capas-acc .btn:disabled{opacity:.5}
+.mp-capas-acc .btn-primary{min-height:56px;font-size:16px}
+
+/* Más */
+.mp-det{padding:0}
+.mp-det summary{list-style:none;min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;cursor:pointer;color:var(--tx)}
+.mp-det summary::-webkit-details-marker{display:none}
+.mp-det summary svg{transform:rotate(90deg);transition:transform var(--dur-sheet)}
+.mp-det[open] summary svg{transform:rotate(-90deg)}
+.mp-det-c{padding:0 16px 16px;display:flex;flex-direction:column;gap:8px}
+.mp-conf{list-style:none !important;padding:0 !important;gap:0 !important}
+.mp-conf li + li{border-top:var(--bw) solid var(--line)}
+.mp-conf button{width:100%;min-height:56px;border:0;background:transparent;color:var(--tx);display:flex;align-items:center;gap:12px;font:700 16px var(--f-body);text-align:left;padding:0}
+.mp-conf button > svg:first-child{color:var(--acc)}
+.mp-conf button > svg:last-child{margin-left:auto;color:var(--mu)}

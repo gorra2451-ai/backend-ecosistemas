@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { conTiempo, entrarConMedio, avisoEntrada, pedirPermisoAvisos, MUNICIPIOS_ZMG, MEDIOS } from './onboarding.js'
+import {
+  conTiempo, entrarConMedio, avisoEntrada, pedirPermisoAvisos, MUNICIPIOS_ZMG, MEDIOS,
+  idCorto, a11yActivo, alternarA11y, resumenA11y, tituloMedio,
+} from './onboarding.js'
 
 const ok = () => Promise.resolve({ data: null, error: null })
 
@@ -54,8 +57,36 @@ describe('pedirPermisoAvisos', () => {
 })
 
 describe('catálogos', () => {
-  it('6 municipios y 4 medios del contrato', () => {
+  it('6 municipios y los 5 medios del contrato v2 en el orden del equipo', () => {
     expect(MUNICIPIOS_ZMG).toHaveLength(6)
-    expect(MEDIOS.map((m) => m.id)).toEqual(['peaton', 'bici', 'auto', 'transporte_publico'])
+    expect(MEDIOS.map((m) => m.id)).toEqual(['peaton', 'moto', 'bici', 'auto', 'transporte_publico'])
+    expect(MEDIOS.every((m) => m.tip)).toBe(true)
+    expect(tituloMedio('moto')).toBe('Motocicleta')
+    expect(tituloMedio(null)).toBe('sin elegir')
+  })
+})
+
+describe('idCorto', () => {
+  it('# + 6 primeros caracteres en mayúsculas', () => {
+    expect(idCorto({ user: { id: 'a7f3b2c4-0000-4000-8000-000000000000' } })).toBe('#A7F3B2')
+  })
+  it('sin sesión no inventa', () => {
+    expect(idCorto(null)).toBe(null)
+    expect(idCorto({ user: {} })).toBe(null)
+  })
+})
+
+describe('ajustes de accesibilidad (mismos valores que Módulo E)', () => {
+  it('grande y dalton van en a11y; voz es booleano', () => {
+    let p = { tema: 'oscuro', a11y: ['contraste'] }
+    p = alternarA11y(p, 'grande')
+    p = alternarA11y(p, 'voz')
+    expect(p.a11y).toEqual(['contraste', 'grande'])
+    expect(p.voz).toBe(true)
+    expect(a11yActivo(p, 'dalton')).toBe(false)
+    expect(resumenA11y(p)).toBe('texto grande, modo voz')
+    p = alternarA11y(p, 'grande')
+    expect(p.a11y).toEqual(['contraste'])
+    expect(resumenA11y({})).toBe('ninguna activada')
   })
 })

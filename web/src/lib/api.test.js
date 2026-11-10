@@ -26,6 +26,7 @@ describe('nivelDeZona', () => {
   it('normaliza el nivel de zonas_publicas', () => {
     expect(nivelDeZona({ nivel: 'alto' })).toBe('alto')
     expect(nivelDeZona({ nivel: 'MEDIO' })).toBe('medio')
+    expect(nivelDeZona({ nivel: 'critico' })).toBe('critico')
     expect(nivelDeZona({ nivel: null })).toBe('bajo')
   })
 })

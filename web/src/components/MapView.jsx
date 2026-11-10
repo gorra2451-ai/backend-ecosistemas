@@ -5,12 +5,12 @@ import { MapContainer, TileLayer, Rectangle, Marker, Circle, useMap } from 'reac
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useApp } from '../lib/store.jsx'
-import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor, nivelDeZona } from '../lib/api.js'
-import { leerCapas, suscribirCapas, filtrarCapas } from '../lib/mapa.js'
+import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor } from '../lib/api.js'
+import { leerCapas, suscribirCapas, filtrarCapas, nivelV2, leerCentro, suscribirCentro } from '../lib/mapa.js'
 
 const CELDA_M = 300 // parametros.tamano_celda_m (POR CONFIRMAR)
-const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)' }
-const TEXTO = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }
+const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)', critico: 'var(--risk)' }
+const TEXTO = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto', critico: 'Crítico' }
 
 const icono = (html, size = 32) => L.divIcon({ html, className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2] })
 const etiqueta = (z) => L.divIcon({
@@ -23,6 +23,16 @@ function Seguir({ ubic, centrarSeq }) {
   const map = useMap()
   useEffect(() => { map.setView([ubic.lat, ubic.lng], map.getZoom() < 14 ? 15 : map.getZoom()) }, [centrarSeq]) // eslint-disable-line
   return null
+}
+
+// Lugar elegido en Buscar (store centrarEn de lib/mapa.js): centra el mapa y lo marca.
+function CentrarEn() {
+  const map = useMap()
+  const c = useSyncExternalStore(suscribirCentro, leerCentro)
+  useEffect(() => { if (c) map.setView([c.lat, c.lng], 16) }, [c?.seq]) // eslint-disable-line
+  if (!c) return null
+  return <Marker position={[c.lat, c.lng]} zIndexOffset={900} title={c.nombre || 'Lugar buscado'}
+    icon={icono('<div class="mp-sw--lugar" style="width:22px;height:22px;border-width:4px" aria-label="Lugar buscado"></div>', 22)} />
 }
 
 function Controles({ ubic }) {
@@ -56,7 +66,7 @@ export default function MapView({ centrarSeq = 0 }) {
       const [z, rep, ref] = await Promise.all([
         zonasPublicas(), reportesEnArea(bboxAlrededor(ubic.lat, ubic.lng, 8000)), refugiosPublicos()])
       if (!vivo) return
-      setZonas((z.data || []).map((x) => ({ ...x, nivel: nivelDeZona(x) })))
+      setZonas((z.data || []).map((x) => ({ ...x, nivel: nivelV2(x) })))
       setReportes(rep.data || [])
       setRefugios(ref.data || [])
     })()
@@ -75,6 +85,7 @@ export default function MapView({ centrarSeq = 0 }) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
       <Seguir ubic={ubic} centrarSeq={centrarSeq} />
       <Controles ubic={ubic} />
+      <CentrarEn />
 
       {ver.zonas.map((z) => {
         const dLng = dLat / Math.cos((z.lat * Math.PI) / 180)

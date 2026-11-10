@@ -83,12 +83,63 @@
 .ay-clima-vig{font-size:17px;font-weight:700}
 .ay-clima-desc{font-size:15px;line-height:1.4;margin:0}
 .ay-inline{min-height:0;padding:0}
-.ay-share{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}
+.ay-share{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:6px}
 .ay-share .ay-a{min-height:52px;padding:0 6px;gap:6px;font-size:14px;color:var(--tx)}
 .ay-acc2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .ay-acc2 .btn{font-size:14px;padding:0 8px !important}
-.ay-clima-ej{display:flex;flex-direction:column;gap:8px}
-.ay-clima-ej .tag-ejemplo{align-self:flex-start}
-.ay-clima-ej .ay-clima-nivel{border-radius:10px}
 .ay-toggle:disabled{opacity:.7}
 @media (max-width:360px){.ay-share,.ay-acc2{grid-template-columns:1fr}}
+
+/* Ronda 3 (Equipo 5): look del design system, flujo/copy del equipo */
+.ay-si{display:inline-flex;align-items:center;gap:4px}
+.ay-on{display:flex;align-items:center;justify-content:center;gap:8px}
+.ay-centro{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
+.ay-left{text-align:left;padding:0;align-self:flex-start}
+.ay-msg{font-weight:700;font-size:17px;margin:0}
+.ay-caso--risk:last-child svg{color:var(--ra)}
+/* Crítico: patrón cruzado + palabra (nunca solo color) */
+.ay-p-critico{background-color:var(--risk);
+  background-image:repeating-linear-gradient(45deg,rgba(11,18,32,.6) 0 2px,transparent 2px 7px),repeating-linear-gradient(-45deg,rgba(11,18,32,.6) 0 2px,transparent 2px 7px)}
+.ay-nivel{flex:none;border-radius:10px;padding:6px 6px;display:inline-flex}
+.ay-nivel .ay-pill{font-size:13px;white-space:nowrap}
+
+/* Alerta: nivel de lluvia con gotas */
+.ay-nivel-lluvia{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--s2);border-radius:14px;padding:10px 12px}
+.ay-gotas{display:inline-flex;gap:4px}
+.ay-gotas i{width:12px;height:16px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;border:2px solid var(--ra);background:transparent}
+.ay-gotas i.on{background:var(--ra)}
+
+/* Monitoreo vial */
+.ay-modos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ay-modo{min-height:56px;border:var(--bw) solid var(--line);border-radius:16px;background:var(--s1);color:var(--tx);
+  font:700 15px var(--f-body);display:flex;align-items:center;justify-content:center;gap:6px;padding:0 6px}
+.ay-modo[aria-pressed=true]{border:2px solid var(--acc);background:var(--chip)}
+.ay-vias{background:var(--s1);border:var(--bw) solid var(--line);border-radius:18px;display:flex;flex-direction:column}
+.ay-via{min-height:72px;display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:0;
+  border-bottom:var(--bw) solid var(--line);color:var(--tx);text-align:left;width:100%}
+.ay-via:last-child{border-bottom:0}
+.ay-via-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ay-via-t{font-weight:700;font-size:16px}
+.ay-via-ic{flex:none;width:36px;height:36px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center}
+.ay-v-no{color:var(--ra)} .ay-v-precaucion{color:var(--rm)} .ay-v-si{color:var(--acc)}
+
+/* ¿Puedo pasar? */
+.ay-veredicto{display:flex;align-items:center;gap:10px;font:800 24px/1.1 var(--f-head);border:2px solid currentColor;border-radius:16px;padding:12px 14px}
+.ay-pasa-fila{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;border-bottom:var(--bw) solid var(--line)}
+.ay-pasa-fila:last-child{border-bottom:0}
+.ay-pasa-l{display:flex;align-items:center;gap:8px;font-size:16px}
+.ay-si-pasa,.ay-no-pasa{display:inline-flex;align-items:center;gap:4px;font-weight:700}
+.ay-si-pasa{color:var(--acc)} .ay-no-pasa{color:var(--ra)}
+
+/* Asistencia */
+.ay-rec{align-items:stretch;text-align:center}
+.ay-rec-lead{font-size:17px;color:var(--mu)}
+.ay-rec-who{font:800 26px/1.1 var(--f-head)}
+.ay-sin-num{min-height:60px;flex-wrap:wrap;font-weight:700}
+.ay-say{background:var(--s2);border-left:4px solid var(--acc);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.ay-say-t{font:var(--t-overline);letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
+.ay-say-msg{margin:0;font-size:17px;line-height:1.4}
+.ay-stepper{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px}
+.ay-stepper .btn-icon{color:var(--tx);font-size:22px;font-weight:700}
+.ay-guia{font-size:16px;line-height:1.45}
+@media (max-width:360px){.ay-modo{flex-direction:column;gap:2px;font-size:13px}}

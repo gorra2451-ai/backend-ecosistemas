@@ -60,11 +60,21 @@ from public.reportes r,
              ('00000000-0000-0000-0000-00000000000c'::uuid, false)) u(id, sigue)
 where r.ubicacion = pg_temp.utm(672100, 2285200);
 
--- nivel_para (como postgres)
-select is(public.nivel_para(1, false), 'bajo'::public.nivel_zona, 'nivel_para: 1 -> bajo');
-select is(public.nivel_para(3, false), 'medio'::public.nivel_zona, 'nivel_para: 3 -> medio');
-select is(public.nivel_para(6, false), 'alto'::public.nivel_zona, 'nivel_para: 6 -> alto');
-select is(public.nivel_para(1, true), 'alto'::public.nivel_zona, 'nivel_para: no pasan carros -> alto');
+-- Celda C: 15 confirmaciones "sí" repartidas entre sus 6 activos (D-021: el nivel sale de los "sí").
+insert into auth.users (id, aud, role)
+select ('00000000-0000-0000-0000-0000000003' || lpad(g::text, 2, '0'))::uuid, 'authenticated', 'authenticated'
+from generate_series(1, 15) g;
+insert into public.confirmaciones (reporte_id, perfil_id, sigue)
+select (select r.id from public.reportes r
+         where public.celda_mapa(r.ubicacion) = '2260_7617' order by r.id offset (g % 6) limit 1),
+       ('00000000-0000-0000-0000-0000000003' || lpad(g::text, 2, '0'))::uuid, true
+from generate_series(1, 15) g;
+
+-- nivel_para (como postgres). D-021: por confirmaciones "sí"; el 2.º argumento es persona_en_riesgo.
+select is(public.nivel_para(4, false), null::public.nivel_zona, 'nivel_para: 4 "sí" -> sin nivel');
+select is(public.nivel_para(10, false), 'medio'::public.nivel_zona, 'nivel_para: 10 "sí" -> medio');
+select is(public.nivel_para(15, false), 'alto'::public.nivel_zona, 'nivel_para: 15 "sí" -> alto');
+select is(public.nivel_para(1, true), 'alto'::public.nivel_zona, 'nivel_para: persona_en_riesgo -> alto');
 
 -- Sin sesión (anon)
 set local role anon;
@@ -73,13 +83,13 @@ select is((select count(*) from public.zonas_publicas)::int, 6, 'una fila por ce
 select is((select total_reportes from public.zonas_publicas where celda = '2240_7617'), 2,
   'pendiente/resuelto/oculto/en_revision no cuentan: celda A total 2');
 select is((select nivel from public.zonas_publicas where celda = '2240_7617'), 'bajo'::public.nivel_zona,
-  '2 activos -> bajo');
-select is((select nivel from public.zonas_publicas where celda = '2250_7617'), 'medio'::public.nivel_zona,
-  '3 activos -> medio');
+  'celda activa con 2 "sí" -> bajo (mínimo de una zona publicada)');
+select is((select nivel from public.zonas_publicas where celda = '2250_7617'), 'bajo'::public.nivel_zona,
+  '3 activos sin confirmaciones -> bajo (D-021: ya no cuenta reportes)');
 select is((select (total_reportes, nivel)::text from public.zonas_publicas where celda = '2260_7617'),
-  '(6,alto)', '6 activos -> alto');
+  '(6,alto)', '15 "sí" en la celda -> alto');
 select is((select (alguno_no_pasan_carros, nivel)::text from public.zonas_publicas where celda = '2270_7617'),
-  '(t,alto)', '1 activo sin paso de carros -> alto');
+  '(t,bajo)', 'no pasan carros ya no sube el nivel (D-021): bajo');
 select is((select count(*) from public.zonas_publicas where celda in ('2250_7617', '2260_7617'))::int, 2,
   'reportes a > 1 km caen en celdas distintas');
 select is((select string_agg(celda, ',' order by celda) from public.zonas_publicas

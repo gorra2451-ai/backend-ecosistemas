@@ -1,7 +1,8 @@
 import { useApp } from './lib/store.jsx'
 import MapView from './components/MapView.jsx'
 import { Toast } from './components/ui.jsx'
-import { PANTALLAS } from './screens/registro.js'
+import TabBar from './components/TabBar.jsx'
+import { PANTALLAS } from './screens/registro.jsx'
 import { TopBar, Hoja, Sidebar, DeskHeader } from './screens/Mapa.jsx'
 import { HojaEnviado, ColaReportes } from './screens/Reportar.jsx'
 import { AvisoConfirmar, DetectorCercanos, BotonProbarConfirmar } from './screens/Confirmar.jsx'
@@ -26,6 +27,7 @@ export default function App() {
           <Toast />
         </main>
       </div>
+      {!['acceso', 'privacidad', 'ubicacion', 'avisos', 'onb', 'tipo', 'paso2', 'riesgo'].includes(screen) && <TabBar />}
       <DetectorCercanos />
       <ColaReportes />
       {DEMO && <div style={{ position: 'fixed', right: 12, top: 150, zIndex: 950 }}><BotonProbarConfirmar /></div>}
