@@ -155,3 +155,8 @@
   .rp-tiles{grid-auto-rows:minmax(170px,1fr)}
 }
 @media (prefers-reduced-motion:reduce){ .rp-tl .now{animation:none} }
+
+/* Modo prueba (?prueba=1): aviso de que "Cerca de ti" ignora la distancia */
+.rp-prueba{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:14px;
+  border:var(--bw) solid var(--amber);color:var(--tx);background:var(--s1);font-size:14px;font-weight:700}
+.rp-prueba svg{color:var(--amber);flex:none;margin-top:1px}

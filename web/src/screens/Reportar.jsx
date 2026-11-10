@@ -14,6 +14,7 @@ import {
 import { Screen, Btn } from '../components/ui.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
 import '../styles/reportar.css'
+import { MODO_PRUEBA, radioCercanos } from '../lib/prueba.js'
 
 // Íconos propios del módulo (mismo estilo de línea que Icon.jsx); el resto viene de Icon.jsx.
 const PROPIOS = {
@@ -474,9 +475,10 @@ export function MisReportes() {
   const { lista, cargando } = useMisReportes()
   const [cerca, setCerca] = useState({ estado: 'cargando', lista: [] })
   useEffect(() => {
-    if (!ubic.real) { setCerca({ estado: 'sin_ubic', lista: [] }); return }
+    // En modo prueba no hace falta GPS: con el punto de ejemplo y radio de toda la ZMG basta.
+    if (!ubic.real && !MODO_PRUEBA) { setCerca({ estado: 'sin_ubic', lista: [] }); return }
     let ok = true
-    reportesCercanos(ubic.lat, ubic.lng).then(({ data, error }) => {
+    reportesCercanos(ubic.lat, ubic.lng, radioCercanos(MODO_PRUEBA)).then(({ data, error }) => {
       if (ok) setCerca({ estado: error ? 'error' : 'listo', lista: (data || []).filter((x) => !x.es_propio) })
     })
     return () => { ok = false }
@@ -487,8 +489,11 @@ export function MisReportes() {
     <Screen onBack={false} label="Reportes · Cerca de ti">
       <div>
         <h1 className="rp-h1">Cerca de ti</h1>
-        <p className="rp-sub">{ubic.real ? 'A 300 m de tu ubicación' : 'Activa tu ubicación para ver lo cercano'}</p>
+        <p className="rp-sub">{MODO_PRUEBA ? 'Reportes de toda la ZMG' : ubic.real ? 'A 300 m de tu ubicación' : 'Activa tu ubicación para ver lo cercano'}</p>
       </div>
+      {MODO_PRUEBA && (
+        <p className="rp-prueba" role="note"><Icon name="alerta" size={18} />Modo prueba: puedes confirmar reportes aunque no estés cerca.</p>
+      )}
 
       <h2 className="rp-label">Tus reportes</h2>
       {!lista.length ? (

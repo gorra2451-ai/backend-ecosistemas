@@ -14,6 +14,7 @@ import {
   suscribirViaje, puedeTocar, cambiosMios, leerMios, guardarMios,
 } from '../lib/confirmar.js'
 import '../styles/confirmar.css'
+import { MODO_PRUEBA } from '../lib/prueba.js'
 
 const usarViaje = () => useSyncExternalStore(suscribirViaje, leerViaje)
 
@@ -278,7 +279,7 @@ function Aviso({ rep, modo, cerrar }) {
   } else {
     cuerpo = (
       <>
-        <p className="cf-etq">Estás cerca del reporte</p>
+        <p className="cf-etq">{MODO_PRUEBA ? 'Modo prueba · reporte de la ZMG' : 'Estás cerca del reporte'}</p>
         <h2 id="cf-titulo">¿Sigue inundado?</h2>
         <Datos rep={rep} calle={calleTxt} />
         <div className="confirm-acciones">
