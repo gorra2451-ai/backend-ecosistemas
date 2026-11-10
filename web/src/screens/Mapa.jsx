@@ -1,6 +1,7 @@
 // MÓDULO C · Mapa (Equipo Mapa). Barra superior, hoja inferior (min/mid/full), sidebar de escritorio,
 // detalle de zona, encabezado de escritorio. Diseño: canvas App.dc.html (§3a) y Web.dc.html (§3b).
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { createPortal } from 'react-dom'
 import { useApp } from '../lib/store.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
 import { Screen } from '../components/ui.jsx'
@@ -8,6 +9,7 @@ import { zonasPublicas, reportesEnArea, alertasClima, reportesCercanos, bboxAlre
 import {
   loCercano, filaCercana, estadoZona, lluviaPara, textoLluvia, tituloHoja, distanciaM, formatoDist, hace,
   rutaGoogle, textoWhatsApp, reporteParaConfirmar, textoNivel, RADIO_TU_ZONA_M,
+  leerCapas, suscribirCapas, cambiarCapa, restablecerCapas, capasModificadas, filtrarCapas,
 } from '../lib/mapa.js'
 import '../styles/mapa.css'
 
@@ -43,14 +45,18 @@ function useDatosMapa() {
     return () => { vivo = false }
   }, [ubic.lat, ubic.lng, version, minuto]) // eslint-disable-line
 
+  const capas = useSyncExternalStore(suscribirCapas, leerCapas)
   const zonas = d?.zonas || []
   const reportes = d?.reportes || []
-  const items = loCercano({ zonas, reportes, ubic })
+  // La lista respeta las capas; la frase de "tu zona" no (no ocultamos peligro cercano).
+  const items = loCercano({ ...filtrarCapas({ zonas, reportes }, capas), ubic })
   const estado = estadoZona({ zonas, ubic, municipio, revisado: d?.revisado })
   const lluvia = lluviaPara(d?.alertas, municipio)
   return {
     cargando: !d, error: d?.error, ubic, municipio, medio, items, estado,
     lluvia: lluvia ? textoLluvia(lluvia, municipio) : '',
+    fuenteLluvia: lluvia?.fuente || '',
+    filtrado: capasModificadas(capas),
     titulo: tituloHoja(medio, items.length === 0),
   }
 }
@@ -59,14 +65,87 @@ const abrirItem = (ir, it) => (it.clase === 'riesgo' ? ir('zona', { reporte: it.
 const MEDIO_TXT = { peaton: 'A pie', bici: 'Bici', auto: 'Auto', transporte_publico: 'Bus' }
 
 // ---------- Piezas ----------
-function Leyenda({ desk = false }) {
+function Leyenda({ desk = false, filtrado = false, onCapas }) {
   const it = (cls, txt) => <span className="legend-item" key={txt}><span className={cls} aria-hidden="true" />{txt}</span>
   return (
-    <div className="mp-legend" role="list" aria-label="Leyenda del mapa">
-      {[it('mp-sw p-bajo', 'Bajo'), it('mp-sw p-medio', 'Medio'), it('mp-sw p-alto', 'Alto'),
-        desk ? it('mp-sw--risk', 'Persona en riesgo') : null, it('mp-sw--pend', 'Sin confirmar'), desk ? null : it('mp-sw--tu', 'Tú')]
-        .filter(Boolean).map((el) => <span role="listitem" key={el.key}>{el}</span>)}
+    <div className="mp-legend-row">
+      <div className="mp-legend" role="list" aria-label="Leyenda del mapa">
+        {[it('mp-sw p-bajo', 'Bajo'), it('mp-sw p-medio', 'Medio'), it('mp-sw p-alto', 'Alto'),
+          desk ? it('mp-sw--risk', 'Persona en riesgo') : null, it('mp-sw--pend', 'Sin confirmar'), desk ? null : it('mp-sw--tu', 'Tú')]
+          .filter(Boolean).map((el) => <span role="listitem" key={el.key}>{el}</span>)}
+      </div>
+      <button type="button" className="mp-capas-btn" onClick={onCapas} aria-haspopup="dialog">
+        <IcoCapas />{filtrado ? 'Capas · filtrado' : 'Capas y leyenda'}
+      </button>
     </div>
+  )
+}
+
+// Ícono propio (no está en Icon.jsx).
+const IcoCapas = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 3l9 5-9 5-9-5z" /><path d="M3 13l9 5 9-5" />
+  </svg>
+)
+
+// ---------- Capas y leyenda (panel) · equipo Mapa, pantallas 5, 6 y 15 ----------
+const CAPAS = [
+  ['bajo', 'Zonas nivel Bajo', 'Hay agua · se puede pasar con cuidado', 'mp-sw p-bajo'],
+  ['medio', 'Zonas nivel Medio', 'Agua a media llanta o a la rodilla · mejor espera', 'mp-sw p-medio'],
+  ['alto', 'Zonas nivel Alto', 'No pasan carros · no cruces', 'mp-sw p-alto'],
+  ['riesgo', 'Persona en riesgo', 'Alguien necesita ayuda · llama al 911', 'mp-sw--risk'],
+  ['refugios', 'Refugios', 'Lugares para resguardarte', 'mp-sw--ref'],
+  ['misReportes', 'Mis reportes', 'Lo que reportaste y aún nadie confirma', 'mp-sw--pend'],
+]
+
+function PanelCapas({ onCerrar, fuenteLluvia }) {
+  const capas = useSyncExternalStore(suscribirCapas, leerCapas)
+  const cerrarRef = useRef(null)
+  useEffect(() => {
+    cerrarRef.current?.focus()
+    const tecla = (e) => { if (e.key === 'Escape') onCerrar() }
+    window.addEventListener('keydown', tecla)
+    return () => window.removeEventListener('keydown', tecla)
+  }, [onCerrar])
+  return createPortal(
+    <div className="mp-capas-fondo" onClick={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
+      <section className="mp-capas" role="dialog" aria-modal="true" aria-labelledby="mp-capas-t">
+        <div className="mp-capas-head">
+          <h2 id="mp-capas-t">Capas y leyenda</h2>
+          <button ref={cerrarRef} type="button" className="mp-capas-x" onClick={onCerrar} aria-label="Cerrar capas y leyenda">
+            <Icon name="cerrar" size={22} />
+          </button>
+        </div>
+        <h3 className="mp-capas-h">Qué ver en el mapa</h3>
+        <ul className="mp-capas-lista">
+          {CAPAS.map(([k, t, d, sw]) => (
+            <li key={k}>
+              <button type="button" role="switch" aria-checked={capas[k]} className="mp-capa" onClick={() => cambiarCapa(k)}>
+                <span className={sw} aria-hidden="true" />
+                <span className="mp-capa-tx"><b>{t}</b><span>{d}</span></span>
+                <span className="mp-capa-r">{capas[k] ? 'Sí' : 'No'}<span className="switch" aria-hidden="true"><i /></span></span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        <p className="mp-capas-nota">Tu zona siempre te avisa de todo, aunque ocultes una capa.</p>
+        <h3 className="mp-capas-h">Otros símbolos</h3>
+        <ul className="mp-capas-sim">
+          <li><span className="mp-sw--tu" aria-hidden="true" /><b>Tú</b><span>Punto con anillo de 300 m: tu zona</span></li>
+          <li><span className="mp-sw p-alto" aria-hidden="true" /><b>Nivel con patrón</b><span>Puntos = Bajo, rayas = Medio, diagonales = Alto</span></li>
+        </ul>
+        <h3 className="mp-capas-h">Fuentes</h3>
+        <ul className="mp-capas-fuentes">
+          <li><b>Reportes ciudadanos anónimos.</b> Un reporte se vuelve zona cuando otras personas cerca lo confirman.</li>
+          <li><b>Avisos de lluvia:</b> alertas de clima verificadas{fuenteLluvia ? ` (hoy: ${fuenteLluvia})` : ''}.</li>
+          <li><b>Mapa base:</b> OpenStreetMap.</li>
+        </ul>
+        <button type="button" className="btn mp-capas-reset" onClick={restablecerCapas} disabled={!capasModificadas(capas)}>
+          Mostrar todo otra vez
+        </button>
+      </section>
+    </div>,
+    document.body,
   )
 }
 
@@ -96,6 +175,15 @@ function Fila({ it, onClick }) {
 function ListaCercana({ datos, onCalmaAvisos }) {
   const { ir } = useApp()
   if (datos.cargando) return <p className="mp-cargando" role="status">Cargando lo cercano…</p>
+  if (!datos.items.length && datos.filtrado) {
+    return (
+      <div className="mp-calma">
+        <b>Nada que mostrar con tus capas</b>
+        <p>Ocultaste algunas capas del mapa. Tu zona te sigue avisando de todo.</p>
+        <button type="button" className="mp-btn-acc" onClick={restablecerCapas}>Mostrar todo otra vez</button>
+      </div>
+    )
+  }
   if (!datos.items.length) {
     return (
       <div className="mp-calma">
@@ -115,6 +203,9 @@ export function TopBar() {
   const { estado, medio } = datos
   const sub = datos.error ? mensajeError(datos.error).titulo : estado.sub
   const alTocarEstado = () => (estado.zona ? ir('zona', { zona: estado.zona }) : setSheet('mid'))
+  const [capasAbierto, setCapasAbierto] = useState(false)
+  const abrirCapas = () => setCapasAbierto(true)
+  const cerrarCapas = useCallback(() => setCapasAbierto(false), [])
   return (
     <div className="mp-top">
       <div className="only-mobile mp-top" style={{ gap: 8 }}>
@@ -130,13 +221,14 @@ export function TopBar() {
             {!datos.cargando && sub && <span className="mp-sub">{sub}</span>}
           </button>
         </div>
-        <Leyenda />
+        <Leyenda filtrado={datos.filtrado} onCapas={abrirCapas} />
         <button type="button" className="btn-a11y mp-a11y" onClick={() => ir('ajustes')}>
           <span className="mp-mode-ico mp-a11y-ico"><Icon name="accesibilidad" size={22} stroke={2.4} /></span>
           Accesibilidad
         </button>
       </div>
-      <div className="only-desk"><Leyenda desk /></div>
+      <div className="only-desk"><Leyenda desk filtrado={datos.filtrado} onCapas={abrirCapas} /></div>
+      {capasAbierto && <PanelCapas fuenteLluvia={datos.fuenteLluvia} onCerrar={cerrarCapas} />}
     </div>
   )
 }

@@ -73,7 +73,9 @@ export function filaCercana(item, ahora = Date.now()) {
   const z = item.dato
   const carros = z.alguno_no_pasan_carros ? 'No pasan carros' : z.nivel === 'bajo' ? 'Pasan carros' : 'Pasan con cuidado'
   const reps = `${z.total_reportes} reporte${z.total_reportes === 1 ? '' : 's'}`
-  return { t: `Zona con agua a ${d}`, m: `${carros} · ${reps}`, lvl: textoNivel(z.nivel), cls: 'p-' + z.nivel }
+  // Copy del equipo Mapa (pantalla 7): cada fila dice qué tan reciente es.
+  const act = hace(z.actualizado_en, ahora)
+  return { t: `Zona con agua a ${d}`, m: [carros, reps, act && 'act. ' + act].filter(Boolean).join(' · '), lvl: textoNivel(z.nivel), cls: 'p-' + z.nivel }
 }
 
 // Frase de estado de la barra superior / tarjeta del sidebar.
@@ -117,4 +119,31 @@ export function reporteParaConfirmar(cercanos, punto, id) {
   const l = (cercanos || []).filter((r) => !r.es_propio)
   if (id) { const e = l.find((r) => r.id === id); if (e) return e }
   return l.map((r) => ({ r, d: distanciaM(punto, r) })).sort((a, b) => a.d - b.d)[0]?.r || null
+}
+
+// ---------- Capas del mapa (filtros) · store propio, sin React ----------
+// Lo leen la lista "Lo cercano" (Mapa.jsx) y MapView (vía usarCapas). Solo front: no se guarda en backend.
+export const CAPAS_INICIALES = Object.freeze({ bajo: true, medio: true, alto: true, riesgo: true, refugios: true, misReportes: true })
+let capas = { ...CAPAS_INICIALES }
+const oyentes = new Set()
+const avisarCapas = () => oyentes.forEach((f) => f())
+
+export const leerCapas = () => capas
+export function cambiarCapa(clave, valor) {
+  if (!(clave in CAPAS_INICIALES)) return
+  capas = { ...capas, [clave]: valor ?? !capas[clave] }
+  avisarCapas()
+}
+export function restablecerCapas() { capas = { ...CAPAS_INICIALES }; avisarCapas() }
+export function suscribirCapas(f) { oyentes.add(f); return () => oyentes.delete(f) }
+export const capasModificadas = (c = capas) => Object.keys(CAPAS_INICIALES).some((k) => c[k] !== CAPAS_INICIALES[k])
+
+// Aplica las capas a los datos del mapa. Zonas por nivel; reportes: solo afecta a "persona en riesgo".
+export function filtrarCapas({ zonas = [], reportes = [], refugios = [], misReportes = [] }, c = capas) {
+  return {
+    zonas: zonas.filter((z) => c[z.nivel] !== false),
+    reportes: reportes.filter((r) => r.tipo !== 'persona_en_riesgo' || c.riesgo),
+    refugios: c.refugios ? refugios : [],
+    misReportes: c.misReportes ? misReportes : [],
+  }
 }

@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { Screen, Btn, PorConfirmar } from '../components/ui.jsx'
 import Icon from '../components/Icon.jsx'
 import { useApp } from '../lib/store.jsx'
-import { derivar, refugiosPublicos, alertasClima, guardarAccesibilidad, nivelDeZona } from '../lib/api.js'
+import { derivar, refugiosPublicos, alertasClima, guardarAccesibilidad } from '../lib/api.js'
 import {
   MUNICIPIOS_ZMG, CASOS, INST_EJEMPLO, normalizarCaso, ordenarPorDistancia, formatoDistancia, urlRuta, municipioParaPush,
+  nivelAlerta, textoHace, textoVigencia, mensajeAlerta, urlWhatsApp, urlSms, PREFS_AVISOS_BASE, DOS_HORAS_MS, silenciado,
 } from '../lib/ayuda.js'
 import { pushDisponible, activarPush, desactivarPush, suscripcionActual } from '../lib/ayudaPush.js'
 import '../styles/ayuda.css'
@@ -183,25 +184,99 @@ export function Refugios() {
 // ---------------------------------------------------------------- Avisos
 const KEY_MUNIS = 'aguas.avisosMunis'
 const KEY_ON = 'aguas.avisosOn'
-const NIVEL_TXT = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }
+const KEY_PREFS = 'aguas.avisosPrefs' // solo front: el backend no conoce estas preferencias
+
+// Tarjeta de alerta (Equipo 5): nivel "N de 3" + palabra + patrón, vigencia, "actualizado hace", fuente y compartir.
+function AlertaClima({ a, ahora }) {
+  const { avisar } = useApp()
+  const n = nivelAlerta(a.nivel)
+  const vig = textoVigencia(a.vigente_desde, a.vigente_hasta)
+  const hace = textoHace(a.verificado_en || a.vigente_desde, ahora)
+  const enlace = typeof window !== 'undefined' ? window.location.origin : ''
+  const msg = mensajeAlerta(a, enlace)
+  const copiar = async () => {
+    try { await navigator.clipboard.writeText(msg); avisar('Alerta copiada') } catch { avisar('No se pudo copiar') }
+  }
+  return (
+    <article className="ay-clima" aria-label={`${n.texto}: ${a.titulo}`}>
+      <div className={`ay-clima-nivel p-${n.clave}`}><span className="ay-pill">{n.texto}</span></div>
+      <div className="ay-clima-body">
+        <span className="ay-clima-tag"><Icon name="lluvia" size={18} />Alerta de clima{a.municipio ? ` · ${a.municipio}` : ''}</span>
+        <h3 className="ay-clima-tit">{a.titulo}</h3>
+        {vig && <span className="ay-clima-vig">{vig}</span>}
+        {a.descripcion && <p className="ay-clima-desc">{a.descripcion}</p>}
+        <span className="ay-sub">
+          {hace ? `Actualizado ${hace}` : null}
+          {a.fuente ? <>{hace ? ' · ' : ''}{a.fuente_url
+            ? <a className="btn-text ay-inline" href={a.fuente_url} target="_blank" rel="noopener noreferrer">Fuente: {a.fuente}</a>
+            : `Fuente: ${a.fuente}`}</> : null}
+        </span>
+        <div className="ay-share" role="group" aria-label="Compartir alerta">
+          <a className="btn ay-a" href={urlWhatsApp(msg)} target="_blank" rel="noopener noreferrer"><Icon name="compartir" />WhatsApp</a>
+          <a className="btn ay-a" href={urlSms(msg)}><Icon name="telefono" />SMS</a>
+          <button className="btn ay-a" onClick={copiar}><Icon name="lista" />Copiar enlace</button>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+// Solo para mostrar el diseño mientras no haya alertas reales: marcado y sin compartir.
+function AlertaEjemplo() {
+  return (
+    <div className="card-ejemplo ay-clima-ej" aria-label="Ejemplo de alerta, no es real">
+      <span className="tag-ejemplo">Ejemplo · por confirmar</span>
+      <div className="ay-clima-nivel p-alto"><span className="ay-pill">Nivel 3 de 3 · Alto</span></div>
+      <strong>Lluvia fuerte (ejemplo)</strong>
+      <span className="ay-sub">Así se verá una alerta real: nivel con número y palabra, horario, “actualizado hace” y la fuente oficial.</span>
+    </div>
+  )
+}
+
+function Pref({ on, onClick, titulo, desc, disabled, extra }) {
+  return (
+    <button className="ay-toggle" role="switch" aria-checked={!!on} onClick={onClick} disabled={disabled}>
+      <span><span className="ay-toggle-l">{titulo}</span><span className="ay-toggle-d">{desc}</span>{extra}</span>
+      <span className="ay-toggle-r">
+        <span className={on ? '' : 'muted'} style={{ fontWeight: on ? 700 : 400 }}>{on ? 'Sí' : 'No'}</span>
+        <span className="switch" aria-hidden="true"><i /></span>
+      </span>
+    </button>
+  )
+}
 
 export function Alertas() {
-  const { municipio, avisar } = useApp()
+  const { ir, municipio, avisar } = useApp()
   const [munis, setMunis] = useState(() => leer(KEY_MUNIS, { [municipio]: true }))
   const [on, setOn] = useState(() => leer(KEY_ON, false))
+  const [prefs, setPrefsAv] = useState(() => ({ ...PREFS_AVISOS_BASE, ...leer(KEY_PREFS, {}) }))
   const [ocupado, setOcupado] = useState(false)
   const [nota, setNota] = useState(null)
   const [alertas, setAlertas] = useState(null)
+  const [ahora, setAhora] = useState(() => Date.now())
 
   useEffect(() => {
     alertasClima().then(({ data, error }) => setAlertas(error ? 'error' : (data || [])))
     // Si el navegador ya no tiene suscripción, el botón vuelve a "Activar".
     if (pushDisponible()) suscripcionActual().then((s) => { if (!s) { setOn(false); guardar(KEY_ON, false) } })
+    const t = setInterval(() => setAhora(Date.now()), 60000) // refresca "actualizado hace" y el silencio
+    return () => clearInterval(t)
   }, [])
 
   const toggleMuni = (m) => {
     const n = { ...munis, [m]: !munis[m] }
     setMunis(n); guardar(KEY_MUNIS, n)
+  }
+  const cambiarPref = (cambio) => {
+    const n = { ...prefs, ...cambio }
+    setPrefsAv(n); guardar(KEY_PREFS, n)
+  }
+  const callado = silenciado(prefs, ahora)
+  const silenciar = () => {
+    if (callado) { cambiarPref({ silencioHasta: null }); avisar('Avisos de vuelta'); return }
+    const hasta = Date.now() + DOS_HORAS_MS
+    cambiarPref({ silencioHasta: hasta }); setAhora(Date.now())
+    avisar(`Silenciado hasta ${new Date(hasta).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}`)
   }
 
   const toggleAvisos = async () => {
@@ -222,8 +297,23 @@ export function Alertas() {
     else setNota('Los avisos push se activan en la siguiente versión. Tus municipios quedan guardados.')
   }
 
+  const hay = Array.isArray(alertas) && alertas.length > 0
+  const acciones = (
+    <div className="ay-acc2">
+      <Btn icon="mapa" onClick={() => ir(null)}>Ver cómo están las calles</Btn>
+      <Btn icon="riesgo" onClick={() => ir('acudo')}>Me pasó algo aquí</Btn>
+    </div>
+  )
+
   return (
     <Screen titulo="Avisos">
+      {hay && (
+        <section className="ay-sec" aria-label="Alertas de clima vigentes">
+          {alertas.map((a) => <AlertaClima key={a.id} a={a} ahora={ahora} />)}
+          {acciones}
+        </section>
+      )}
+
       <div className="ay-card">
         <h2 className="ay-h" style={{ fontSize: 21 }}>Solo te avisamos si algo cambia</h2>
         <p className="ay-sub" style={{ fontSize: 15, lineHeight: 1.4 }}>
@@ -245,29 +335,37 @@ export function Alertas() {
       </div>
       <p className="ay-sub">Por municipio o zona, nunca por tu ubicación exacta.</p>
 
-      <h2 className="ay-label" style={{ fontSize: 17 }}>Alertas de clima</h2>
-      {alertas === null && <p className="muted" role="status">Revisando alertas…</p>}
-      {alertas === 'error' && <p className="muted">No pudimos revisar las alertas. Vuelve a intentar con señal.</p>}
-      {Array.isArray(alertas) && alertas.length === 0 && <p className="muted">Sin alertas de clima por ahora.</p>}
-      {Array.isArray(alertas) && alertas.length > 0 && (
-        <div className="ay-lista">
-          {alertas.map((a) => {
-            const n = nivelDeZona(a)
-            return (
-              <div key={a.id} className="ay-alerta">
-                <span className={`ay-sw p-${n}`} aria-hidden="true" />
-                <div>
-                  <strong>{NIVEL_TXT[n]} · {a.titulo}</strong> · {a.municipio}
-                  {a.descripcion && <div>{a.descripcion}</div>}
-                  <div className="ay-sub" style={{ fontSize: 13 }}>
-                    {a.vigente_hasta ? `Hasta ${new Date(a.vigente_hasta).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}` : ''}
-                    {a.fuente_url ? <> · <a className="btn-text" style={{ minHeight: 0 }} href={a.fuente_url} target="_blank" rel="noopener noreferrer">Fuente: {a.fuente}</a></> : null}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+      <h2 className="ay-label" style={{ fontSize: 17 }}>Ajustar mis avisos</h2>
+      <div className="ay-lista-toggles">
+        <Pref on={prefs.soloCambios} onClick={() => cambiarPref({ soloCambios: !prefs.soloCambios })}
+          titulo="Solo si cambia el estado" desc="Sin avisos repetidos." />
+        <Pref on={prefs.soloFuertes} onClick={() => cambiarPref({ soloFuertes: !prefs.soloFuertes })}
+          titulo="Solo alertas fuertes" desc="Nivel 3 de 3 y cierres de calle." />
+        <Pref on={false} disabled titulo="Avisarme 1 hora antes" desc="Para organizar tu día."
+          extra={<span className="ay-toggle-d">Necesita pronóstico <PorConfirmar /></span>} />
+        <button className={callado ? 'ay-on' : 'btn-ghost'} onClick={silenciar}>
+          {callado
+            ? `Silenciado hasta ${new Date(prefs.silencioHasta).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })} · toca para quitar`
+            : 'Silenciar 2 horas'}
+        </button>
+      </div>
+      <p className="ay-sub">Estos ajustes se guardan en este celular.</p>
+
+      {!hay && (
+        <>
+          <h2 className="ay-label" style={{ fontSize: 17 }}>Alertas de clima</h2>
+          {alertas === null && <p className="muted" role="status">Revisando alertas…</p>}
+          {alertas === 'error' && <p className="muted">No pudimos revisar las alertas. Vuelve a intentar con señal.</p>}
+          {Array.isArray(alertas) && (
+            <div className="ay-vacio">
+              <Icon name="lluvia" size={40} />
+              <strong>Sin alertas de clima por ahora</strong>
+              <span>Solo mostramos alertas con fuente oficial. Si cambia algo, aparece aquí.</span>
+            </div>
+          )}
+          {Array.isArray(alertas) && <AlertaEjemplo />}
+          {acciones}
+        </>
       )}
     </Screen>
   )

@@ -1,11 +1,12 @@
 // Mapa real (Leaflet + OSM/CARTO, sin llave · D-018). Pinta zonas_publicas, reportes activos,
 // mis reportes sin confirmar, refugios y "tú". Se recarga con Realtime y con refrescar().
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { MapContainer, TileLayer, Rectangle, Marker, Circle, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useApp } from '../lib/store.jsx'
 import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor, nivelDeZona } from '../lib/api.js'
+import { leerCapas, suscribirCapas, filtrarCapas } from '../lib/mapa.js'
 
 const CELDA_M = 300 // parametros.tamano_celda_m (POR CONFIRMAR)
 const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)' }
@@ -46,6 +47,7 @@ export default function MapView({ centrarSeq = 0 }) {
   const [reportes, setReportes] = useState([])
   const [refugios, setRefugios] = useState([])
   const [tick, setTick] = useState(0)
+  const capas = useSyncExternalStore(suscribirCapas, leerCapas)
 
   useEffect(() => escucharCambios(() => setTick((t) => t + 1)), [])
   useEffect(() => {
@@ -63,6 +65,7 @@ export default function MapView({ centrarSeq = 0 }) {
 
   const dLat = CELDA_M / 2 / 111320
   const activosIds = useMemo(() => new Set(reportes.map((r) => r.id)), [reportes])
+  const ver = filtrarCapas({ zonas, reportes, refugios, misReportes }, capas)
   const oscuro = prefs.tema !== 'claro'
   const tiles = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
   return (
@@ -73,7 +76,7 @@ export default function MapView({ centrarSeq = 0 }) {
       <Seguir ubic={ubic} centrarSeq={centrarSeq} />
       <Controles ubic={ubic} />
 
-      {zonas.map((z) => {
+      {ver.zonas.map((z) => {
         const dLng = dLat / Math.cos((z.lat * Math.PI) / 180)
         return (
           <Rectangle key={z.celda} bounds={[[z.lat - dLat, z.lng - dLng], [z.lat + dLat, z.lng + dLng]]}
@@ -81,23 +84,23 @@ export default function MapView({ centrarSeq = 0 }) {
             eventHandlers={{ click: () => { setSeleccion({ tipo: 'zona', ...z }); ir('zona', { zona: z }) } }} />
         )
       })}
-      {zonas.slice(0, 3).map((z) => (
+      {ver.zonas.slice(0, 3).map((z) => (
         <Marker key={'l' + z.celda} position={[z.lat, z.lng]} icon={etiqueta(z)}
           eventHandlers={{ click: () => { setSeleccion({ tipo: 'zona', ...z }); ir('zona', { zona: z }) } }} />
       ))}
 
-      {reportes.filter((r) => r.tipo === 'persona_en_riesgo').map((r) => (
+      {ver.reportes.filter((r) => r.tipo === 'persona_en_riesgo').map((r) => (
         <Marker key={r.id} position={[r.lat, r.lng]} zIndexOffset={1000}
           icon={icono('<div class="mk-risk" aria-label="Persona en riesgo">!</div>')}
           eventHandlers={{ click: () => ir('zona', { reporte: r }) }} />
       ))}
 
-      {misReportes.filter((m) => !activosIds.has(m.id) && Date.now() - m.creado < 3 * 3600e3).map((m) => (
+      {ver.misReportes.filter((m) => !activosIds.has(m.id) && Date.now() - m.creado < 3 * 3600e3).map((m) => (
         <Marker key={'m' + m.id} position={[m.lat, m.lng]} icon={icono('<div class="mk-pend" title="Tu reporte · sin confirmar"></div>')}
           eventHandlers={{ click: () => ir('mireporte', { id: m.id }) }} />
       ))}
 
-      {refugios.map((f) => (
+      {ver.refugios.map((f) => (
         <Marker key={'f' + f.id} position={[f.lat, f.lng]} icon={icono('<div class="mk-ref">⌂</div>', 30)}
           eventHandlers={{ click: () => ir('refugios') }} />
       ))}

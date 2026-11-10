@@ -49,3 +49,47 @@ describe('textos', () => {
     expect(mensajeConfirmar('raro')).toMatch(/Vuelve a intentar/)
   })
 })
+
+import { interpretarVoz, textoGracias, escucharVoz } from './confirmar.js'
+
+describe('interpretarVoz', () => {
+  it('reconoce sí', () => {
+    expect(interpretarVoz('Sí')).toBe('sigue')
+    expect(interpretarVoz('si sigue inundado')).toBe('sigue')
+  })
+  it('reconoce ya no', () => {
+    expect(interpretarVoz('Ya no')).toBe('ya_no')
+    expect(interpretarVoz('no')).toBe('ya_no')
+    expect(interpretarVoz('ya bajó el agua')).toBe('ya_no')
+  })
+  it('no confunde palabras que contienen "si"/"no"', () => {
+    expect(interpretarVoz('sinaloa')).toBe(null)
+    expect(interpretarVoz('noche')).toBe(null)
+    expect(interpretarVoz('no sé')).toBe(null)
+  })
+  it('"es falso" no se acepta por voz', () => {
+    expect(interpretarVoz('es falso')).toBe(null)
+    expect(interpretarVoz('')).toBe(null)
+  })
+})
+
+describe('textoGracias', () => {
+  it('avisa si el reporte se cerró', () => {
+    expect(textoGracias('ya_no', 'resuelto')).toContain('ya no aparece en el mapa')
+  })
+  it('no inventa números (P-29)', () => {
+    for (const a of ['sigue', 'ya_no', 'falso']) expect(textoGracias(a, 'activo')).not.toMatch(/\d/)
+  })
+})
+
+describe('escucharVoz', () => {
+  it('sin soporte responde null', () => {
+    let v = 'x'; escucharVoz((r) => { v = r }, null); expect(v).toBe(null)
+  })
+  it('usa es-MX y entrega la acción', () => {
+    let v, inst
+    class Fake { constructor() { inst = this } start() { this.onresult({ results: [[{ transcript: 'ya no' }]] }); this.onend() } abort() {} }
+    escucharVoz((r) => { v = r }, Fake)
+    expect(inst.lang).toBe('es-MX'); expect(v).toBe('ya_no')
+  })
+})

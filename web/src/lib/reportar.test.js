@@ -3,6 +3,7 @@ vi.mock('./supabase.js', () => ({ supabase: {} }))
 import {
   pasanCarrosPara, armarReporte, casoAcudo, chipEstado, lineaDeTiempo, etiquetaReporte,
   linkMaps, linkWhatsApp, textoFamilia, leerCola, encolar, quitarDeCola, medidasMax, haceCuanto,
+  GRAVEDAD_CALLE, pasanCarrosDeGravedad, pasosStepper, resumenReporte,
 } from './reportar.js'
 
 const memoria = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) } }
@@ -22,7 +23,7 @@ describe('armarReporte', () => {
   it('payload para crear_reporte y registro local con el mismo id', () => {
     const { payload, rep } = armarReporte({ tipo: 'calle', detalle: 'no', pasanCarros: false, ubic, id: 'x', ahora: 5 })
     expect(payload).toEqual({ id: 'x', tipo: 'calle', pasanCarros: false, lat: ubic.lat, lng: ubic.lng, precision: 8 })
-    expect(rep).toEqual({ id: 'x', tipo: 'calle', detalle: 'no', lat: ubic.lat, lng: ubic.lng, creado: 5 })
+    expect(rep).toEqual({ id: 'x', tipo: 'calle', detalle: 'no', lat: ubic.lat, lng: ubic.lng, precision: 8, creado: 5 })
   })
   it('nivel del agua en casa NO viaja al backend (solo front)', () => {
     const { payload, rep } = armarReporte({ tipo: 'casa', detalle: 'cintura', ubic, id: 'y' })
@@ -91,5 +92,34 @@ describe('medidasMax (foto ≤ 1600 px)', () => {
   it('no agranda fotos chicas', () => {
     expect(medidasMax(800, 600)).toEqual({ w: 800, h: 600 })
     expect(medidasMax(0, 600)).toEqual({ w: 0, h: 0 })
+  })
+})
+
+describe('ronda 2 · flujo del Equipo Reporte', () => {
+  it('gravedad de calle → p_pasan_carros (solo "Paso bloqueado" manda false)', () => {
+    expect(GRAVEDAD_CALLE.map((g) => g.k)).toEqual(['bloqueado', 'limitado', 'sin_riesgo'])
+    expect(pasanCarrosDeGravedad('bloqueado')).toBe(false)
+    expect(pasanCarrosDeGravedad('limitado')).toBe(true)
+    expect(pasanCarrosDeGravedad('sin_riesgo')).toBe(true)
+    const { payload, rep } = armarReporte({ tipo: 'calle', detalle: 'sin_riesgo', pasanCarros: pasanCarrosDeGravedad('sin_riesgo'), ubic, id: 'z' })
+    expect(payload.pasanCarros).toBe(true)
+    expect(payload).not.toHaveProperty('detalle')
+    expect(rep.detalle).toBe('sin_riesgo')
+  })
+  it('stepper marca hechos, actual y pendientes; el último paso cuenta como hecho', () => {
+    expect(pasosStepper(0).map((p) => p.k)).toEqual(['now', 'next', 'next', 'next'])
+    expect(pasosStepper(2).map((p) => p.k)).toEqual(['done', 'done', 'now', 'next'])
+    expect(pasosStepper(3).map((p) => p.k)).toEqual(['done', 'done', 'done', 'done'])
+    expect(pasosStepper(1)[1].label).toBe('Detalles')
+  })
+  it('resumen: tipo, ubicación con precisión, gravedad y foto', () => {
+    expect(resumenReporte({ tipo: 'calle', detalle: 'bloqueado', precision: 12.4, foto: true }).map((x) => x.texto))
+      .toEqual(['Calle', 'Tu ubicación al reportar (±12 m)', 'Paso bloqueado', 'Con foto (sin datos ocultos)'])
+    expect(resumenReporte({ tipo: 'casa' }).map((x) => x.texto)).toEqual(['Mi casa', 'Tu ubicación al reportar'])
+    expect(resumenReporte(null)).toEqual([])
+  })
+  it('texto para la familia según gravedad', () => {
+    expect(textoFamilia({ tipo: 'calle', detalle: 'bloqueado', lat: 1, lng: 2 })).toMatch(/^Se inundó la calle, no se puede pasar\./)
+    expect(textoFamilia({ tipo: 'calle', detalle: 'sin_riesgo', lat: 1, lng: 2 })).toMatch(/^Se inundó la calle\. Aquí/)
   })
 })

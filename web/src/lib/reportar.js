@@ -6,7 +6,8 @@ import { codigoError } from './api.js'
 // ---------- Tipos y etiquetas (copy de App.dc.html) ----------
 export const TIPO_LABEL = { calle: 'Calle', casa: 'Mi casa', coche: 'Coche', persona_en_riesgo: 'Persona en riesgo' }
 export const DETALLE_LABEL = {
-  si: 'Pasan carros', no: 'No pasan carros',
+  si: 'Pasan carros', no: 'No pasan carros', // ronda 1 (se conservan para reportes ya guardados)
+  bloqueado: 'Paso bloqueado', limitado: 'Paso limitado', sin_riesgo: 'Sin riesgo · encharcamiento leve',
   tobillo: 'Agua a los tobillos', rodilla: 'Agua a las rodillas', cintura: 'Agua a la cintura o más',
   vacio: 'Coche sin nadie dentro', dentro: 'Hay alguien dentro de un coche',
 }
@@ -21,13 +22,40 @@ export function pasanCarrosPara(tipo, respuesta) {
   return true
 }
 
+// Gravedad de la calle (flujo que testeó el Equipo Reporte). El backend solo distingue pasan / no pasan carros:
+// "Paso limitado" y "Sin riesgo" viajan igual (p_pasan_carros = true); la diferencia queda solo en el front.
+export const GRAVEDAD_CALLE = [
+  { k: 'bloqueado', t: 'Paso bloqueado', d: 'No se puede transitar · la zona sube a nivel Alto', pasanCarros: false },
+  { k: 'limitado', t: 'Paso limitado', d: 'Se puede pasar con precaución', pasanCarros: true },
+  { k: 'sin_riesgo', t: 'Sin riesgo', d: 'Encharcamiento leve', pasanCarros: true },
+]
+export const pasanCarrosDeGravedad = (k) => GRAVEDAD_CALLE.find((g) => g.k === k)?.pasanCarros ?? true
+
+// Stepper del flujo: Tipo · Detalles · Evidencia · Enviado. k: done | now | next.
+export const PASOS_REPORTE = ['Tipo', 'Detalles', 'Evidencia', 'Enviado']
+export const pasosStepper = (actual) =>
+  PASOS_REPORTE.map((label, i) => ({ label, k: i < actual || actual === PASOS_REPORTE.length - 1 && i === actual ? 'done' : i === actual ? 'now' : 'next' }))
+
+// Resumen de "¡Reporte enviado!": tipo, ubicación (sin dirección: el backend no geocodifica), gravedad, foto.
+const ICONO_TIPO = { calle: 'calle', casa: 'casa', coche: 'coche', persona_en_riesgo: 'riesgo' }
+export function resumenReporte(rep) {
+  if (!rep) return []
+  const m = Math.round(rep.precision || 0)
+  return [
+    { icono: ICONO_TIPO[rep.tipo] || 'alerta', texto: TIPO_LABEL[rep.tipo] || 'Reporte' },
+    { icono: 'pin', texto: m ? `Tu ubicación al reportar (±${m} m)` : 'Tu ubicación al reportar' },
+    DETALLE_LABEL[rep.detalle] && { icono: 'alerta', texto: DETALLE_LABEL[rep.detalle] },
+    rep.foto && { icono: 'camara', texto: 'Con foto (sin datos ocultos)' },
+  ].filter(Boolean)
+}
+
 // Arma lo que se manda al backend y lo que se guarda en "mis reportes" (local).
 export function armarReporte({ tipo, detalle = null, pasanCarros, ubic, id = crypto.randomUUID(), ahora = Date.now() }) {
   const payload = {
     id, tipo, pasanCarros: pasanCarrosPara(tipo, pasanCarros),
     lat: ubic.lat, lng: ubic.lng, precision: ubic.precision,
   }
-  const rep = { id, tipo, detalle, lat: ubic.lat, lng: ubic.lng, creado: ahora }
+  const rep = { id, tipo, detalle, lat: ubic.lat, lng: ubic.lng, precision: ubic.precision, creado: ahora }
   return { payload, rep }
 }
 
@@ -84,7 +112,8 @@ export const linkWhatsApp = (texto) => `https://wa.me/?text=${encodeURIComponent
 
 export function textoFamilia(rep) {
   const que = {
-    calle: rep.detalle === 'no' ? 'Se inundó la calle, no pasan carros.' : 'Se inundó la calle.',
+    calle: { no: 'Se inundó la calle, no pasan carros.', bloqueado: 'Se inundó la calle, no se puede pasar.',
+      limitado: 'Se inundó la calle, se puede pasar con precaución.' }[rep.detalle] || 'Se inundó la calle.',
     casa: 'Se metió el agua a la casa.',
     coche: 'Un coche quedó en el agua.',
     persona_en_riesgo: 'Hay una persona en riesgo por inundación.',

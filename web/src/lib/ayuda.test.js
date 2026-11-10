@@ -45,3 +45,35 @@ describe('push', () => {
     expect(municipioParaPush({}, 'Zapopan')).toBe('Zapopan')
   })
 })
+
+describe('alertas de clima', async () => {
+  const { nivelAlerta, textoHace, textoVigencia, mensajeAlerta, urlWhatsApp, urlSms, silenciado, DOS_HORAS_MS } = await import('./ayuda.js')
+  it('nivel con número y palabra, cae en bajo si no lo conoce', () => {
+    expect(nivelAlerta('alto').texto).toBe('Nivel 3 de 3 · Alto')
+    expect(nivelAlerta('medio').num).toBe(2)
+    expect(nivelAlerta('raro').clave).toBe('bajo')
+  })
+  it('actualizado hace', () => {
+    const ahora = Date.parse('2026-11-10T18:00:00Z')
+    expect(textoHace('2026-11-10T17:55:00Z', ahora)).toBe('hace 5 min')
+    expect(textoHace('2026-11-10T15:00:00Z', ahora)).toBe('hace 3 h')
+    expect(textoHace('2026-11-08T18:00:00Z', ahora)).toBe('hace 2 días')
+    expect(textoHace(null, ahora)).toBeNull()
+  })
+  it('vigencia', () => {
+    expect(textoVigencia(null, null)).toBeNull()
+    expect(textoVigencia(null, '2026-11-10T18:00:00Z')).toMatch(/^Hasta /)
+    expect(textoVigencia('2026-11-10T16:00:00Z', '2026-11-10T18:00:00Z')).toMatch(/^De .+ a /)
+  })
+  it('mensaje y enlaces para compartir', () => {
+    const m = mensajeAlerta({ titulo: 'Lluvia fuerte', municipio: 'Zapopan', nivel: 'alto', fuente: 'SMN' }, 'https://x.mx')
+    expect(m).toBe('¡Aguas! Lluvia fuerte en Zapopan (nivel 3 de 3 · alto). Fuente: SMN. https://x.mx')
+    expect(urlWhatsApp('a b')).toBe('https://wa.me/?text=a%20b')
+    expect(urlSms('a&b')).toBe('sms:?&body=a%26b')
+  })
+  it('silenciar 2 horas', () => {
+    expect(silenciado({ silencioHasta: 1000 + DOS_HORAS_MS }, 1000)).toBe(true)
+    expect(silenciado({ silencioHasta: 500 }, 1000)).toBe(false)
+    expect(silenciado({}, 1000)).toBe(false)
+  })
+})

@@ -34,6 +34,37 @@
 .rp-nivel small{display:block;font-size:15px;color:var(--mu)}
 button:disabled.choice,button:disabled.rp-nivel,button:disabled.tile{opacity:.55}
 
+/* Ronda 2 · stepper Tipo · Detalles · Evidencia · Enviado (Equipo Reporte) */
+.rp-stepper{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.rp-stepper li{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.rp-stepper li + li::before{content:"";position:absolute;top:12px;right:calc(50% + 15px);left:calc(-50% + 15px);height:3px;
+  border-radius:2px;background:var(--line)}
+.rp-stepper li.done + li::before{background:var(--acc)}
+.rp-stepper .dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.rp-stepper .done .dot{background:var(--acc);color:var(--accTx)}
+.rp-stepper .now .dot{border:4px solid var(--acc);background:var(--bg)}
+.rp-stepper .next .dot{border:2px dashed var(--mu)}
+.rp-stepper .lbl{font-size:13px;font-weight:700;color:var(--mu);line-height:1.1}
+.rp-stepper .now .lbl{color:var(--tx)}
+.rp-choices--3 .choice{min-height:104px;font-size:28px}
+.rp-lead{font-size:17px;line-height:1.4;color:var(--mu)}
+.rp-ok-linea{display:flex;align-items:center;gap:8px;min-height:52px;font-size:16px;font-weight:700;color:var(--acc)}
+.rp-drop{min-height:190px;border:2px dashed var(--mu);border-radius:24px;background:var(--s1);color:var(--tx);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px;text-align:center}
+.rp-drop svg{color:var(--acc)}
+.rp-drop b{font:800 24px var(--f-head)}
+.rp-drop small{font-size:15px;color:var(--mu)}
+.rp-drop.ok{border-style:solid;border-color:var(--acc)}
+.rp-drop:disabled{cursor:default}
+.rp-drop:disabled:not(.ok){opacity:.7}
+.rp-resumen{background:var(--s2);border:var(--bw) solid var(--line);border-radius:16px;padding:12px 14px}
+.rp-resumen > b{display:block;font-size:16px;margin-bottom:6px}
+.rp-resumen ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rp-resumen li{display:flex;align-items:center;gap:10px;font-size:15px}
+.rp-resumen li svg{color:var(--acc);flex:none}
+.rp-enviado{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding-top:8px}
+.rp-sent-ok.grande{width:76px;height:76px;border-radius:24px}
+
 /* Pantalla roja */
 .screen.rp-riesgo{background:var(--risk);color:#fff;padding:38px 20px 22px}
 .rp-riesgo .screen-inner{gap:16px}

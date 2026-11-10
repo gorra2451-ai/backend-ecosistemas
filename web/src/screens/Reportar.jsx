@@ -1,12 +1,13 @@
 // MÓDULO B · Reportar (Equipo Reporte). Pantallas: tipo, paso2, riesgo, mireporte, error.
-// Hoja "enviado" (sheet === 'sent') y <ColaReportes/> (reintento de la cola sin señal; se monta en App).
+// `paso2` cubre los pasos 2–4 del stepper con params.fase: (sin fase) Detalles · 'evidencia' · 'enviado' (escritorio).
+// Hoja "enviado" (sheet === 'sent', móvil) y <ColaReportes/> (reintento de la cola sin señal; se monta en App).
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApp } from '../lib/store.jsx'
 import { crearReporte, subirEvidencia, reportesCercanos, mensajeError } from '../lib/api.js'
 import {
   armarReporte, etiquetaReporte, chipEstado, mensajeEnviado, lineaDeTiempo, casoAcudo, haceCuanto,
   linkWhatsApp, textoFamilia, textoRiesgo, encolar, leerCola, quitarDeCola, quitarExif,
-  seguimientoReporte, soltarSesion, TIPO_LABEL,
+  seguimientoReporte, soltarSesion, TIPO_LABEL, GRAVEDAD_CALLE, pasosStepper, resumenReporte,
 } from '../lib/reportar.js'
 import { Screen, Btn } from '../components/ui.jsx'
 import Icon from '../components/Icon.jsx'
@@ -41,16 +42,46 @@ function useMandar() {
     const res = await enviar(app, armado)
     setEnviando(false)
     if (res.error) return app.ir('error', { codigo: res.error, ...armado })
-    if (esEscritorio()) {
-      // En escritorio no hay hoja inferior: aviso + Mi reporte.
-      app.avisar(res.estado === 'cola' ? 'Sin señal · tu reporte se envía solo cuando vuelva' : 'Enviado · ya está en el mapa como punto sin confirmar')
-      app.ir('mireporte', { id: armado.rep.id })
-    } else {
-      app.ir(null)
-      app.setSheet('sent')
-    }
+    // El reporte ya quedó creado en el 3er toque; la evidencia se ofrece DESPUÉS (agregar_evidencia necesita el id).
+    // Sin señal no hay id en el servidor todavía: se salta la evidencia.
+    if (res.estado === 'cola') return terminarReporte(app, armado.rep.id)
+    app.ir('paso2', { tipo: armado.rep.tipo, fase: 'evidencia', id: armado.rep.id })
   }, [app])
   return { mandar, enviando }
+}
+
+// Último paso: móvil → hoja "enviado" sobre el mapa (se ve el punto); escritorio → pantalla "¡Reporte enviado!".
+function terminarReporte(app, id) {
+  if (esEscritorio()) return app.ir('paso2', { fase: 'enviado', id })
+  app.ir(null)
+  app.setSheet('sent')
+}
+
+// Stepper visual del flujo (Tipo · Detalles · Evidencia · Enviado).
+function Stepper({ actual }) {
+  const pasos = pasosStepper(actual)
+  return (
+    <ol className="rp-stepper" aria-label={`Paso ${actual + 1} de ${pasos.length}`}>
+      {pasos.map((p, i) => (
+        <li key={p.label} className={p.k} aria-current={i === actual ? 'step' : undefined}>
+          <span className="dot" aria-hidden="true">{p.k === 'done' && <Icon name="check" size={14} stroke={3.2} />}</span>
+          <span className="lbl">{p.label}<span className="sr-only">{p.k === 'done' ? ' · hecho' : p.k === 'now' ? ' · ahora' : ' · falta'}</span></span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+// Resumen del reporte enviado (tipo · ubicación · gravedad · foto).
+function Resumen({ rep }) {
+  return (
+    <div className="rp-resumen">
+      <b>Resumen de tu reporte</b>
+      <ul>
+        {resumenReporte(rep).map((x) => <li key={x.texto}><Icon name={x.icono} size={20} />{x.texto}</li>)}
+      </ul>
+    </div>
+  )
 }
 
 // Seguimiento: si el reporte ya es público (activo) trae confirmaciones; se recarga con cada realtime (`version`).
@@ -91,11 +122,12 @@ export function Tipo() {
   const elegir = (tipo) => ir('paso2', { tipo })
 
   return (
-    <Screen onBack={false} label="Reportar · paso 1 de 2">
+    <Screen onBack={false} label="Reportar inundación · paso 1 de 4 · Tipo">
       <div className="rp-top">
         <button className="rp-btn-top" onClick={() => ir(null)}>Cancelar</button>
-        <span className="rp-paso">Paso 1 de 2</span>
+        <span className="rp-paso">Reportar inundación</span>
       </div>
+      <Stepper actual={0} />
       <div className="rp-ubic">
         <Icon name="pin" size={22} stroke={2} />
         <div style={{ minWidth: 0, flex: 1 }}>
@@ -135,6 +167,13 @@ const NIVELES = [
 ]
 
 export function Paso2() {
+  const { params } = useApp()
+  if (params.fase === 'evidencia') return <Evidencia />
+  if (params.fase === 'enviado') return <Enviado />
+  return <Detalles />
+}
+
+function Detalles() {
   const { ir, params, ubic } = useApp()
   const tipo = params.tipo || 'calle'
   const { mandar, enviando } = useMandar()
@@ -142,20 +181,24 @@ export function Paso2() {
   const conPersona = () => ir('riesgo', { armado: armarReporte({ tipo: 'persona_en_riesgo', detalle: 'dentro', ubic }), coche: true })
 
   return (
-    <Screen onBack={false} label={`Reportar · paso 2 de 2 · ${TIPO_LABEL[tipo]}`}>
+    <Screen onBack={false} label={`Reportar inundación · paso 2 de 4 · Detalles · ${TIPO_LABEL[tipo]}`}>
       <div className="rp-top">
         <button className="rp-btn-top" onClick={() => ir('tipo')} disabled={enviando}>← Atrás</button>
-        <span className="rp-paso">Paso 2 de 2 · {TIPO_LABEL[tipo]}</span>
+        <span className="rp-paso">{TIPO_LABEL[tipo]}</span>
       </div>
+      <Stepper actual={1} />
 
       {tipo === 'calle' && (
         <>
-          <h1 className="rp-h1 rp-h1--l">¿Pasan carros?</h1>
-          <div className="rp-choices">
-            <button className="choice" disabled={enviando} onClick={() => go('si', true)}>Sí pasan<small>Con cuidado, el agua está baja</small></button>
-            <button className="choice choice--alto p-alto" disabled={enviando} onClick={() => go('no', false)}>
-              <span><span>No pasan</span><small>La zona sube a nivel Alto</small></span>
-            </button>
+          <h1 className="rp-h1">¿Cómo está el paso?</h1>
+          <div className="rp-choices rp-choices--3">
+            {GRAVEDAD_CALLE.map((g) => g.pasanCarros ? (
+              <button key={g.k} className="choice" disabled={enviando} onClick={() => go(g.k, g.pasanCarros)}>{g.t}<small>{g.d}</small></button>
+            ) : (
+              <button key={g.k} className="choice choice--alto p-alto" disabled={enviando} onClick={() => go(g.k, g.pasanCarros)}>
+                <span><span>{g.t}</span><small>{g.d}</small></span>
+              </button>
+            ))}
           </div>
         </>
       )}
@@ -187,6 +230,90 @@ export function Paso2() {
         </>
       )}
       <Estado texto={enviando ? 'Enviando tu reporte…' : ''} />
+    </Screen>
+  )
+}
+
+// ---------- paso2 · fase 'evidencia' (opcional, el reporte YA está enviado) ----------
+function useSubirFoto(rep) {
+  const { agregarMiReporte } = useApp()
+  const [foto, setFoto] = useState(rep?.foto ? 'ok' : null) // null | 'subiendo' | 'ok' | código de error
+  const elegir = async (e) => {
+    const f = e.target.files?.[0]
+    e.target.value = ''
+    if (!f || !rep) return
+    setFoto('subiendo')
+    try {
+      const limpia = await quitarExif(f)
+      const { error } = await subirEvidencia(rep.id, limpia)
+      setFoto(error || 'ok')
+      if (!error) agregarMiReporte({ ...rep, foto: true })
+    } catch {
+      setFoto('archivo_invalido')
+    }
+  }
+  return { foto, elegir }
+}
+
+function Evidencia() {
+  const app = useApp()
+  const { params, misReportes } = app
+  const rep = misReportes.find((r) => r.id === params.id) || misReportes[0]
+  const { foto, elegir } = useSubirFoto(rep)
+  const input = useRef(null)
+  const listo = () => terminarReporte(app, rep?.id)
+  const subiendo = foto === 'subiendo'
+  const fallo = foto && !['subiendo', 'ok'].includes(foto)
+
+  return (
+    <Screen onBack={false} label="Reportar inundación · paso 3 de 4 · Evidencia">
+      <div className="rp-top">
+        <span className="rp-ok-linea" role="status"><Icon name="check" size={20} stroke={3} />Tu reporte ya está en el mapa</span>
+      </div>
+      <Stepper actual={2} />
+      <h1 className="rp-h1">Agrega una foto</h1>
+      <p className="rp-lead">Una foto ayuda a que otros vecinos confirmen tu reporte.</p>
+      <button className={'rp-drop' + (foto === 'ok' ? ' ok' : '')} disabled={subiendo || foto === 'ok' || !rep} onClick={() => input.current?.click()}>
+        <Icon name={foto === 'ok' ? 'check' : 'camara'} size={44} stroke={1.8} />
+        <b>{foto === 'ok' ? 'Foto agregada' : subiendo ? 'Subiendo foto…' : fallo ? 'Elegir otra foto' : 'Subir foto'}</b>
+        <small>{foto === 'ok' ? 'Le quitamos los datos ocultos (lugar, hora, equipo)' : 'Toca para tomar o elegir una foto'}</small>
+      </button>
+      <input ref={input} type="file" accept="image/*" hidden onChange={elegir} />
+      <p className="rp-nota" role="status" aria-live="polite">
+        {fallo ? `No se subió la foto (${mensajeError(foto).titulo}). Tu reporte quedó igual.` : 'La foto es opcional. Antes de subirla le quitamos los datos ocultos.'}
+      </p>
+      <div className="rp-spacer" />
+      <Btn variant="primary" disabled={foto !== 'ok'} onClick={listo}>Continuar</Btn>
+      <Btn variant="ghost" disabled={subiendo} onClick={listo}>Omitir</Btn>
+    </Screen>
+  )
+}
+
+// ---------- paso2 · fase 'enviado' (escritorio; en móvil es la hoja) ----------
+function Enviado() {
+  const { ir, params, misReportes } = useApp()
+  const rep = misReportes.find((r) => r.id === params.id) || misReportes[0]
+  useSeguimiento(rep)
+  if (!rep) return null
+  const enCola = rep.estado === 'cola'
+  const caso = casoAcudo(rep.tipo)
+  return (
+    <Screen onBack={false} label="Reporte enviado">
+      <Stepper actual={3} />
+      <div className="rp-enviado">
+        <span className={'rp-sent-ok grande' + (enCola ? ' cola' : '')}><Icon name={enCola ? 'alerta' : 'check'} size={40} stroke={2.8} /></span>
+        <h1 className="rp-h1">{enCola ? 'Reporte guardado' : '¡Reporte enviado!'}</h1>
+        <span className={`rp-chip ${chipEstado(rep.estado).clase}`}>{chipEstado(rep.estado).texto}</span>
+        <p className="rp-lead">{mensajeEnviado(rep.estado)}</p>
+      </div>
+      <Resumen rep={rep} />
+      {caso && <button className="rp-acudo" onClick={() => ir('acudoresp', { caso })}>Qué hacer ahora: ¿A quién acudo?</button>}
+      <div className="rp-spacer" />
+      <Btn variant="primary" icon="mapa" onClick={() => ir(null)}>Ver en el mapa</Btn>
+      <div className="rp-grid2">
+        <Btn onClick={() => ir('mireporte', { id: rep.id })}>Seguir mi reporte</Btn>
+        <Btn icon="mas" onClick={() => ir('tipo')}>Hacer otro reporte</Btn>
+      </div>
     </Screen>
   )
 }
@@ -237,57 +364,34 @@ export function Riesgo() {
   )
 }
 
-// ---------- hoja "enviado" ----------
+// ---------- hoja "enviado" (móvil) ----------
 export function HojaEnviado() {
   const { misReportes, setSheet, ir } = useApp()
   const rep = misReportes[0]
   useSeguimiento(rep)
-  const [foto, setFoto] = useState(null) // null | 'subiendo' | 'ok' | código de error
-  const input = useRef(null)
-  useEffect(() => { setFoto(null) }, [rep?.id])
   if (!rep) return null
 
   const chip = chipEstado(rep.estado)
   const enCola = rep.estado === 'cola'
   const caso = casoAcudo(rep.tipo)
 
-  const alElegir = async (e) => {
-    const f = e.target.files?.[0]
-    e.target.value = ''
-    if (!f) return
-    setFoto('subiendo')
-    try {
-      const limpia = await quitarExif(f)
-      const { error } = await subirEvidencia(rep.id, limpia)
-      setFoto(error || 'ok')
-    } catch {
-      setFoto('archivo_invalido')
-    }
-  }
-  const fotoTxt = foto === 'subiendo' ? 'Subiendo foto…' : foto === 'ok' ? 'Foto agregada. Le quitamos los datos ocultos (lugar, hora, equipo).'
-    : foto ? `No se subió la foto: ${mensajeError(foto).titulo}` : ''
-
   return (
     <div className="sheet sheet--sent rp-sent rise" role="region" aria-label="Reporte enviado">
       <div className="rp-sent-head">
         <span className={'rp-sent-ok' + (enCola ? ' cola' : '')}><Icon name={enCola ? 'alerta' : 'check'} size={30} stroke={2.8} /></span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="rp-sent-tit"><b>{enCola ? 'Guardado' : 'Enviado'}</b><span className={`rp-chip ${chip.clase}`}>{chip.texto}</span></div>
-          <div className="rp-sub">{etiquetaReporte(rep)}</div>
+          <div className="rp-sent-tit"><b>{enCola ? 'Reporte guardado' : '¡Reporte enviado!'}</b><span className={`rp-chip ${chip.clase}`}>{chip.texto}</span></div>
         </div>
-        <button className="rp-x" aria-label="Cerrar" onClick={() => setSheet('min')}><Icon name="cerrar" size={20} /></button>
+        <button className="rp-x" aria-label="Cerrar y ver el mapa" onClick={() => setSheet('min')}><Icon name="cerrar" size={20} /></button>
       </div>
       <p>{mensajeEnviado(rep.estado)}</p>
+      <Resumen rep={rep} />
       {caso && <button className="rp-acudo" onClick={() => ir('acudoresp', { caso })}>Qué hacer ahora: ¿A quién acudo?</button>}
       <div className="rp-grid2">
-        <Btn icon="camara" disabled={enCola || foto === 'subiendo' || foto === 'ok'} onClick={() => input.current?.click()}>
-          {foto === 'ok' ? 'Foto agregada' : 'Agregar foto · opcional'}
-        </Btn>
-        <Btn onClick={() => ir('mireporte', { id: rep.id })}>Seguir mi reporte</Btn>
+        <Btn icon="mapa" onClick={() => setSheet('min')}>Ver en el mapa</Btn>
+        <Btn icon="mas" onClick={() => { setSheet('min'); ir('tipo') }}>Hacer otro reporte</Btn>
       </div>
-      <input ref={input} type="file" accept="image/*" hidden onChange={alElegir} />
-      {enCola && <p className="rp-sub">Podrás agregar foto cuando se envíe.</p>}
-      {fotoTxt && <p className="rp-sub" role="status" aria-live="polite">{fotoTxt}</p>}
+      <Btn variant="ghost" onClick={() => ir('mireporte', { id: rep.id })}>Seguir mi reporte</Btn>
     </div>
   )
 }

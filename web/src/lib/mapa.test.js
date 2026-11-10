@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   distanciaM, formatoDist, hace, lluviaPara, loCercano, filaCercana, estadoZona, tituloHoja,
   rutaGoogle, textoWhatsApp, reporteParaConfirmar,
+  CAPAS_INICIALES, leerCapas, cambiarCapa, restablecerCapas, suscribirCapas, capasModificadas, filtrarCapas,
 } from './mapa.js'
 
 const TU = { lat: 20.6497, lng: -103.4016 }
@@ -65,8 +66,11 @@ describe('loCercano', () => {
     expect(loCercano({ zonas, ubic: TU })).toHaveLength(3)
   })
   it('filas con nivel en palabra y patrón', () => {
-    const [f] = loCercano({ zonas: [zona(200, 'alto', { alguno_no_pasan_carros: true, total_reportes: 1 })], ubic: TU }).map((i) => filaCercana(i))
-    expect(f).toMatchObject({ lvl: 'Alto', cls: 'p-alto', t: 'Zona con agua a 200 m', m: 'No pasan carros · 1 reporte' })
+    const ahora = Date.parse('2026-11-10T12:00:00Z')
+    const [f] = loCercano({ zonas: [zona(200, 'alto', { alguno_no_pasan_carros: true, total_reportes: 1 })], ubic: TU }).map((i) => filaCercana(i, ahora))
+    expect(f).toMatchObject({ lvl: 'Alto', cls: 'p-alto', t: 'Zona con agua a 200 m', m: 'No pasan carros · 1 reporte · act. hace 10 min' })
+    const [g] = loCercano({ zonas: [zona(200, 'bajo', { actualizado_en: null })], ubic: TU }).map((i) => filaCercana(i, ahora))
+    expect(g.m).toBe('Pasan carros · 2 reportes')
   })
 })
 
@@ -106,5 +110,36 @@ describe('textos y enlaces', () => {
     expect(reporteParaConfirmar(l, TU, 'b').id).toBe('b')
     expect(reporteParaConfirmar(l, TU, 'a').id).toBe('c')
     expect(reporteParaConfirmar([], TU)).toBe(null)
+  })
+})
+
+describe('capas del mapa (store + filtro)', () => {
+  it('cambia, avisa a suscriptores y se restablece', () => {
+    restablecerCapas()
+    let n = 0
+    const quitar = suscribirCapas(() => { n++ })
+    cambiarCapa('alto')
+    expect(leerCapas().alto).toBe(false)
+    expect(capasModificadas()).toBe(true)
+    cambiarCapa('refugios', false)
+    cambiarCapa('inventada')
+    expect(n).toBe(2)
+    restablecerCapas()
+    expect(leerCapas()).toEqual(CAPAS_INICIALES)
+    expect(capasModificadas()).toBe(false)
+    quitar(); cambiarCapa('bajo'); expect(n).toBe(3); restablecerCapas()
+  })
+  it('filtra zonas por nivel, persona en riesgo, refugios y mis reportes', () => {
+    const datos = {
+      zonas: [zona(100, 'bajo'), zona(200, 'alto')],
+      reportes: [{ id: 'r', tipo: 'persona_en_riesgo' }, { id: 'c', tipo: 'calle' }],
+      refugios: [{ id: 1 }], misReportes: [{ id: 'm' }],
+    }
+    const c = { ...CAPAS_INICIALES, alto: false, riesgo: false, refugios: false, misReportes: false }
+    const f = filtrarCapas(datos, c)
+    expect(f.zonas.map((z) => z.celda)).toEqual(['c100'])
+    expect(f.reportes.map((r) => r.id)).toEqual(['c'])
+    expect(f.refugios).toEqual([]); expect(f.misReportes).toEqual([])
+    expect(filtrarCapas(datos, CAPAS_INICIALES).zonas).toHaveLength(2)
   })
 })

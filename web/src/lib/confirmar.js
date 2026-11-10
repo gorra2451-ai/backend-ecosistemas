@@ -76,3 +76,52 @@ export function marcarPreguntado(id) {
   memoria = l
   try { sessionStorage.setItem(CLAVE, JSON.stringify(l)) } catch { /* sin storage */ }
 }
+
+// ---- Ronda 2 (HTML del Equipo Confirmación) ----
+
+// Copy del "gracias" (equipo). Sin "ayudó a N personas": N no existe en el backend (P-29).
+// estado = lo que devuelve confirmar_reporte / marcar_falso ({ reporte_id, estado }).
+export function textoGracias(accion, estado) {
+  if (estado === 'resuelto') return '¡Gracias! Con tu respuesta, este reporte ya no aparece en el mapa.'
+  if (estado === 'en_revision') return '¡Gracias! Lo vamos a revisar.'
+  if (accion === 'falso') return '¡Gracias! Tu aviso ayuda a limpiar el mapa.'
+  if (accion === 'ya_no') return '¡Gracias! Avisaremos a tus vecinos si ya se puede pasar.'
+  return '¡Gracias! Tu respuesta ayuda a tus vecinos a evitar la inundación.'
+}
+
+// Voz: "sí" / "sigue" → 'sigue'; "ya no" / "no" / "bajó" / "seco" → 'ya_no'; lo demás → null.
+// "Es falso" no se acepta por voz (evita marcar reportes por error).
+export function interpretarVoz(texto) {
+  const t = String(texto || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/g, ' ')
+  const p = ` ${t.replace(/\s+/g, ' ').trim()} `
+  if (/ no se /.test(p)) return null // "no sé"
+  if (/ (ya no|no|nel|bajo|seco|seca) /.test(p)) return 'ya_no'
+  if (/ (si|sigue|sip|claro|aja) /.test(p)) return 'sigue'
+  return null
+}
+
+export function claseVoz(w = typeof window !== 'undefined' ? window : undefined) {
+  return w ? (w.SpeechRecognition || w.webkitSpeechRecognition || null) : null
+}
+
+// Escucha una frase en es-MX. Devuelve una función para cancelar. cb(accion|null).
+export function escucharVoz(cb, Clase = claseVoz()) {
+  if (!Clase) { cb(null); return () => {} }
+  let listo = false
+  const fin = (v) => { if (!listo) { listo = true; cb(v) } }
+  let rec
+  try {
+    rec = new Clase()
+    rec.lang = 'es-MX'
+    rec.interimResults = false
+    rec.maxAlternatives = 3
+    rec.onresult = (e) => {
+      const alts = Array.from(e.results?.[0] || []).map((a) => a.transcript)
+      fin(alts.map(interpretarVoz).find(Boolean) || null)
+    }
+    rec.onerror = () => fin(null)
+    rec.onend = () => fin(null)
+    rec.start()
+  } catch { fin(null) }
+  return () => { listo = true; try { rec?.abort() } catch { /* nada */ } }
+}

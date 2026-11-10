@@ -3,11 +3,12 @@
 // Los 6 municipios que muestra el canvas (Avisos). Nombres cortos, como en la app.
 export const MUNICIPIOS_ZMG = ['Guadalajara', 'Zapopan', 'Tlaquepaque', 'Tonalá', 'Tlajomulco', 'El Salto']
 
+// Nombres del Equipo Registro (ronda 2). Sin 'moto': no existe en el enum medio_transporte (P-28).
 export const MEDIOS = [
-  { id: 'peaton', titulo: 'A pie', sub: 'Cruces de riesgo' },
-  { id: 'bici', titulo: 'Bici', sub: 'Cruces de riesgo' },
-  { id: 'auto', titulo: 'Auto', sub: 'Modo manejo llega en la siguiente versión' },
-  { id: 'transporte_publico', titulo: 'Transporte', sub: 'Estado de tu zona' },
+  { id: 'peaton', titulo: 'Caminando', sub: 'Cruces de riesgo' },
+  { id: 'bici', titulo: 'Bicicleta', sub: 'Cruces de riesgo' },
+  { id: 'auto', titulo: 'Automóvil', sub: 'Modo manejo llega en la siguiente versión' },
+  { id: 'transporte_publico', titulo: 'Transporte público', sub: 'Estado de tu zona' },
 ]
 
 // Resuelve con { data:null, error:'sin_red' } si la promesa tarda más de `ms`: el onboarding nunca se traba.

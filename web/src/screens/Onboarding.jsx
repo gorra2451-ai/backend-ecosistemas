@@ -1,5 +1,6 @@
 // MÓDULO A · Primera vez (Equipo Registro). Pantallas: acceso, privacidad, ubicacion, avisos, onb.
-// Copy y flujo de App.dc.html (DISENO.md §3a). En escritorio se ven como tarjeta centrada a pantalla completa.
+// Look de App.dc.html (DISENO.md §3a); ronda 2: flujo y copy del Equipo Registro donde no choca con el backend.
+// Pasos: 1 bienvenida → 2 ubicación → 3 avisos → 4 medio (abre la sesión anónima). privacidad = lectura. En escritorio se ven como tarjeta centrada a pantalla completa.
 import { useState } from 'react'
 import { Screen, Btn, PorConfirmar } from '../components/ui.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
@@ -8,16 +9,11 @@ import { asegurarSesion, registrarEntrada } from '../lib/api.js'
 import { MUNICIPIOS_ZMG, MEDIOS, entrarConMedio, avisoEntrada, pedirPermisoAvisos } from '../lib/onboarding.js'
 import '../styles/onboarding.css'
 
-const IconoUsuario = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
-)
-
 function Onb({ children, label }) {
   return <Screen full onBack={false} label={label}><div className="onb">{children}</div></Screen>
 }
 
-function Pasos({ n, total = 3 }) {
+function Pasos({ n, total = 4 }) {
   return (
     <span className="onb-pasos">
       {Array.from({ length: total }, (_, i) => <span key={i} className={i < n ? 'on' : ''} aria-hidden="true" />)}
@@ -35,32 +31,46 @@ function Marca({ size = 52 }) {
   )
 }
 
-// ---------- acceso ----------
+// ---------- acceso (bienvenida) ----------
+// Ronda 2: flujo del Equipo Registro. La bienvenida junta acceso + privacidad: un solo tap ("Comenzar")
+// en vez de 3 (continuar + casilla + aceptar). El aviso completo sigue a un tap ("Leer").
+const BENEFICIOS = [
+  { icon: 'mapa', t: 'Ve dónde hay calles inundadas' },
+  { icon: 'check', t: 'Reporta y confirma con tus vecinos' },
+  { icon: 'campana', t: 'Recibe avisos de tu zona' },
+]
+
 export function Acceso() {
   const { ir } = useApp()
   return (
     <Onb label="Entrar a ¡Aguas!">
-      <Marca />
-      <h1 className="onb-h1">Ve y reporta calles inundadas con tus vecinos</h1>
+      <div className="onb-top"><Marca size={40} /><Pasos n={1} /></div>
+      <h1 className="onb-h1">Juntos ante las inundaciones</h1>
       <p className="onb-lead">Un mapa de la ZMG que confirma la gente que está ahí. Entras en segundos.</p>
-      <div className="onb-spacer" />
-      <button type="button" className="btn btn-primary onb-anon" onClick={() => ir('privacidad')}>
-        <span className="t">Continuar sin cuenta</span>
-        <span className="s">Anónimo · recomendado</span>
-      </button>
-      <button type="button" className="btn btn-disabled onb-google" disabled aria-describedby="onb-google-nota">
-        <IconoUsuario />Continuar con Google
-      </button>
-      <div id="onb-google-nota" className="onb-nota">
-        Aún no disponible: el inicio con Google no existe todavía en el backend.
+      <ul className="onb-beneficios">
+        {BENEFICIOS.map((b) => (
+          <li key={b.t}><Icon name={b.icon} size={26} /><span>{b.t}</span></li>
+        ))}
+      </ul>
+      <div className="onb-sello">
+        <Icon name="escudo" size={28} />
+        <div>
+          <div className="t">Usa la app sin cuenta</div>
+          <div className="s">No pedimos nombre, correo ni teléfono. Guardamos solo dónde está cada reporte, nunca tu recorrido.</div>
+        </div>
       </div>
-      <div className="onb-centro"><PorConfirmar>Google: por confirmar con backend</PorConfirmar></div>
-      <button type="button" className="btn-text onb-link" onClick={() => ir('privacidad')}>Leer el aviso de privacidad</button>
+      <div className="onb-sello onb-priv">
+        <div><div className="t">Aviso de privacidad</div><div className="s">Qué datos usamos y para qué.</div></div>
+        <button type="button" className="btn btn-ghost onb-leer" onClick={() => ir('privacidad')}>Leer</button>
+      </div>
+      <div className="onb-spacer" />
+      <button type="button" className="btn btn-primary" onClick={() => ir('ubicacion')}>Comenzar</button>
+      <p className="onb-nota">Al comenzar aceptas el aviso de privacidad.</p>
     </Onb>
   )
 }
 
-// ---------- privacidad ----------
+// ---------- privacidad (lectura; se abre desde "Leer") ----------
 const FRASES = [
   { t: 'No pedimos tu nombre, correo ni teléfono.' },
   { t: 'Guardamos solo dónde está cada reporte, nunca tu recorrido.' },
@@ -70,12 +80,10 @@ const FRASES = [
 
 export function Privacidad() {
   const { ir } = useApp()
-  const [acepto, setAcepto] = useState(false)
   return (
     <Onb label="Aviso de privacidad">
       <div className="onb-top">
         <Btn variant="ghost" icon="atras" className="onb-atras" onClick={() => ir('acceso')}>Atrás</Btn>
-        <Pasos n={1} />
       </div>
       <h1 className="onb-h1">Tu privacidad, en corto</h1>
       <ul className="onb-frases">
@@ -93,6 +101,8 @@ export function Privacidad() {
             correo, teléfono ni edad.</p>
           <p><b>Qué guardamos de un reporte.</b> El punto donde está la inundación, la hora y lo que contestaste
             (por ejemplo, si pasan carros). No guardamos por dónde te mueves.</p>
+          <p><b>Cómo te mueves.</b> El medio que eliges (a pie, bici, auto o transporte) se guarda con tu visita,
+            sin tu ubicación, para saber cuánta gente usa la app y cómo.</p>
           <p><b>Quién lo ve.</b> El mapa muestra los reportes y zonas, nunca quién los hizo. Solo tú puedes ver
             tus propios reportes.</p>
           <p><b>Avisos.</b> Si los activas, guardamos el municipio o la zona aproximada (unos 300 m) de la que
@@ -102,13 +112,7 @@ export function Privacidad() {
         </div>
       </details>
       <div className="onb-spacer" />
-      <label className="onb-check">
-        <input type="checkbox" checked={acepto} onChange={(e) => setAcepto(e.target.checked)} />
-        Leí y acepto el aviso de privacidad
-      </label>
-      {acepto
-        ? <button type="button" className="btn btn-primary" onClick={() => ir('ubicacion')}>Aceptar y seguir</button>
-        : <button type="button" className="btn btn-disabled" disabled>Marca la casilla para seguir</button>}
+      <button type="button" className="btn btn-primary" onClick={() => ir('acceso')}>Entendido</button>
     </Onb>
   )
 }
@@ -137,6 +141,7 @@ export function Ubicacion() {
         <>
           <h1 className="onb-h1">¿Usamos tu ubicación?</h1>
           <p className="onb-lead">Para poner tu reporte donde estás y mostrarte lo que pasa a 300 m. Solo mientras usas la app; nunca guardamos tu recorrido.</p>
+          <p className="onb-opcional">Opcional · puedes cambiarlo después</p>
           <div className="onb-spacer" />
           <button type="button" className="btn btn-primary" onClick={permitir} disabled={pidiendo} aria-busy={pidiendo}>
             {pidiendo ? 'Buscando tu ubicación…' : 'Permitir ubicación'}
@@ -184,6 +189,7 @@ export function AvisosPermiso() {
       <span className="onb-icono"><Icon name="campana" size={48} stroke={1.8} /></span>
       <h1 className="onb-h1">¿Te avisamos si algo cambia?</h1>
       <p className="onb-lead">Solo si se inunda o se despeja tu zona, o si viene lluvia fuerte. Máximo 1 aviso por zona cada 30 min. Así lo pidió casi la mitad de las personas encuestadas (49.3 %).</p>
+      <p className="onb-opcional">Opcional · puedes cambiarlo después</p>
       <div className="onb-spacer" />
       <button type="button" className="btn btn-primary" onClick={permitir} disabled={pidiendo} aria-busy={pidiendo}>
         {pidiendo ? 'Esperando tu respuesta…' : 'Permitir avisos'}
@@ -211,13 +217,9 @@ export function Medio() {
 
   return (
     <Onb label="¿Cómo te mueves hoy?">
-      <Marca size={44} />
-      <p className="onb-intro">Ve y reporta calles inundadas en la ZMG, junto con tus vecinos.</p>
-      <div className="onb-sello">
-        <Icon name="escudo" size={28} />
-        <div><div className="t">Anónimo. No guardamos dónde estás.</div><div className="s">Sin correo, teléfono ni nombre.</div></div>
-      </div>
+      <div className="onb-top fin"><Pasos n={4} /></div>
       <h1 className="onb-h1 xl">¿Cómo te mueves hoy?</h1>
+      <p className="onb-lead">Elige el de tu trayecto de hoy. Al tocarlo entras a la app.</p>
       <div className="onb-medios">
         {MEDIOS.map((m) => (
           <button key={m.id} type="button" className="tile onb-medio" onClick={() => elegir(m.id)}

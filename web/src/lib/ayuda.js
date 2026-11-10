@@ -65,3 +65,53 @@ export function municipioParaPush(elegidos, actual) {
   if (on.includes(actual)) return actual
   return on[0] || actual
 }
+
+// ---------------------------------------------------------------- Alertas de clima (ronda 2, Equipo 5)
+// Nivel del backend (bajo|medio|alto) → "N de 3" + palabra (nunca solo color).
+const NIVELES = { bajo: [1, 'Bajo'], medio: [2, 'Medio'], alto: [3, 'Alto'] }
+export function nivelAlerta(n) {
+  const [num, palabra] = NIVELES[n] || NIVELES.bajo
+  return { clave: NIVELES[n] ? n : 'bajo', num, palabra, texto: `Nivel ${num} de 3 · ${palabra}` }
+}
+
+// "hace 5 min" a partir de una fecha ISO. null si no hay fecha válida.
+export function textoHace(iso, ahora = Date.now()) {
+  const t = iso ? new Date(iso).getTime() : NaN
+  if (Number.isNaN(t)) return null
+  const min = Math.max(0, Math.round((ahora - t) / 60000))
+  if (min < 1) return 'hace un momento'
+  if (min < 60) return `hace ${min} min`
+  const h = Math.round(min / 60)
+  if (h < 24) return `hace ${h} h`
+  const d = Math.round(h / 24)
+  return `hace ${d} día${d === 1 ? '' : 's'}`
+}
+
+const hora = (d) => d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })
+// Vigencia legible: "Hasta 9:00 p.m." / "De 4:00 p.m. a 9:00 p.m." (fechas ISO del backend).
+export function textoVigencia(desde, hasta) {
+  const a = desde ? new Date(desde) : null, b = hasta ? new Date(hasta) : null
+  const ok = (d) => d && !Number.isNaN(d.getTime())
+  if (ok(a) && ok(b)) return `De ${hora(a)} a ${hora(b)}`
+  if (ok(b)) return `Hasta ${hora(b)}`
+  return null
+}
+
+// Texto para compartir: solo lo que dijo la fuente + enlace a la app.
+export function mensajeAlerta(a, enlace) {
+  const n = nivelAlerta(a?.nivel)
+  const vig = textoVigencia(a?.vigente_desde, a?.vigente_hasta)
+  return [
+    `¡Aguas! ${a?.titulo || 'Alerta de clima'}${a?.municipio ? ` en ${a.municipio}` : ''} (${n.texto.toLowerCase()}).`,
+    vig ? `${vig}.` : null,
+    a?.fuente ? `Fuente: ${a.fuente}.` : null,
+    enlace || null,
+  ].filter(Boolean).join(' ')
+}
+export const urlWhatsApp = (texto) => `https://wa.me/?text=${encodeURIComponent(texto)}`
+export const urlSms = (texto) => `sms:?&body=${encodeURIComponent(texto)}`
+
+// Preferencias de avisos del Equipo 5 (solo en este celular; el backend no las conoce).
+export const PREFS_AVISOS_BASE = { soloCambios: true, soloFuertes: false, silencioHasta: null }
+export const DOS_HORAS_MS = 2 * 60 * 60 * 1000
+export const silenciado = (p, ahora = Date.now()) => !!(p?.silencioHasta && p.silencioHasta > ahora)

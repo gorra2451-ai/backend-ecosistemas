@@ -16,9 +16,19 @@
 .confirm button:disabled{opacity:.6;cursor:wait}
 .confirm-si{min-height:76px;border-radius:20px;border:0;background:var(--bg);color:var(--tx);font:800 24px var(--f-head)}
 .confirm-no{min-height:64px;border-radius:18px;border:3px solid var(--bg);background:transparent;color:var(--bg);font-size:20px;font-weight:700}
-/* "Es falso": menos prominente y separado de "Ya no" (P-27 + auditoría del canvas). */
-.confirm-falso{align-self:center;min-height:48px;margin-top:var(--sp2);padding:0 var(--sp3);border:0;background:transparent;
+.confirm-si.enviado,.confirm-no.enviado{opacity:1;cursor:default}
+.confirm-no.enviado{background:var(--bg);color:var(--tx)}
+/* Voz (equipo): secundario, mismo lenguaje que "Ya no" pero más bajo. */
+.confirm-voz{min-height:52px;border-radius:var(--r-pill);border:2px solid color-mix(in srgb,var(--bg) 45%,transparent);
+  background:transparent;color:var(--bg);font-size:16px;font-weight:700}
+.confirm-voz.activo{border-color:var(--acc);color:var(--acc)}
+.confirm-voz-msg{font:var(--t-small);margin:0;min-height:0}
+.confirm-voz-msg:empty{display:none}
+/* "Omitir" y "Es falso": enlaces separados y menos prominentes que "Ya no" (P-27 + auditoría del canvas). */
+.confirm-links{display:flex;justify-content:space-between;gap:var(--sp3);margin-top:var(--sp1)}
+.confirm-link{min-height:48px;padding:0 var(--sp2);border:0;background:transparent;
   color:var(--bg);font-size:15px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.confirm-bar>i.pausa{animation-play-state:paused}
 .confirm-probar{min-height:48px;border:0;background:transparent;color:var(--acc);font:700 15px var(--f-body);
   text-decoration:underline;cursor:pointer;padding:0 var(--sp2)}
 .confirm-probar:focus-visible{outline:3px solid var(--acc);outline-offset:2px}

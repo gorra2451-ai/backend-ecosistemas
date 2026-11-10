@@ -89,3 +89,39 @@
 .mp-link--line{border:2px solid var(--line);color:var(--tx)}
 .mp-link--911{min-height:72px;border-radius:20px;background:var(--risk);color:#fff;font:800 20px var(--f-body)}
 .mp-z-priv{font-size:14px;color:var(--mu);text-align:center}
+
+/* ---------- Capas y leyenda (panel) ---------- */
+.mp-legend-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;align-self:flex-start}
+.mp-capas-btn{min-height:48px;padding:0 12px;border:var(--bw) solid var(--line);border-radius:12px;background:var(--s1);color:var(--tx);
+  font:700 14px var(--f-body);display:flex;align-items:center;gap:6px;box-shadow:var(--sh-legend-light)}
+.mp-sw--ref{width:16px;height:16px;border-radius:5px;background:var(--acc);flex:none}
+.mp-capas-fondo{position:fixed;inset:0;z-index:800;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.mp-capas{width:100%;max-width:480px;max-height:calc(100dvh - 24px);overflow-y:auto;background:var(--bg);color:var(--tx);
+  border:var(--bw) solid var(--line);border-radius:22px;padding:16px 16px 20px;display:flex;flex-direction:column;gap:10px}
+.mp-capas-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mp-capas-head h2{font:800 22px/1.1 var(--f-head)}
+.mp-capas-x{width:48px;height:48px;flex:none;border:var(--bw) solid var(--line);border-radius:14px;background:var(--s1);color:var(--tx);
+  display:flex;align-items:center;justify-content:center}
+.mp-capas-h{font:800 15px var(--f-body);color:var(--mu);margin-top:6px}
+.mp-capas-lista,.mp-capas-sim,.mp-capas-fuentes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.mp-capa{width:100%;min-height:64px;border:var(--bw) solid var(--line);border-radius:16px;background:var(--s1);color:var(--tx);
+  display:flex;align-items:center;gap:12px;padding:8px 12px;text-align:left}
+.mp-capa-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.mp-capa-tx b{font-size:17px}
+.mp-capa-tx span{font-size:13px;color:var(--mu)}
+.mp-capa-r{display:flex;align-items:center;gap:8px;flex:none;font-size:14px;font-weight:700}
+.mp-capa .switch{display:flex;align-items:center;box-sizing:border-box}
+.mp-capa .switch>i{display:block}
+.mp-capa[aria-checked=true] .switch{background:var(--acc);justify-content:flex-end}
+.mp-capa[aria-checked=true] .switch>i{background:var(--accTx)}
+.mp-capa[aria-checked=false] .mp-capa-tx b{color:var(--mu)}
+.mp-capas-nota{font-size:14px;color:var(--mu)}
+.mp-capas-sim li{display:grid;grid-template-columns:20px auto;column-gap:10px;align-items:center}
+.mp-capas-sim li span:last-child{grid-column:2;font-size:14px;color:var(--mu)}
+.mp-capas-fuentes li{font-size:15px;line-height:1.4}
+.mp-capas-reset{margin-top:6px}
+.mp-capas-reset:disabled{opacity:.5}
+@media (min-width:1024px){
+  .mp-capas-fondo{align-items:flex-start;justify-content:flex-end;padding:92px 16px 16px}
+  .mp-capas{max-height:calc(100dvh - 108px)}
+}

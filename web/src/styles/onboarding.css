@@ -78,3 +78,12 @@
   .onb-spacer{flex:none;min-height:4px}
   .onb-medios{min-height:0;flex:none}
 }
+
+/* Ronda 2: bienvenida del Equipo Registro (beneficios + sin cuenta + aviso) */
+.onb-top .onb-marca span{font-size:28px}
+.onb-beneficios{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.onb-beneficios li{display:flex;align-items:center;gap:12px;font-size:17px;font-weight:700;min-height:40px}
+.onb-beneficios svg{color:var(--acc);flex:none}
+.onb-priv{justify-content:space-between}
+.onb .onb-leer{width:auto!important;min-height:48px;padding:0 18px;flex:none}
+.onb-opcional{font-size:14px;font-weight:700;color:var(--mu)}
