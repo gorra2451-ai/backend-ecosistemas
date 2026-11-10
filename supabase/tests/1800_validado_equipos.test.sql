@@ -4,6 +4,11 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(81);
+-- D-022: el mid-fi sube estos parámetros por migración; esta prueba verifica la LÓGICA con los
+-- valores normales, así que los fija dentro de su transacción (se revierte al final).
+update public.parametros set valor = 1000 where clave = 'radio_cercanos_max_m';
+update public.parametros set valor = 60   where clave = 'ventana_activacion_min';
+update public.parametros set valor = 30   where clave = 'minutos_expiracion';
 
 delete from public.reportes;          -- aislar de seed.sql (el rollback lo restaura)
 

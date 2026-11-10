@@ -27,7 +27,8 @@ select ok((select relrowsecurity from pg_class where oid = 'public.acciones_admi
 
 -- Parámetros
 select is(public.param('umbral_activacion'), 5::numeric, 'umbral_activacion = 5 (clase)');
-select is(public.param('minutos_expiracion'), 30::numeric, 'minutos_expiracion = 30 (clase)');
+-- D-022 (TEMPORAL mid-fi): 180. Al revertir la migración 20261110192439, regresar a 30 (clase).
+select is(public.param('minutos_expiracion'), 180::numeric, 'minutos_expiracion = 180 temporal mid-fi (clase: 30)');
 select throws_ok($$ select public.param('no_existe') $$, 'P0001', 'parametro_no_existe: no_existe', 'param() falla con clave desconocida');
 
 -- ZMG

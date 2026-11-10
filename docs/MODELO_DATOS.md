@@ -49,14 +49,14 @@ Valores iniciales (**5 y 30 salieron de clase; el resto son propuestas** a ajust
 | `confirmaciones_para_publicar` | 5 | "sí" de otras personas para que un `pendiente` pase a `activo` (D-021) |
 | `umbral_persona_en_riesgo` | 1 | reportes `persona_en_riesgo` que la activan (POR CONFIRMAR) |
 | `radio_agrupacion_m` | 150 | duplicados del mismo usuario y agrupación de `persona_en_riesgo` |
-| `ventana_activacion_min` | 60 | minutos para juntar las confirmaciones; si no, `pendiente` → `resuelto` |
-| `minutos_expiracion` | 30 | minutos sin "sí" para que un `activo` pase a `resuelto` |
+| `ventana_activacion_min` | 60 (**1440 temporal mid-fi, D-022**) | minutos para juntar las confirmaciones; si no, `pendiente` → `resuelto` |
+| `minutos_expiracion` | 30 (**180 temporal mid-fi, D-022**) | minutos sin "sí" para que un `activo` pase a `resuelto` |
 | `votos_no_para_resolver` | 3 | votos "no" (desde el último "sí") que lo resuelven |
 | `banderas_para_revision` | 3 | marcas de falso que lo mandan a `en_revision` |
 | `max_reportes_por_hora` | 5 | límite por usuario |
 | `tamano_celda_m` | 300 | lado de la celda de zonas de calor |
 | `nivel_bajo_min` / `nivel_medio_min` / `nivel_alto_min` / `nivel_critico_min` | 5 / 10 / 15 / 20 | confirmaciones "sí" para cada nivel (D-021) |
-| `radio_cercanos_max_m` | 1000 | tope de `p_radio_m` en `reportes_cercanos` |
+| `radio_cercanos_max_m` | 1000 (**40000 temporal mid-fi, D-022**) | tope de `p_radio_m` en `reportes_cercanos` |
 | `area_max_consulta_km2` | 2500 | tope del rectángulo en `reportes_activos_en_area` |
 | `minutos_entre_avisos` | 30 | máx. 1 aviso por zona por usuario en este lapso (módulo C) |
 | `max_intentos_push` / `minutos_reintento_push` / `minutos_bloqueo_aviso_push` / `dias_retencion_avisos_push` | 3 / 5 / 2 / 7 | cola de avisos (P-22) |

@@ -185,3 +185,19 @@ debe seguir lo que se probó, no lo que se supuso antes.
 **Privacidad:** los pendientes ahora se ven en `reportes_cercanos` (solo con sesión, radio ≤ 1 km,
 sin autor), necesario para poder confirmarlos.
 **Pendiente:** el 071 de CFE requiere fuente oficial (P-34).
+
+## D-022 · Parámetros temporales y modo prueba para el testeo del mid-fi
+**Estado:** Aceptada por Diego · 2026-11-10 · pendiente revisión de LeoFigo74z (PR #14) · **TEMPORAL**
+**Decisión:** durante el testeo del mid-fi (desde 2026-11-11), migración `20261110192439_parametros_midfi`:
+`radio_cercanos_max_m` 1000 → **40000**, `ventana_activacion_min` 60 → **1440**, `minutos_expiracion`
+30 → **180**. `confirmaciones_para_publicar` se queda en **5** (el copy del front dice 5; bajarlo exige
+primero que el front lea `parametros`). En el front, la liga con `?prueba=1` hace que "Cerca de ti"
+liste pendientes y activos de toda la ZMG (sin GPS) con aviso visible "Modo prueba"; `?prueba=0` lo apaga.
+**Por qué:** la maestra manda la liga a personas distintas, repartidas por la ZMG y a distintas horas.
+Con 150–300 m de cercanía, 1 km de tope, 60 min de ventana y 30 min de expiración, casi ningún reporte
+juntaría 5 confirmaciones y nadie vería activarse una zona. `confirmar_reporte` no valida distancia;
+la cercanía solo se exige en el front, así que el modo prueba no toca el esquema.
+**Privacidad:** con `?prueba=1` cualquier sesión ve los pendientes de toda la ZMG (sin autor, igual que
+D-021). No se guarda nada nuevo de la persona; `aguas.prueba` vive solo en su navegador.
+**Reversión:** al cerrar el testeo, nueva migración que regrese 1000 / 60 / 30, regresar
+`0000_base.test.sql` a 30 y quitar el bloque D-022 de `0200_confirmacion` y `1800_validado_equipos`.

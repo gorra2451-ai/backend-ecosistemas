@@ -77,7 +77,7 @@ Archivos subidos por error y todavía sin registrar pueden borrarse por su dueñ
 
 ## Confirmar (Equipo Confirmación) ✅
 ```js
-await supabase.rpc('reportes_cercanos', { p_lat, p_lng, p_radio_m: 300 })   // para el aviso; radio topado a radio_cercanos_max_m
+await supabase.rpc('reportes_cercanos', { p_lat, p_lng, p_radio_m: 300 })   // para el aviso; radio topado a radio_cercanos_max_m (1000; 40000 temporal mid-fi con ?prueba=1, D-022)
 // → [{ id, tipo, gravedad, pasan_carros, lat, lng, distancia_m, ultima_confirmacion, creado_en,
 //      confirmaciones_si, nivel, estado, es_propio }]   error: sin_sesion
 // v2: incluye 'pendiente' y 'activo' (para poder confirmarlos). Sin autor.
@@ -89,7 +89,7 @@ Errores de confirmar/marcar_falso: `sin_sesion`, `parametros_invalidos` (p_sigue
 `es_propio = true` → el front no debe ofrecer confirmar ese reporte.
 **Publicación (v2, D-021):** un reporte pasa a `activo` (visible en el mapa) al juntar
 `confirmaciones_para_publicar` (5) confirmaciones "sí" de otras personas. `persona_en_riesgo` se
-publica con su propio reporte. Si no las junta en `ventana_activacion_min` (60) pasa a `resuelto`.
+publica con su propio reporte. Si no las junta en `ventana_activacion_min` (60; 1440 temporal en el mid-fi, D-022) pasa a `resuelto`.
 **Nivel (v2):** por confirmaciones "sí" (`parametros.nivel_*_min`): **bajo 5–9 · medio 10–14 ·
 alto 15–19 · critico ≥ 20**. `persona_en_riesgo` activa con menos de 15 = `alto`. Un `activo` con menos
 de 5 "sí" (p. ej. restaurado por admin) = `bajo`; un `pendiente` tiene `nivel = null`.

@@ -2,6 +2,24 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-10 (noche) · Diego · Claude Code (recorrido local del mid-fi + modo prueba)
+**Hecho**
+- Recorrido local en Chrome (escritorio y móvil 390 px, claro/oscuro/contraste): registro → reportar → 5 confirmaciones
+  (sesiones anónimas por API) → zona activa en el mapa vía Realtime. Fixes: etiquetas de zona 12×12 y encimadas,
+  stepper de Reportar anulado por CSS huérfano (+ prueba que parsea todos los CSS), GPS colgado si se ignora el
+  permiso (límite propio de 12 s), botón Reportar fuera de pantalla en escritorio, mapa que no centraba al llegar el GPS,
+  ruta alterna que apuntaba a la inundación, "De dónde quiero avisos", moto, `--mu2` en contraste, Confirmar trabado en
+  "Enviando…", nota al publicar, insignia "0 personas", videos > 10 MB, conteo de confirmaciones (403), doble envío.
+- Modo prueba `?prueba=1` (D-022): "Cerca de ti" lista toda la ZMG y se puede confirmar sin estar cerca.
+- Migración `20261110192439_parametros_midfi` (D-022, TEMPORAL): radio 40000, ventana 1440, expiración 180.
+  vitest 143/143 · `db reset` + `test db` 465/465.
+**Aviso de contrato (regla 10):** `radio_cercanos_max_m`, `ventana_activacion_min` y `minutos_expiracion` cambian en la
+nube al hacer `db push` (ver `docs/API.md`, `docs/MODELO_DATOS.md`). LeoFigo74z: revisar en el PR #14.
+**Decidido:** D-022. `confirmaciones_para_publicar` se queda en 5.
+**Pendiente:** revertir D-022 al cerrar el testeo; que el front lea `parametros` (umbrales 5/10/15/20 y `MIN_ATENUAR`
+fijos); nivel de zona por confirmaciones vs. gravedad reportada (confunde); "Mis avisos" por municipio promete más de
+lo que entrega; municipio "detectado" nunca se detecta.
+
 ## 2026-11-10 · Diego · Claude Code (front unificado + backend v2 validado)
 **Hecho**
 - Front unificado en `web/` (D-018) en 3 rondas: canvas de Diego → material de los equipos → "manda lo validado"
