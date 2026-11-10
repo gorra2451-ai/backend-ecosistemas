@@ -5,7 +5,8 @@
 **Fase actual:** F5-T3, integración del front unificado y backend v2 para el mid-fi (local listo, falta la nube)
 **Meta:** mid-fi de ¡Aguas! el 2026-11-11 a las 12:00. La maestra manda la liga a personas distintas,
 repartidas por la ZMG → la liga va con **`?prueba=1`**: https://aguas-zmg.netlify.app/?prueba=1
-**Rama activa:** `feat/f5-t3-front-midfi-web` → PR #14 (front `web/` + backend v2 + D-022). Falta aprobación de Leo.
+**Rama activa:** `feat/f5-t3-front-midfi-web` → PR #14 (front + v2 + D-022; CI verde, falta aprobación de Leo).
+`feat/f5-t3-web-voz` (voz) va encima. Auth anónima remota: **activa** (verificado `/auth/v1/settings`).
 
 ## Dónde quedamos
 - Recorrido local completo en Chrome (escritorio + móvil 390 px, claro/oscuro/contraste): registro → reportar →
@@ -13,13 +14,12 @@ repartidas por la ZMG → la liga va con **`?prueba=1`**: https://aguas-zmg.netl
 - Modo prueba `?prueba=1` (D-022): "Cerca de ti" lista toda la ZMG y se confirma sin estar cerca.
 - Migración TEMPORAL `20261110192439_parametros_midfi` (D-022): radio 40000, ventana 1440, expiración 180;
   `confirmaciones_para_publicar` sigue en 5. Local: `supabase test db` 465/465 · vitest 143/143 · build OK.
-- **Nada de esto está en la nube todavía.** Netlify sigue con la ronda 1. Auth anónima remota apagada.
+- **Nada de esto está en la nube todavía.** Netlify sigue con la ronda 1.
 
 ## Siguiente paso (en este orden)
 1. LeoFigo74z aprueba PR #14 desde SU cuenta (prompt que le mandó Diego).
 2. `gh pr merge 14 --merge` → `git checkout main && git pull` → `supabase db push` (5 migraciones)
    → `bash scripts/probar-nube.sh`.
-3. Diego enciende Auth anónima (Authentication → Sign In / Providers) y revisa el límite por IP (Rate Limits).
 4. `cd web && npm run build && netlify deploy --prod --dir dist --site c8abb1d6-9180-4a14-9de8-9ee8894045be --no-build`.
 5. Humo en la nube con 2 celulares: liga con `?prueba=1` → reportar en uno → confirmar desde Reportes → "Cerca de ti"
    en el otro. Probar Safari iPhone (colores de zonas) y Realtime.
@@ -31,8 +31,10 @@ repartidas por la ZMG → la liga va con **`?prueba=1`**: https://aguas-zmg.netl
 - Nivel de zona sale de confirmaciones (D-021): quien reporta "Medio" ve "Bajo". Confunde.
 - Front con números fijos (5/10/15/20, `MIN_ATENUAR=60`): leerlos de `parametros` antes de bajar el 5.
 - "Mis avisos" por municipio promete zona nueva/despejada/cierres; solo entrega lluvia fuerte.
-- Municipio dice "detectado" y nunca se detecta. "Modo voz" promete leer alertas y no lo hace (ver abajo).
-- Reportar con voz NO existe; solo "Responder con voz" en Confirmar (Chrome/Android; iOS parcial).
+- Municipio dice "detectado" y nunca se detecta.
+- Voz (rama `feat/f5-t3-web-voz`, encima del PR #14; PR a `main` cuando #14 entre): "Modo voz" lee zonas nuevas o
+  que suben a ≤ 400 m (sondeo 60 s, sin Realtime para no romper el canal del mapa) + botón "Escuchar" (solo móvil);
+  "Reportar con voz" llena tipo y gravedad, el envío sigue manual. Probado con reconocedor simulado; falta micrófono real.
 
 ## DUPLICADOS para decidir (cuál se queda)
 - Permisos: Registro paso 3 · Avisos→Preferencias · ubicación del Mapa. Accesibilidad: Registro paso 4 · Ajustes.

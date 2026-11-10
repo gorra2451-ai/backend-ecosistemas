@@ -2,6 +2,15 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-10 (cierre) · Diego · Claude Code (voz)
+**Hecho**
+- Rama `feat/f5-t3-web-voz` (2 subagentes en worktrees, integrados por cherry-pick): "Modo voz" ahora lee zonas
+  nuevas o que suben de nivel a ≤ 400 m y botón "Escuchar"; "Reportar con voz" interpreta tipo y gravedad (envío manual).
+  vitest 187/187 · build OK. En Chrome con reconocedor/síntesis simulados: "Escuchar", aviso automático de zona nueva,
+  frase → paso 2 con Calle + Medio, y "No te entendí" sin avanzar.
+- Auth anónima encendida en la nube (verificado `anonymous_users: true`). CI del PR #14 en verde (faltaba "Fase actual").
+**Pendiente:** probar voz con micrófono real (Chrome Android / Safari iOS); botón "Escuchar" en escritorio.
+
 ## 2026-11-10 (noche) · Diego · Claude Code (recorrido local del mid-fi + modo prueba)
 **Hecho**
 - Recorrido local en Chrome (escritorio y móvil 390 px, claro/oscuro/contraste): registro → reportar → 5 confirmaciones
