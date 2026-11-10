@@ -44,8 +44,9 @@ button:disabled{cursor:not-allowed}
     background:var(--bg);border-right:var(--bw) solid var(--line)}
   .map-sheet{display:none}
   .only-mobile{display:none!important}
-  .screen{left:440px} /* las pantallas abren a la derecha del sidebar */
-  .screen.full{left:0}
+  /* en escritorio las pantallas son un panel a la derecha: el mapa sigue a la vista */
+  .screen{left:auto;right:0;width:min(560px,100%);border-left:var(--bw) solid var(--line);box-shadow:var(--sh-toast)}
+  .screen.full{left:0;width:auto;border-left:0;box-shadow:none}
 }
 @media (max-width:1023.98px){ .only-desk{display:none!important} }
 
@@ -57,3 +58,6 @@ button:disabled{cursor:not-allowed}
   display:flex;align-items:center;justify-content:center;color:#fff}
 .mk-ref{width:30px;height:30px;border-radius:9px;background:var(--acc);color:var(--accTx);display:flex;align-items:center;justify-content:center}
 .leaflet-div-icon{background:transparent;border:0}
+
+/* Tema oscuro del mapa: OSM estándar con filtro (sin llave, D-018) */
+:root:not([data-theme=light]) .leaflet-tile-pane,[data-a11y~=contraste] .leaflet-tile-pane{filter:invert(1) hue-rotate(185deg) brightness(.85) contrast(.9) saturate(.6)}

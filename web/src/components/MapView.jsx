@@ -24,6 +24,22 @@ function Seguir({ ubic, centrarSeq }) {
   return null
 }
 
+function Controles({ ubic }) {
+  const map = useMap()
+  const b = { width: 48, height: 48, border: 'var(--bw) solid var(--line)', borderRadius: 14, background: 'var(--s1)',
+    color: 'var(--tx)', fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  const ref = (el) => { if (el) { L.DomEvent.disableClickPropagation(el); L.DomEvent.disableScrollPropagation(el) } }
+  return (
+    <div ref={ref}
+      style={{ position: 'absolute', right: 12, top: '40%', zIndex: 455, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <button style={b} aria-label="Acercar el mapa" onClick={() => map.zoomIn()}>+</button>
+      <button style={b} aria-label="Alejar el mapa" onClick={() => map.zoomOut()}>−</button>
+      <button style={{ ...b, color: 'var(--acc)' }} aria-label="Volver a mi ubicación"
+        onClick={() => map.setView([ubic.lat, ubic.lng], 15)}>◎</button>
+    </div>
+  )
+}
+
 export default function MapView({ centrarSeq = 0 }) {
   const { ubic, version, misReportes, setSeleccion, ir, prefs } = useApp()
   const [zonas, setZonas] = useState([])
@@ -48,16 +64,14 @@ export default function MapView({ centrarSeq = 0 }) {
   const dLat = CELDA_M / 2 / 111320
   const activosIds = useMemo(() => new Set(reportes.map((r) => r.id)), [reportes])
   const oscuro = prefs.tema !== 'claro'
-  const tiles = oscuro
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-
+  const tiles = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
   return (
     <MapContainer center={[ubic.lat, ubic.lng]} zoom={15} zoomControl={false} attributionControl
       style={{ position: 'absolute', inset: 0 }}>
-      <TileLayer key={tiles} url={tiles} maxZoom={19}
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>' />
+      <TileLayer url={tiles} maxZoom={19}
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
       <Seguir ubic={ubic} centrarSeq={centrarSeq} />
+      <Controles ubic={ubic} />
 
       {zonas.map((z) => {
         const dLng = dLat / Math.cos((z.lat * Math.PI) / 180)

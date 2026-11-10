@@ -3,8 +3,11 @@ import MapView from './components/MapView.jsx'
 import { Toast } from './components/ui.jsx'
 import { PANTALLAS } from './screens/registro.js'
 import { TopBar, Hoja, Sidebar, DeskHeader } from './screens/Mapa.jsx'
-import { HojaEnviado } from './screens/Reportar.jsx'
-import { AvisoConfirmar, DetectorCercanos } from './screens/Confirmar.jsx'
+import { HojaEnviado, ColaReportes } from './screens/Reportar.jsx'
+import { AvisoConfirmar, DetectorCercanos, BotonProbarConfirmar } from './screens/Confirmar.jsx'
+
+// ?demo=1 muestra el botón para probar el aviso de confirmación sin estar físicamente cerca.
+const DEMO = typeof location !== 'undefined' && new URLSearchParams(location.search).has('demo')
 
 export default function App() {
   const { screen, sheet } = useApp()
@@ -24,6 +27,8 @@ export default function App() {
         </main>
       </div>
       <DetectorCercanos />
+      <ColaReportes />
+      {DEMO && <div style={{ position: 'fixed', right: 12, top: 150, zIndex: 950 }}><BotonProbarConfirmar /></div>}
     </div>
   )
 }

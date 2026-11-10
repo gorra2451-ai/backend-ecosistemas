@@ -1,0 +1,99 @@
+/* MÓDULO B · Reportar. Solo tokens del design system (App.dc.html: tipo, paso2, enviado, riesgo, mireporte, error). */
+.rp-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rp-paso{font-size:15px;font-weight:700;color:var(--mu)}
+.rp-btn-top{min-height:52px;border:var(--bw) solid var(--line);border-radius:16px;background:var(--s1);color:var(--tx);
+  font-weight:700;font-size:16px;padding:0 14px}
+.rp-ubic{display:flex;align-items:center;gap:10px;background:var(--s1);border-radius:16px;padding:12px 14px}
+.rp-ubic svg{color:var(--acc)}
+.rp-ubic b{display:block;font-size:16px}
+.rp-ubic small{display:block;font-size:14px;color:var(--mu)}
+.rp-h1{font:800 38px/1.02 var(--f-head)}
+.rp-h1--l{font-size:42px}
+.rp-estado{font-size:15px;font-weight:700;color:var(--mu);min-height:21px}
+
+/* Tiles 2×2 */
+.rp-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(150px,1fr);gap:12px;flex:1}
+.rp-tiles .tile{text-align:center;padding:12px}
+.rp-tiles .tile svg{color:var(--acc)}
+.rp-tiles .tile--risk svg{color:var(--ra)}
+.rp-tiles .tile small{font-size:14px;font-weight:400;color:var(--mu)}
+
+/* Elecciones grandes del paso 2 */
+.rp-choices{display:flex;flex-direction:column;gap:14px;flex:1}
+.rp-choices .choice{min-height:140px;color:var(--tx);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px}
+.rp-choices .choice small{font:400 16px var(--f-body);color:var(--mu)}
+.rp-choices .choice--alto{color:#0B1220} /* canvas: texto oscuro fijo sobre patrón Alto */
+.rp-choices .choice--alto > span{background:var(--ra);border-radius:16px;padding:8px 18px;display:flex;flex-direction:column;align-items:center}
+.rp-choices .choice--alto small{font-weight:700;color:#0B1220}
+.rp-nivel{flex:1;min-height:112px;border:var(--bw) solid var(--line);border-radius:24px;background:var(--s1);color:var(--tx);
+  display:flex;align-items:center;gap:16px;padding:0 18px;text-align:left}
+.rp-nivel .fig{position:relative;width:56px;height:96px;flex:none}
+.rp-nivel .fig svg{position:absolute;inset:0}
+.rp-nivel .agua{position:absolute;left:0;right:0;bottom:0;border-radius:6px;opacity:.85}
+.rp-nivel b{display:block;font:800 26px var(--f-head)}
+.rp-nivel small{display:block;font-size:15px;color:var(--mu)}
+button:disabled.choice,button:disabled.rp-nivel,button:disabled.tile{opacity:.55}
+
+/* Pantalla roja */
+.screen.rp-riesgo{background:var(--risk);color:#fff;padding:38px 20px 22px}
+.rp-riesgo .screen-inner{gap:16px}
+.rp-riesgo .tag{font-size:16px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.rp-riesgo h1{font:800 50px/.98 var(--f-head)}
+.rp-riesgo p{font-size:18px;line-height:1.4}
+.rp-riesgo .envio{font-size:15px;font-weight:700;background:rgba(0,0,0,.25);border-radius:14px;padding:10px 12px}
+.rp-911{min-height:120px;border-radius:30px;background:#fff;color:var(--risk-tx-on-white);font:800 40px var(--f-head);
+  display:flex;align-items:center;justify-content:center;gap:14px;text-decoration:none}
+.rp-riesgo .sec{min-height:68px;border-radius:22px;border:2px solid #fff;color:#fff;font-size:18px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;padding:0 12px;text-align:center}
+.rp-riesgo .volver{min-height:56px;border:0;border-radius:18px;background:rgba(0,0,0,.25);color:#fff;font-size:17px;font-weight:700}
+.rp-riesgo :focus-visible{outline-color:#fff}
+
+/* Hoja "Enviado" */
+.rp-sent{position:static}
+.rp-sent-head{display:flex;align-items:center;gap:12px}
+.rp-sent-ok{width:52px;height:52px;flex:none;border-radius:16px;background:var(--acc);color:var(--accTx);display:flex;align-items:center;justify-content:center}
+.rp-sent-ok.cola{background:var(--amber);color:var(--amberTx)}
+.rp-sent-tit{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rp-sent-tit b{font:800 26px var(--f-head)}
+.rp-chip{font:700 14px var(--f-body)}
+.rp-sub{font-size:14px;color:var(--mu)}
+.rp-x{width:48px;height:48px;flex:none;border:var(--bw) solid var(--line);border-radius:14px;background:var(--s2);color:var(--tx);
+  display:flex;align-items:center;justify-content:center;padding:0}
+.rp-sent p{font-size:16px;line-height:1.4}
+.rp-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.rp-grid2 .btn{padding:0 10px}
+.rp-acudo{min-height:64px;border:0;border-radius:18px;background:var(--acc);color:var(--accTx);font-size:18px;font-weight:700}
+
+/* Mi reporte */
+.rp-tl{background:var(--s1);border-radius:20px;padding:16px 16px 4px;list-style:none;margin:0}
+.rp-tl li{display:flex;gap:14px}
+.rp-tl .col{display:flex;flex-direction:column;align-items:center;width:26px;flex:none}
+.rp-tl .dot{width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center}
+.rp-tl .done{background:var(--acc);color:var(--accTx)}
+.rp-tl .now{border:4px solid var(--acc);background:var(--bg)}
+.rp-tl .next{border:2px dashed var(--mu)}
+.rp-tl .line{width:3px;flex:1;min-height:22px;background:var(--line)}
+.rp-tl .txt{padding-bottom:14px}
+.rp-tl .txt b{display:block;font-size:17px}
+.rp-tl .txt small{display:block;font-size:14px;color:var(--mu)}
+.rp-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.rp-stat{background:var(--s1);border-radius:16px;padding:12px}
+.rp-stat b{display:block;font:800 32px var(--f-head)}
+.rp-stat small{font-size:14px;color:var(--mu)}
+.rp-wa{min-height:64px;border-radius:18px;background:var(--acc);color:var(--accTx);font-size:18px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none}
+.rp-cita{background:var(--s1);border-radius:14px;padding:12px 14px;font-size:15px;color:var(--mu);line-height:1.4;word-break:break-word}
+.rp-nota{font-size:14px;color:var(--mu);text-align:center}
+
+/* Error */
+.rp-err-ico{width:68px;height:68px;border-radius:22px;background:var(--s2);color:var(--amber);display:flex;align-items:center;justify-content:center}
+.rp-err h1{font:800 34px/1.05 var(--f-head)}
+.rp-err p{font-size:18px;line-height:1.45;color:var(--mu)}
+.rp-tel{min-height:60px;border-radius:18px;border:2px solid var(--ra);color:var(--tx);font-size:17px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none}
+.rp-spacer{flex:1}
+
+@media (min-width:1024px){
+  .rp-tiles{grid-auto-rows:minmax(170px,1fr)}
+}
+@media (prefers-reduced-motion:reduce){ .rp-tl .now{animation:none} }

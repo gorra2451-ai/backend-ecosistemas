@@ -1,0 +1,80 @@
+/* Módulo A · Primera vez (acceso, privacidad, ubicacion, avisos, onb). Solo tokens del design system. */
+.onb{display:flex;flex-direction:column;gap:16px;flex:1}
+.onb .btn{width:100%}
+.onb-spacer{flex:1;min-height:8px}
+.onb-marca{display:flex;align-items:center;gap:12px}
+.onb-marca span{font:800 36px/1 var(--f-head)}
+.onb-h1{font:800 34px/1.05 var(--f-head)}
+.onb-h1.xl{font-size:40px;line-height:1.02}
+.onb-lead{font-size:17px;line-height:1.45;color:var(--mu)}
+.onb-intro{font-size:18px;line-height:1.35}
+.onb-nota{font-size:14px;line-height:1.4;color:var(--mu);text-align:center}
+.onb-centro{display:flex;justify-content:center}
+.onb .onb-link{align-self:center;min-height:48px;font-size:15px;padding:0 8px}
+
+/* Botón principal de acceso con subtítulo */
+.onb-anon{min-height:72px!important;border-radius:22px;flex-direction:column;gap:2px;display:flex;align-items:center;justify-content:center}
+.onb-anon .t{font-size:20px;font-weight:700}
+.onb-anon .s{font-size:14px;font-weight:700;opacity:.85}
+.onb-google{display:flex;align-items:center;justify-content:center;gap:10px;font-size:17px;font-weight:700}
+
+/* Barra superior: atrás + indicador de pasos */
+.onb-top{display:flex;align-items:center;justify-content:space-between;min-height:48px}
+.onb-top.fin{justify-content:flex-end}
+.onb .onb-atras{width:auto!important;min-height:48px;border-radius:14px;background:var(--s1)}
+.onb-pasos{display:flex;gap:6px}
+.onb-pasos > span[aria-hidden]{width:22px;height:6px;border-radius:3px;background:var(--line)}
+.onb-pasos > span.on{background:var(--acc)}
+
+/* Cuatro frases de privacidad */
+.onb-frases{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.onb-frases li{display:flex;gap:12px;align-items:flex-start;background:var(--s1);border:var(--bw) solid var(--line);
+  border-radius:16px;padding:12px 14px;color:var(--acc)}
+.onb-frases .t{display:block;font-size:16px;font-weight:700;line-height:1.3;color:var(--tx)}
+.onb-frases .nota{display:block;font-size:13px;font-weight:700;color:var(--amber)}
+
+/* Aviso completo (details) */
+.onb-aviso summary{min-height:48px;display:flex;align-items:center;color:var(--acc);font-weight:700;font-size:15px;
+  text-decoration:underline;cursor:pointer;list-style:none}
+.onb-aviso summary::-webkit-details-marker{display:none}
+.onb-aviso summary::after{content:"▾";margin-left:6px;text-decoration:none;display:inline-block}
+.onb-aviso[open] summary::after{transform:rotate(180deg)}
+.onb-aviso-cuerpo{display:flex;flex-direction:column;gap:10px;background:var(--s1);border:var(--bw) solid var(--line);
+  border-radius:16px;padding:14px;font-size:15px;line-height:1.45;color:var(--mu2)}
+.onb-aviso-cuerpo b{color:var(--tx)}
+
+.onb-check{display:flex;align-items:center;gap:12px;min-height:52px;font-size:16px;font-weight:700;cursor:pointer}
+.onb-check input{width:26px;height:26px;accent-color:var(--acc);flex:none;margin:0}
+
+/* Ícono grande de permiso */
+.onb-icono{width:96px;height:96px;border-radius:30px;background:var(--s1);border:var(--bw) solid var(--line);
+  color:var(--acc);display:flex;align-items:center;justify-content:center}
+
+/* Selector de municipio */
+.onb-municipios{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.onb .onb-muni{display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;background:var(--s1)}
+.onb .onb-muni.sel{border:2px solid var(--acc);background:var(--chip)}
+
+/* Sello de anonimato y tiles de medio */
+.onb-sello{display:flex;align-items:center;gap:12px;background:var(--s1);border:var(--bw) solid var(--line);border-radius:18px;padding:12px 14px}
+.onb-sello svg{color:var(--acc)}
+.onb-sello .t{font-weight:700;font-size:15px}
+.onb-sello .s{font-size:14px;color:var(--mu)}
+.onb-medios{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;flex:1;min-height:300px}
+.onb-medio{min-height:140px;padding:12px;font-size:21px;text-align:center;cursor:pointer}
+.onb-medio svg{color:var(--acc)}
+.onb-medio .s{font-size:14px;font-weight:400;color:var(--mu);line-height:1.25}
+.onb-medio:hover:not(:disabled){border-color:var(--acc)}
+.onb-medio:disabled{opacity:.6}
+.onb-medio[aria-busy=true]{opacity:1;border:2px solid var(--acc)}
+
+/* Escritorio: tarjeta centrada que cubre header, sidebar y mapa */
+@media (min-width:1024px){
+  .screen.full:has(.onb){position:fixed;inset:0;z-index:850;padding:32px} /* bajo el toast (900) */
+  .screen.full:has(.onb) > .screen-inner{flex:none;margin:auto;max-width:520px;background:var(--s1);border:var(--bw) solid var(--line);
+    border-radius:var(--r-card);padding:32px;box-shadow:var(--sh-dialog)}
+  .onb-frases li,.onb-sello,.onb-icono,.onb-aviso-cuerpo,.onb .onb-muni{background:var(--bg)}
+  .onb .onb-atras{background:var(--bg)}
+  .onb-spacer{flex:none;min-height:4px}
+  .onb-medios{min-height:0;flex:none}
+}

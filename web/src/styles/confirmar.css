@@ -1,0 +1,27 @@
+/* MÓDULO D · Aviso "¿Sigue inundado?" (DISENO §2 .confirm). Modal inferior invertido. */
+.confirm{display:flex;flex-direction:column;width:100%;max-width:440px;box-shadow:var(--sh-toast);
+  animation:rise var(--dur-rise) ease-out}
+.confirm:focus{outline:none}
+.confirm-bar{height:5px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--bg) 18%,transparent);overflow:hidden}
+.confirm-bar>i{display:block;height:100%;background:var(--acc);border-radius:inherit;transform-origin:left center;
+  animation:confirm-shrink 10s linear forwards}
+@keyframes confirm-shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.confirm-lugar{font:var(--t-small);margin:0;opacity:.85}
+.confirm-lugar b{font-weight:700}
+.confirm h2{font:800 34px/1.05 var(--f-head);margin:0}
+.confirm-nota{font:var(--t-small);margin:0;opacity:.85}
+.confirm-acciones{display:flex;flex-direction:column;gap:var(--sp3);margin-top:var(--sp1)}
+.confirm button{display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;font-family:var(--f-body)}
+.confirm button:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+.confirm button:disabled{opacity:.6;cursor:wait}
+.confirm-si{min-height:76px;border-radius:20px;border:0;background:var(--bg);color:var(--tx);font:800 24px var(--f-head)}
+.confirm-no{min-height:64px;border-radius:18px;border:3px solid var(--bg);background:transparent;color:var(--bg);font-size:20px;font-weight:700}
+/* "Es falso": menos prominente y separado de "Ya no" (P-17 + auditoría del canvas). */
+.confirm-falso{align-self:center;min-height:48px;margin-top:var(--sp2);padding:0 var(--sp3);border:0;background:transparent;
+  color:var(--bg);font-size:15px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.confirm-probar{min-height:48px;border:0;background:transparent;color:var(--acc);font:700 15px var(--f-body);
+  text-decoration:underline;cursor:pointer;padding:0 var(--sp2)}
+.confirm-probar:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+
+@media (prefers-reduced-motion:reduce){ .confirm,.confirm-bar>i{animation:none} }
+[data-a11y~=motion] .confirm-bar>i{animation:none!important}

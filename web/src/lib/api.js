@@ -2,11 +2,12 @@
 // Contrato: docs/API.md. Cada función regresa { data, error } donde error es un código del contrato.
 import { supabase } from './supabase.js'
 
-const CODIGOS = [
-  'sin_sesion', 'parametros_invalidos', 'fuera_de_zmg', 'limite_por_hora', 'duplicado_cercano',
-  'id_en_uso', 'limite_entradas', 'reporte_no_existe', 'reporte_no_autorizado', 'reporte_no_activo',
-  'archivo_no_existe', 'tipo_archivo_invalido', 'archivo_invalido', 'limite_evidencias',
-  'area_demasiado_grande', 'ya_confirmado', 'propio', 'no_admin',
+const CODIGOS = [ // códigos reales de supabase/migrations (los más largos primero: se busca por substring)
+  'reporte_no_autorizado', 'proveedor_push_no_permitido', 'tipo_archivo_invalido', 'area_demasiado_grande',
+  'parametros_invalidos', 'limite_suscripciones', 'suscripcion_en_uso', 'duplicado_cercano', 'limite_evidencias',
+  'reporte_no_activo', 'reporte_no_existe', 'archivo_no_existe', 'archivo_invalido', 'limite_entradas',
+  'limite_por_hora', 'motivo_requerido', 'estado_invalido', 'propio_reporte', 'no_autorizado', 'fuera_de_zmg',
+  'sin_perfil', 'sin_sesion', 'id_en_uso',
 ]
 
 export function codigoError(err) {
@@ -82,8 +83,8 @@ export async function reportesCercanos(lat, lng, radio = 300) {
   await asegurarSesion()
   return r(supabase.rpc('reportes_cercanos', { p_lat: lat, p_lng: lng, p_radio_m: radio }))
 }
-export const confirmarReporte = (id, sigue) => r(supabase.rpc('confirmar_reporte', { p_reporte_id: id, p_sigue: sigue }))
-export const marcarFalso = (id) => r(supabase.rpc('marcar_falso', { p_reporte_id: id }))
+export const confirmarReporte = async (id, sigue) => (await asegurarSesion(), r(supabase.rpc('confirmar_reporte', { p_reporte_id: id, p_sigue: sigue })))
+export const marcarFalso = async (id) => (await asegurarSesion(), r(supabase.rpc('marcar_falso', { p_reporte_id: id })))
 
 // ---------- Mapa ----------
 export const zonasPublicas = () => r(supabase.from('zonas_publicas').select('*'))
