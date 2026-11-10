@@ -118,3 +118,17 @@ consultar la API de administración; las sesiones ya usaban ES256), SSL obligato
 contraseñas de 12+ con mayúsculas, minúsculas y dígitos (también en `config.toml`), y
 `scripts/probar-nube.sh` como revisión externa tras cada `supabase db push`.
 **Por qué:** auditoría F5-T2. Lo que falta (captcha, alta por correo) queda en P-16.
+
+## D-017 · Límite de entradas, privacidad y retención de push
+**Estado:** Aceptada (Diego) · 2026-10-28
+**Decisión:** P-25: máximo de 20 entradas por perfil en una hora, configurable en
+`parametros.max_entradas_por_hora`. P-26: se permite guardar la celda aproximada
+(~300 m) vinculada a `perfil_id` para avisos push. La suscripción se elimina
+inmediatamente con `baja_push` o al borrar el perfil; además, `pg_cron` la elimina
+tras 30 días sin renovar el endpoint ni recibir un aviso entregado con éxito. El plazo
+vive en `parametros.dias_retencion_suscripcion`. El último envío exitoso se conserva
+en la suscripción aunque se limpie el historial de avisos.
+**Seguridad de despliegue:** Auth anónima permanece apagada en la nube hasta que
+estén listos captcha y límites (P-16); en local puede estar encendida para pruebas.
+**Por qué:** limitar el abuso y retener la ubicación aproximada y las claves push
+solo mientras el dispositivo siga usando el servicio.
