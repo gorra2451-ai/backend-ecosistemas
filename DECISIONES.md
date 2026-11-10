@@ -146,7 +146,8 @@ solo como link de "ruta alterna".
 solo URL y llave publicable.
 
 ## D-019 · Sesión anónima encendida en la nube para el mid-fi (atiende parte de P-16)
-**Estado:** Propuesta (Diego) · 2026-11-10 · LeoFigo74z pide no activarla sin captcha y límites (P-16); se decide en el PR
+**Estado:** Aceptada (Diego y LeoFigo74z) · 2026-11-10 · condicionada: solo durante los testeos del mid-fi,
+límite de 30 sesiones anónimas por hora por IP, y se apaga al terminar los testeos. Captcha sigue en P-16.
 **Decisión:** se enciende el inicio de sesión anónimo en el proyecto remoto con el límite por IP
 de Supabase Auth (anónimos por hora), sin captcha, mientras duren los testeos del mid-fi.
 Los límites del backend siguen (`max_reportes_por_hora`, `max_entradas_por_hora`).
