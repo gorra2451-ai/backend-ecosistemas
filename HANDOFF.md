@@ -2,6 +2,7 @@
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
 **Última actualización:** 2026-11-10 noche · Diego (con Claude Code)
+**Fase actual:** F5-T3, integración del front unificado y backend v2 para el mid-fi (local listo, falta la nube)
 **Meta:** mid-fi de ¡Aguas! el 2026-11-11 a las 12:00. La maestra manda la liga a personas distintas,
 repartidas por la ZMG → la liga va con **`?prueba=1`**: https://aguas-zmg.netlify.app/?prueba=1
 **Rama activa:** `feat/f5-t3-front-midfi-web` → PR #14 (front `web/` + backend v2 + D-022). Falta aprobación de Leo.
