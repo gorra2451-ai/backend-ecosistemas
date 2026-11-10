@@ -135,7 +135,7 @@ solo mientras el dispositivo siga usando el servicio.
 
 ## D-018 · Front unificado ¡Aguas! dentro de este repo (reemplaza a D-002)
 **Estado:** Aceptada (Diego) · 2026-11-10 · falta visto bueno de LeoFigo74z en el PR
-**Decisión:** la clase acordó un solo prototipo con el design system de Diego (P-23). El front
+**Decisión:** la clase acordó un solo prototipo con el design system de Diego (P-33). El front
 vive en `web/` de este repo (Vite + React + `supabase-js` + Leaflet/OpenStreetMap) y se publica
 en Netlify (plan gratuito, solo `web/`). `supabase/` no cambia de estructura ni de CI.
 Los HTML de los 5 equipos son referencia de pantallas; el front final es uno.
@@ -146,7 +146,7 @@ solo como link de "ruta alterna".
 solo URL y llave publicable.
 
 ## D-019 · Sesión anónima encendida en la nube para el mid-fi (atiende parte de P-16)
-**Estado:** Aceptada (Diego) · 2026-11-10
+**Estado:** Propuesta (Diego) · 2026-11-10 · LeoFigo74z pide no activarla sin captcha y límites (P-16); se decide en el PR
 **Decisión:** se enciende el inicio de sesión anónimo en el proyecto remoto con el límite por IP
 de Supabase Auth (anónimos por hora), sin captcha, mientras duren los testeos del mid-fi.
 Los límites del backend siguen (`max_reportes_por_hora`, `max_entradas_por_hora`).

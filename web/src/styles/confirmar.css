@@ -16,7 +16,7 @@
 .confirm button:disabled{opacity:.6;cursor:wait}
 .confirm-si{min-height:76px;border-radius:20px;border:0;background:var(--bg);color:var(--tx);font:800 24px var(--f-head)}
 .confirm-no{min-height:64px;border-radius:18px;border:3px solid var(--bg);background:transparent;color:var(--bg);font-size:20px;font-weight:700}
-/* "Es falso": menos prominente y separado de "Ya no" (P-17 + auditoría del canvas). */
+/* "Es falso": menos prominente y separado de "Ya no" (P-27 + auditoría del canvas). */
 .confirm-falso{align-self:center;min-height:48px;margin-top:var(--sp2);padding:0 var(--sp3);border:0;background:transparent;
   color:var(--bg);font-size:15px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .confirm-probar{min-height:48px;border:0;background:transparent;color:var(--acc);font:700 15px var(--f-body);
