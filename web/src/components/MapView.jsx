@@ -6,7 +6,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useApp } from '../lib/store.jsx'
 import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor } from '../lib/api.js'
-import { leerCapas, suscribirCapas, filtrarCapas, nivelV2, leerCentro, suscribirCentro } from '../lib/mapa.js'
+import { leerCapas, suscribirCapas, filtrarCapas, nivelV2, zonasConEtiqueta, leerCentro, suscribirCentro } from '../lib/mapa.js'
 
 const CELDA_M = 300 // parametros.tamano_celda_m (POR CONFIRMAR)
 const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)', critico: 'var(--risk)' }
@@ -14,14 +14,15 @@ const TEXTO = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto', critico: 'Crítico' 
 
 const icono = (html, size = 32) => L.divIcon({ html, className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2] })
 const etiqueta = (z) => L.divIcon({
-  className: '', iconAnchor: [-14, 14],
+  className: '', iconSize: null, iconAnchor: [-14, 14], // sin iconSize Leaflet fija 12×12 y aplasta la caja
   html: `<div class="zone-label" style="position:static;white-space:nowrap"><span class="p-${z.nivel}" style="width:18px;height:18px;border-radius:5px;display:inline-block"></span>
     <span><b style="font-size:14px">${TEXTO[z.nivel]}${z.alguno_no_pasan_carros ? ' · no pasan' : ''}</b><br><span style="font-size:13px;color:var(--mu)">${z.total_reportes} reporte${z.total_reportes === 1 ? '' : 's'}</span></span></div>`,
 })
 
 function Seguir({ ubic, centrarSeq }) {
   const map = useMap()
-  useEffect(() => { map.setView([ubic.lat, ubic.lng], map.getZoom() < 14 ? 15 : map.getZoom()) }, [centrarSeq]) // eslint-disable-line
+  // También al llegar el primer GPS real: el mapa se monta antes con el punto de ejemplo (CENTRO_ZMG).
+  useEffect(() => { map.setView([ubic.lat, ubic.lng], map.getZoom() < 14 ? 15 : map.getZoom()) }, [centrarSeq, ubic.real]) // eslint-disable-line
   return null
 }
 
@@ -95,7 +96,7 @@ export default function MapView({ centrarSeq = 0 }) {
             eventHandlers={{ click: () => { setSeleccion({ tipo: 'zona', ...z }); ir('zona', { zona: z }) } }} />
         )
       })}
-      {ver.zonas.slice(0, 3).map((z) => (
+      {zonasConEtiqueta(ver.zonas).map((z) => (
         <Marker key={'l' + z.celda} position={[z.lat, z.lng]} icon={etiqueta(z)}
           eventHandlers={{ click: () => { setSeleccion({ tipo: 'zona', ...z }); ir('zona', { zona: z }) } }} />
       ))}

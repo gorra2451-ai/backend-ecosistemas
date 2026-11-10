@@ -204,3 +204,15 @@ export function partirLugar(nombre) {
   const [t, ...resto] = String(nombre || '').split(',').map((x) => x.trim()).filter(Boolean)
   return { t: t || 'Lugar sin nombre', sub: resto.join(', ') }
 }
+
+// Etiquetas del mapa: las celdas miden 300 m y una etiqueta ocupa ~550 m a zoom 15, así que dos
+// celdas contiguas se enciman. Se etiqueta primero la más grave y se salta la que quede a < sepM.
+export function zonasConEtiqueta(zonas = [], max = 3, sepM = 700) {
+  const orden = [...zonas].sort((a, b) => NIVELES.indexOf(b.nivel) - NIVELES.indexOf(a.nivel))
+  const elegidas = []
+  for (const z of orden) {
+    if (elegidas.length >= max) break
+    if (elegidas.every((e) => distanciaM(e, z) >= sepM)) elegidas.push(z)
+  }
+  return elegidas
+}

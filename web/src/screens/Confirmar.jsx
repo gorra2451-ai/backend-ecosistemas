@@ -110,13 +110,18 @@ function Aviso({ rep, modo, cerrar }) {
     ocupadoRef.current = true
     cancelarVoz.current(); setEscuchando(false)
     setEnviando(accion)
-    const { data, error } = await responder(rep.id, accion)
-    if (error) { cerrar(); avisar(mensajeConfirmar(error)); return }
+    let data, error
+    try {
+      ({ data, error } = await responder(rep.id, accion))
+    } catch {
+      error = 'desconocido'
+    }
+    if (error) { ocupadoRef.current = false; setEnviando(null); cerrar(); avisar(mensajeConfirmar(error)); return }
     const repetido = registrarVoto(rep.id, accion) || data?.repetido === true
     if (permiteSenal(prefs).vibra) { try { navigator.vibrate?.(80) } catch { /* sin vibración */ } }
     if (leerViaje().pendiente?.id === rep.id) cambiarViaje({ pendiente: null })
     const texto = textoGracias(accion, medio)
-    const notas = notasGracias({ repetido, estado: data?.estado })
+    const notas = notasGracias({ repetido, estado: data?.estado, antes: rep.estado })
     refrescar()
     if (!puedeTocar(medio, leerViaje())) { // en movimiento: nada táctil, solo aviso de lectura
       cerrar(); avisar(`${porVoz ? 'Escuchamos tu respuesta. ' : ''}¡Enviado! ${texto}`); return
@@ -426,8 +431,14 @@ export function BotonProbarConfirmar() {
   const [buscando, setBuscando] = useState(false)
   const probar = async () => {
     setBuscando(true)
-    const { data, error } = await reportesCercanos(ubic.lat, ubic.lng, 1000) // demo: tope del backend (radio_cercanos_max_m)
-    setBuscando(false)
+    let data, error
+    try {
+      ({ data, error } = await reportesCercanos(ubic.lat, ubic.lng, 1000)) // demo: tope del backend (radio_cercanos_max_m)
+    } catch {
+      error = 'desconocido'
+    } finally {
+      setBuscando(false)
+    }
     if (error) { avisar(mensajeConfirmar(error)); return }
     const rep = elegirCercano(data)
     if (!rep) { avisar('No hay reportes de otros vecinos a 1 km'); return }

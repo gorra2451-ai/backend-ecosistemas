@@ -57,7 +57,7 @@
 .mp-side .mp-list{max-height:none;overflow:visible}
 .mp-side-fill{flex:1}
 .mp-report-inv{height:76px;border:0;border-radius:22px;background:var(--tx);color:var(--bg);font:800 28px var(--f-head);
-  display:flex;align-items:center;justify-content:center;gap:12px;position:relative;overflow:hidden;flex:none}
+  display:flex;align-items:center;justify-content:center;gap:12px;position:sticky;bottom:12px;z-index:2;overflow:hidden;flex:none} /* CTA principal siempre visible en la barra lateral de escritorio */
 
 /* ---------- Encabezado (escritorio) ---------- */
 .mp-brand{display:flex;align-items:center;gap:12px;font:800 28px var(--f-head);color:var(--tx)}

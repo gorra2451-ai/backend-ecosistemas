@@ -14,6 +14,7 @@ import {
   leerCapas, suscribirCapas, cambiarCapa, restablecerCapas, capasModificadas, filtrarCapas,
   centrarEn, debounce, partirLugar,
 } from '../lib/mapa.js'
+import { urlRutaAlterna, grupoMedio } from '../lib/ayuda.js'
 import '../styles/mapa.css'
 
 // ---------- Datos compartidos (una sola petición para barra, hoja y sidebar) ----------
@@ -64,7 +65,7 @@ function useDatosMapa() {
 }
 
 const abrirItem = (ir, it) => (it.clase === 'riesgo' ? ir('zona', { reporte: it.dato }) : ir('zona', { zona: it.dato }))
-const MEDIO_TXT = { peaton: 'A pie', bici: 'Bici', auto: 'Auto', transporte_publico: 'Bus' }
+const MEDIO_TXT = { peaton: 'A pie', moto: 'Moto', bici: 'Bici', auto: 'Auto', transporte_publico: 'Bus' }
 
 // ---------- Piezas ----------
 function Leyenda({ desk = false, filtrado = false, onCapas }) {
@@ -473,7 +474,7 @@ function useDireccion(punto) {
 }
 
 export function Zona() {
-  const { params, ubic, setOverlay, version, ir } = useApp()
+  const { params, ubic, setOverlay, version, ir, medio } = useApp()
   const dato = params?.zona || params?.reporte ? describir(params) : null
   const dist = dato ? distanciaM(ubic, dato.punto) : Infinity
   const cerca = dist <= RADIO_TU_ZONA_M
@@ -551,7 +552,7 @@ export function Zona() {
       )}
       {!dato.riesgo && (
         <>
-          <a className="mp-link mp-link--acc" href={rutaGoogle(lat, lng)} target="_blank" rel="noopener noreferrer">
+          <a className="mp-link mp-link--acc" href={urlRutaAlterna(ubic, grupoMedio(medio))} target="_blank" rel="noopener noreferrer">
             <Icon name="mapa" />Ver rutas alternativas (Google Maps)
           </a>
           <p className="mp-z-nota">Google Maps no conoce esta alerta: elige una ruta que no pase por aquí.</p>
@@ -705,7 +706,7 @@ export function Mas() {
         <h2 id="mp-conf">Configuración</h2>
         <ul className="mp-conf">
           <li><button type="button" onClick={() => ir('preferencias')}><Icon name="campana" />Notificaciones<Icon name="chevron" size={20} /></button></li>
-          <li><button type="button" onClick={() => ir('alertas')}><Icon name="pin" />De dónde quiero avisos<Icon name="chevron" size={20} /></button></li>
+          <li><button type="button" onClick={() => ir('preferencias')}><Icon name="pin" />De dónde quiero avisos<Icon name="chevron" size={20} /></button></li>
           <li><button type="button" onClick={() => ir('ajustes')}><Icon name="accesibilidad" />Accesibilidad y apariencia<Icon name="chevron" size={20} /></button></li>
           <li><button type="button" onClick={() => ir('onb')}><Icon name="peaton" />Cómo me muevo hoy<Icon name="chevron" size={20} /></button></li>
         </ul>

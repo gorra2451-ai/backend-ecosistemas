@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+// api.js se simula: estas pruebas no tocan la red (responder ante una sesión que falla).
+vi.mock('./api.js', () => ({ asegurarSesion: vi.fn(), confirmarReporte: vi.fn(), marcarFalso: vi.fn() }))
+import { asegurarSesion } from './api.js'
 import { elegirCercano, puedePreguntar, haceMin, lugarDe, mensajeConfirmar } from './confirmar.js'
 
 const r = (id, distancia_m, es_propio = false) => ({ id, distancia_m, es_propio, tipo: 'calle' })
@@ -94,7 +97,7 @@ describe('escucharVoz', () => {
 
 import {
   clasificarCercanos, esAntiguo, insignia, nivelRiesgo, cambiosMios, velocidadDe, enMovimiento, puedeTocar,
-  registrarVoto, notasGracias, permiteSenal, urlDesviar, textoLlegas, MIN_ATENUAR,
+  registrarVoto, notasGracias, responder, permiteSenal, urlDesviar, textoLlegas, MIN_ATENUAR,
 } from './confirmar.js'
 
 describe('clasificarCercanos', () => {
@@ -121,6 +124,10 @@ describe('insignia y nivel', () => {
     const viejo = { confirmaciones_si: 1, creado_en: new Date(ahora - (MIN_ATENUAR + 5) * 60000).toISOString() }
     expect(esAntiguo(viejo, ahora)).toBe(true)
     expect(insignia(viejo, ahora).texto).toBe('Antiguo · Confirmado por 1 persona • hace 1 h 5 min')
+  })
+  it('insignia con 0 confirmaciones dice «Esperando confirmaciones»', () => {
+    const nuevo = { confirmaciones_si: 0, ultima_confirmacion: '2026-11-10T11:50:00Z' }
+    expect(insignia(nuevo, ahora).texto).toBe('Esperando confirmaciones • hace 10 min')
   })
   it('nivel con palabra', () => {
     expect(nivelRiesgo('critico').nombre).toBe('Riesgo crítico')
@@ -176,6 +183,14 @@ describe('respuestas', () => {
   it('notasGracias', () => {
     expect(notasGracias({ repetido: true, estado: 'activo' })).toEqual(['Ya habías respondido este reporte; mantuvimos tu voto.'])
     expect(notasGracias({ estado: 'resuelto' })[0]).toMatch(/ya no aparece en el mapa/)
+  })
+  it('notasGracias: tu «sí» publicó el reporte (pendiente → activo)', () => {
+    expect(notasGracias({ antes: 'pendiente', estado: 'activo' })).toEqual(['Con tu confirmación ya aparece en el mapa.'])
+    expect(notasGracias({ antes: 'activo', estado: 'activo' })).toEqual([])
+  })
+  it('responder no lanza si la sesión falla: devuelve error', async () => {
+    asegurarSesion.mockRejectedValueOnce(new Error('sin red'))
+    await expect(responder('r9', 'sigue')).resolves.toEqual({ data: null, error: 'desconocido' })
   })
   it('voz «desviar ruta»', () => { expect(interpretarVoz('desviar ruta')).toBe('desviar') })
   it('urlDesviar por medio', () => {

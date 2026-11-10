@@ -9,6 +9,7 @@ import {
   linkWhatsApp, textoFamilia, textoRiesgo, encolar, leerCola, quitarDeCola, quitarExif, subirEvidenciaReporte, tipoEvidencia,
   seguimientoReporte, soltarSesion, TIPO_LABEL, TIPOS_REPORTE, GRAVEDAD, pasosStepper, resumenReporte, textoUbicacion,
   unirMisReportes, filaMiReporte, filaCercano, iconoTipo, PRECISION_LUGAR_BUSCADO,
+  validarArchivo, MENSAJE_ARCHIVO, tituloUbicacion, crearCandado,
 } from '../lib/reportar.js'
 import { Screen, Btn } from '../components/ui.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
@@ -81,13 +82,16 @@ async function enviarConEvidencia(app, armado, archivo) {
 function useMandar() {
   const app = useApp()
   const [enviando, setEnviando] = useState(false)
-  const mandar = useCallback(async (armado, archivo = null) => {
+  // Candado síncrono: `disabled={enviando}` no alcanza a frenar dos toques antes del re-render.
+  const candado = useRef(null)
+  if (!candado.current) candado.current = crearCandado()
+  const mandar = useCallback((armado, archivo = null) => candado.current(async () => {
     setEnviando(true)
     const res = await enviarConEvidencia(app, armado, archivo)
     setEnviando(false)
     if (res.error) return app.ir('error', { codigo: res.error, ...armado, archivo })
     app.ir('paso2', { fase: 'enviado', id: armado.rep.id })
-  }, [app])
+  }), [app])
   return { mandar, enviando }
 }
 
@@ -327,7 +331,7 @@ function Detalles() {
       <p className="rp-label">Ubicación</p>
       <div className="rp-loc">
         <Icon name="pin" size={24} />
-        <div className="txt"><b>{lugar ? 'Ubicación elegida' : 'Ubicación detectada'}</b><span>{textoPunto}</span></div>
+        <div className="txt"><b>{tituloUbicacion({ elegido: !!lugar, real: ubic.real })}</b><span>{textoPunto}</span></div>
         <button className="btn-icon rp-back" aria-label="Cambiar ubicación" aria-expanded={editar} onClick={() => setEditar((v) => !v)}><Ico name="lapiz" size={20} /></button>
       </div>
       {editar && <BuscarLugar onElegir={elegir} onCerrar={() => setEditar(false)} />}
@@ -347,12 +351,19 @@ function Evidencia() {
   const { ir, params } = useApp()
   const { tipo, gravedad, lugar } = params
   const [archivo, setArchivo] = useState(null)
+  const [aviso, setAviso] = useState('')
   const input = useRef(null)
   const { mandar, enviando } = useMandar()
   const volver = () => ir('paso2', { tipo, gravedad, lugar })
   useEffect(() => { if (!lugar || !gravedad) volver() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const elegir = (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setArchivo(f) }
+  const elegir = (e) => {
+    const f = e.target.files?.[0]; e.target.value = ''
+    if (!f) return
+    const problema = validarArchivo(f)
+    setAviso(problema ? MENSAJE_ARCHIVO[problema] : '')
+    if (!problema) setArchivo(f)
+  }
   const esVideo = archivo && tipoEvidencia(archivo.type) === 'video'
   const enviarYa = () => mandar(armarReporte({ tipo, gravedad, ubic: lugar, direccion: lugar?.direccion }), archivo)
 
@@ -368,6 +379,7 @@ function Evidencia() {
         <small>{archivo ? archivo.name : 'Toca para elegir un archivo'}</small>
       </button>
       <input ref={input} type="file" accept={ACEPTA} hidden onChange={elegir} />
+      {aviso && <p className="rp-nota" role="alert">{aviso}</p>}
       {archivo && <button className="btn-text" disabled={enviando} onClick={() => setArchivo(null)}>Quitar archivo</button>}
       <p className="rp-hint"><Ico name="info" size={20} /><span>Es opcional. Cuida que no se vean caras ni placas.{!esVideo && ' A las fotos les quitamos los datos ocultos (lugar, hora, equipo).'}</span></p>
       <div className="rp-spacer" />

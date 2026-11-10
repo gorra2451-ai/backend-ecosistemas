@@ -5,7 +5,9 @@ import {
   linkMaps, linkWhatsApp, textoFamilia, leerCola, encolar, quitarDeCola, medidasMax, haceCuanto,
   GRAVEDAD_CALLE, pasanCarrosDeGravedad, pasosStepper, resumenReporte,
   unirMisReportes, filaMiReporte, filaCercano, textoUbicacion, extensionEvidencia, tipoEvidencia, estadoEnviado, mensajeEnviado,
+  validarArchivo, MAX_EVIDENCIA_BYTES, MENSAJE_ARCHIVO, tituloUbicacion, crearCandado, seguimientoReporte,
 } from './reportar.js'
+import { supabase } from './supabase.js'
 
 const memoria = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) } }
 const ubic = { lat: 20.6497, lng: -103.4016, precision: 8 }
@@ -174,5 +176,64 @@ describe('ronda 3 · HTML validado del Equipo Reporte + contrato v2', () => {
     const f = filaCercano({ tipo: 'calle', distancia_m: 120.4, estado: 'pendiente', gravedad: 'bloqueado', ultima_confirmacion: null, creado_en: new Date(0).toISOString() }, 7 * 60000)
     expect(f).toEqual({ titulo: 'Calle inundada', lugar: 'A 120 m de ti', estado: 'Sin confirmar', nivel: { texto: 'Alto', patron: 'p-alto' }, hace: 'Actualizado hace 7 min' })
     expect(filaCercano({ tipo: 'casa', estado: 'activo', nivel: 'medio' }).nivel).toEqual({ texto: 'Medio', patron: 'p-medio' })
+  })
+})
+
+describe('validarArchivo (refleja parametros.max_evidencia_bytes)', () => {
+  it('límite de 10 MB igual al bucket', () => expect(MAX_EVIDENCIA_BYTES).toBe(10485760))
+  it('justo en el límite pasa; un byte más es muy_grande', () => {
+    expect(validarArchivo({ size: 10485760, type: 'video/mp4' })).toBeNull()
+    expect(validarArchivo({ size: 10485761, type: 'video/mp4' })).toBe('muy_grande')
+  })
+  it('mensaje para la persona', () => {
+    expect(MENSAJE_ARCHIVO.muy_grande).toBe('El archivo pesa más de 10 MB. Elige uno más ligero o envía sin foto.')
+  })
+})
+
+describe('tituloUbicacion', () => {
+  it('elegida · detectada · sin ubicación', () => {
+    expect(tituloUbicacion({ elegido: true, real: false })).toBe('Ubicación elegida')
+    expect(tituloUbicacion({ elegido: false, real: true })).toBe('Ubicación detectada')
+    expect(tituloUbicacion({ elegido: false, real: false })).toBe('Sin ubicación')
+  })
+})
+
+describe('crearCandado (doble toque en Enviar)', () => {
+  it('un segundo toque mientras corre el primero no vuelve a ejecutar', async () => {
+    let n = 0
+    let soltar
+    const correr = crearCandado()
+    const tarea = () => { n++; return new Promise((r) => { soltar = r }) }
+    const a = correr(tarea)
+    const b = correr(tarea)
+    expect(n).toBe(1)
+    soltar('ok')
+    expect(await a).toBe('ok')
+    expect(await b).toBeUndefined()
+    const c = correr(async () => { n++; return 'otra' })
+    expect(await c).toBe('otra')
+    expect(n).toBe(2)
+  })
+  it('se libera aunque la tarea falle', async () => {
+    const correr = crearCandado()
+    await expect(correr(async () => { throw new Error('x') })).rejects.toThrow('x')
+    expect(await correr(async () => 1)).toBe(1)
+  })
+})
+
+describe('seguimientoReporte', () => {
+  it('cuenta confirmaciones con reporte_id (anon/authenticated no leen la columna id)', async () => {
+    const cols = []
+    const cadena = (res) => { const q = { eq: () => q, maybeSingle: () => Promise.resolve(res), then: (f, g) => Promise.resolve(res).then(f, g) }; return q }
+    supabase.from = (tabla) => ({
+      select: (c) => {
+        if (tabla === 'reportes') return cadena({ data: { estado: 'activo', ultima_confirmacion: null }, error: null })
+        cols.push(c)
+        return cadena(c === 'id' ? { count: null, error: { code: '42501', message: 'permission denied' } } : { count: 3, error: null })
+      },
+    })
+    const { data } = await seguimientoReporte('r1')
+    expect(cols).toEqual(['reporte_id'])
+    expect(data.confirmaciones).toBe(3)
   })
 })

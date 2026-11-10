@@ -102,7 +102,7 @@ export const personas = (n) => `${n} ${n === 1 ? 'persona' : 'personas'}`
 export function insignia(rep, ahora = Date.now()) {
   const h = haceMin(fechaRef(rep), ahora)
   const n = rep?.confirmaciones_si
-  const base = Number.isFinite(n) ? `Confirmado por ${personas(n)}` : 'Reportado'
+  const base = !Number.isFinite(n) ? 'Reportado' : n === 0 ? 'Esperando confirmaciones' : `Confirmado por ${personas(n)}`
   const texto = [base, h].filter(Boolean).join(' • ')
   const antiguo = esAntiguo(rep, ahora)
   return { antiguo, texto: antiguo ? `Antiguo · ${texto}` : texto }
@@ -158,10 +158,15 @@ export function mensajeConfirmar(codigo) {
 // ---- Respuestas ----
 // accion: 'sigue' (Sí) | 'bajo' (Ya se secó / El agua bajó) | 'nunca' (Calle seca / Nunca hubo agua)
 export const votoDe = (accion) => (accion === 'sigue' ? 'si' : 'no')
+// Nunca lanza: si la sesión o la red fallan, devuelve { error: 'desconocido' } (el botón no se queda en "Enviando…").
 export async function responder(id, accion) {
-  await asegurarSesion()
-  if (accion === 'nunca') return marcarFalso(id)
-  return confirmarReporte(id, accion === 'sigue')
+  try {
+    await asegurarSesion()
+    if (accion === 'nunca') return await marcarFalso(id)
+    return await confirmarReporte(id, accion === 'sigue')
+  } catch {
+    return { data: null, error: 'desconocido' }
+  }
 }
 
 // Copy del "¡Gracias!" del equipo, sin el "ayudó a N" (N no existe en el backend, P-29).
@@ -171,8 +176,10 @@ export function textoGracias(accion, medio) {
     : `Tu aviso ayuda a ${gente(medio)} a no desviarse sin necesidad.`
 }
 // Líneas extra de la pantalla final según lo que devolvió el backend.
-export function notasGracias({ repetido, estado }) {
+// antes = estado del reporte al preguntar; pendiente → activo significa que este "sí" lo publicó.
+export function notasGracias({ repetido, estado, antes }) {
   const n = []
+  if (antes === 'pendiente' && estado === 'activo') n.push('Con tu confirmación ya aparece en el mapa.')
   if (repetido) n.push('Ya habías respondido este reporte; mantuvimos tu voto.')
   if (estado === 'resuelto' || estado === 'oculto') n.push('Con tu respuesta, este reporte ya no aparece en el mapa.')
   if (estado === 'en_revision') n.push('Lo vamos a revisar.')

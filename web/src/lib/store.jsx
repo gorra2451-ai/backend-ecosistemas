@@ -1,6 +1,7 @@
 // Estado global y navegación. Sin router: una pantalla activa (`screen`) sobre el mapa,
 // igual que App.dc.html. ir('tipo') abre una pantalla; ir(null) vuelve al mapa.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { pedirPosicion, permisoConcedido } from './ubicacion.js'
 
 // Centro por defecto si no hay permiso de ubicación: Plaza del Sol, Zapopan (ejemplo del design system).
 export const CENTRO_ZMG = { lat: 20.6497, lng: -103.4016, precision: 500, real: false }
@@ -39,12 +40,8 @@ export function AppProvider({ children }) {
     el.dataset.a11y = (prefs.a11y || []).join(' ')
   }, [prefs])
 
-  const pedirUbicacion = useCallback(() => new Promise((res) => {
-    if (!navigator.geolocation) return res(null)
-    navigator.geolocation.getCurrentPosition(
-      (p) => { const u = { lat: p.coords.latitude, lng: p.coords.longitude, precision: p.coords.accuracy, real: true }; setUbic(u); res(u) },
-      () => res(null), { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 })
-  }), [])
+  const pedirUbicacion = useCallback(() => pedirPosicion().then((u) => { if (u) setUbic(u); return u }), [])
+  useEffect(() => { permisoConcedido().then((si) => { if (si) pedirUbicacion() }) }, [pedirUbicacion])
 
   const value = useMemo(() => ({
     screen, params, ir, sheet, setSheet, overlay, setOverlay, toast, avisar, ubic, setUbic, pedirUbicacion,

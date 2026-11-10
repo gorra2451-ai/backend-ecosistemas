@@ -75,6 +75,19 @@ export function armarReporte({ tipo, gravedad = null, detalle = null, pasanCarro
   return { payload, rep }
 }
 
+// Título de la tarjeta de ubicación en Detalles.
+export const tituloUbicacion = ({ elegido, real }) => (elegido ? 'Ubicación elegida' : real ? 'Ubicación detectada' : 'Sin ubicación')
+
+// Candado para acciones async: mientras una corre, las llamadas extra no hacen nada (doble toque en "Enviar").
+export function crearCandado() {
+  let ocupado = false
+  return async (tarea) => {
+    if (ocupado) return undefined
+    ocupado = true
+    try { return await tarea() } finally { ocupado = false }
+  }
+}
+
 // Caso de "¿A quién acudo?" según el tipo reportado (solo casa y coche ofrecen el atajo).
 export const casoAcudo = (tipo) => (tipo === 'casa' || tipo === 'coche' ? tipo : null)
 
@@ -263,7 +276,8 @@ export async function seguimientoReporte(id) {
   if (rep.error || !rep.data) return { data: null, error: rep.error }
   let confirmaciones = null
   try {
-    const { count, error } = await supabase.from('confirmaciones').select('id', { count: 'exact', head: true })
+    // anon/authenticated solo leen (reporte_id, sigue, falso) de confirmaciones (endurecimiento_base): `id` da 42501.
+    const { count, error } = await supabase.from('confirmaciones').select('reporte_id', { count: 'exact', head: true })
       .eq('reporte_id', id).eq('sigue', true)
     if (!error) confirmaciones = count ?? null
   } catch { /* sin red: se queda en null */ }
@@ -274,6 +288,12 @@ export async function seguimientoReporte(id) {
 const EXT_EVIDENCIA = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' }
 export const extensionEvidencia = (mime) => EXT_EVIDENCIA[mime] || null
 export const tipoEvidencia = (mime) => (String(mime).startsWith('video/') ? 'video' : String(mime).startsWith('image/') ? 'foto' : null)
+
+// Refleja parametros.max_evidencia_bytes (y el límite del bucket `evidencias`): 10 MB. Si cambia allá, cambia aquí.
+export const MAX_EVIDENCIA_BYTES = 10485760
+export const MENSAJE_ARCHIVO = { muy_grande: 'El archivo pesa más de 10 MB. Elige uno más ligero o envía sin foto.' }
+// null = sirve; si no, el código del problema (clave de MENSAJE_ARCHIVO).
+export const validarArchivo = (archivo) => (archivo?.size > MAX_EVIDENCIA_BYTES ? 'muy_grande' : null)
 
 export async function subirEvidenciaReporte(reporteId, archivo) {
   const ext = extensionEvidencia(archivo.type)

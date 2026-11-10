@@ -57,7 +57,7 @@
 [data-a11y~=dalton]{ --rb:#9AD0F5; --rm:#3A8FD9; --ra:#E66100; --risk:#B34700; --amber:#9AD0F5; }
 [data-theme=light][data-a11y~=dalton]{ --amber:#1F5F99; --amberTx:#FFFFFF; }
 [data-a11y~=contraste]{ /* se impone al modo claro */
-  --bg:#000; --s1:#000; --s2:#000; --line:#FFF; --tx:#FFF; --mu:#FFF;
+  --bg:#000; --s1:#000; --s2:#000; --line:#FFF; --tx:#FFF; --mu:#FFF; --mu2:#FFF;
   --map:#000; --grid:#1E1E1E; --road:#8A8A8A; --roadC:#000; --park:#262626; --lab:#FFF;
   --bw:2px; --acc:#2EE6D6; --accTx:#04201E; --amber:#F5B83D; --amberTx:#0B1220; --chip:transparent;
 }

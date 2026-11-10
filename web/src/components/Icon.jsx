@@ -25,6 +25,7 @@ const P = {
   campana: <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" />,
   voz: <><path d="M4 9v6h4l5 4V5L8 9z" /><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12" /></>,
   peaton: <><circle cx="13" cy="4" r="2" /><path d="M10 21l2-6 3 2v4M8 12l3-4 4 1 2 4M11 15l-1-4" /></>,
+  moto: <><circle cx="5.5" cy="17" r="3" /><circle cx="18.5" cy="17" r="3" /><path d="M8.5 17H14l3-6h-3L12 8H9M17 11l1.5 6" /></>,
   bici: <><circle cx="6" cy="17" r="3.5" /><circle cx="18" cy="17" r="3.5" /><path d="M6 17l4-8h5l3 8M10 9l3 8M14 6h3" /></>,
   auto: <path d="M4 16l1.6-5.4A2 2 0 0 1 7.5 9h9a2 2 0 0 1 1.9 1.6L20 16M3 16h18v3H3z" />,
   transporte_publico: <><rect x="5" y="3" width="14" height="15" rx="2" /><path d="M5 11h14M8 21v-3M16 21v-3" /></>,

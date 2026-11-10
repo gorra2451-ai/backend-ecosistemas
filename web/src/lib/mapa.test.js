@@ -200,3 +200,19 @@ describe('buscar: centrarEn, debounce y partirLugar', () => {
     expect(partirLugar('')).toEqual({ t: 'Lugar sin nombre', sub: '' })
   })
 })
+
+describe('zonasConEtiqueta', () => {
+  it('no etiqueta dos celdas contiguas (se enciman); deja la más grave', async () => {
+    const { zonasConEtiqueta } = await import('./mapa.js')
+    const z = (celda, lat, lng, nivel) => ({ celda, lat, lng, nivel })
+    const a = z('a', 20.67, -103.39, 'bajo')
+    const b = z('b', 20.67, -103.3871, 'alto')   // ~300 m al este de a: contigua
+    const c = z('c', 20.70, -103.39, 'medio')    // ~3.3 km al norte: lejos
+    expect(zonasConEtiqueta([a, b, c]).map((x) => x.celda)).toEqual(['b', 'c'])
+  })
+  it('respeta el máximo', async () => {
+    const { zonasConEtiqueta } = await import('./mapa.js')
+    const lejos = [0, 1, 2, 3, 4].map((i) => ({ celda: 'z' + i, lat: 20.6 + i * 0.05, lng: -103.3, nivel: 'bajo' }))
+    expect(zonasConEtiqueta(lejos, 3)).toHaveLength(3)
+  })
+})
