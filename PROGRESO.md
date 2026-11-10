@@ -2,6 +2,18 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-10 (cierre) · Diego · Claude Code (revisión de Leo + voz)
+**Hecho**
+- Revisión de LeoFigo74z al PR #14 atendida (D-023): `validar_confirmable` rechaza pendientes con la ventana vencida
+  bajo `FOR UPDATE` (prueba 2000, 10 casos); bucket solo imágenes y `agregar_evidencia` lanza `video_deshabilitado`
+  (prueba 2100, 6 casos; además `.mp4` nunca se podía registrar por la regex `[a-z]+`); el front no manda coordenadas
+  del dispositivo a Nominatim y busca solo con el botón "Buscar" (verificado en Chrome: 0 llamadas al teclear, 1 al buscar).
+- Voz integrada al PR #14: "Modo voz" (zonas nuevas o que suben ≤ 400 m, sondeo 60 s) + "Escuchar"; "Reportar con voz"
+  (tipo y gravedad, envío manual). Verificado en Chrome con reconocedor/síntesis simulados.
+- Auth anónima en la nube encendida (`anonymous_users: true`). Bucket `evidencias` en la nube vacío (sin videos).
+- pgTAP 481/481 · vitest 194/194 · build OK.
+**Pendiente:** nueva aprobación de Leo → merge → `db push` → probar-nube → deploy; probar voz con micrófono real.
+
 ## 2026-11-10 (noche) · Diego · Claude Code (recorrido local del mid-fi + modo prueba)
 **Hecho**
 - Recorrido local en Chrome (escritorio y móvil 390 px, claro/oscuro/contraste): registro → reportar → 5 confirmaciones
