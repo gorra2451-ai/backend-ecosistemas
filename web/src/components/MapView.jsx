@@ -1,0 +1,96 @@
+// Mapa real (Leaflet + OSM/CARTO, sin llave · D-018). Pinta zonas_publicas, reportes activos,
+// mis reportes sin confirmar, refugios y "tú". Se recarga con Realtime y con refrescar().
+import { useEffect, useMemo, useState } from 'react'
+import { MapContainer, TileLayer, Rectangle, Marker, Circle, useMap } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { useApp } from '../lib/store.jsx'
+import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor, nivelDeZona } from '../lib/api.js'
+
+const CELDA_M = 300 // parametros.tamano_celda_m (POR CONFIRMAR)
+const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)' }
+const TEXTO = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }
+
+const icono = (html, size = 32) => L.divIcon({ html, className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2] })
+const etiqueta = (z) => L.divIcon({
+  className: '', iconAnchor: [-14, 14],
+  html: `<div class="zone-label" style="position:static;white-space:nowrap"><span class="p-${z.nivel}" style="width:18px;height:18px;border-radius:5px;display:inline-block"></span>
+    <span><b style="font-size:14px">${TEXTO[z.nivel]}${z.alguno_no_pasan_carros ? ' · no pasan' : ''}</b><br><span style="font-size:13px;color:var(--mu)">${z.total_reportes} reporte${z.total_reportes === 1 ? '' : 's'}</span></span></div>`,
+})
+
+function Seguir({ ubic, centrarSeq }) {
+  const map = useMap()
+  useEffect(() => { map.setView([ubic.lat, ubic.lng], map.getZoom() < 14 ? 15 : map.getZoom()) }, [centrarSeq]) // eslint-disable-line
+  return null
+}
+
+export default function MapView({ centrarSeq = 0 }) {
+  const { ubic, version, misReportes, setSeleccion, ir, prefs } = useApp()
+  const [zonas, setZonas] = useState([])
+  const [reportes, setReportes] = useState([])
+  const [refugios, setRefugios] = useState([])
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => escucharCambios(() => setTick((t) => t + 1)), [])
+  useEffect(() => {
+    let vivo = true
+    ;(async () => {
+      const [z, rep, ref] = await Promise.all([
+        zonasPublicas(), reportesEnArea(bboxAlrededor(ubic.lat, ubic.lng, 8000)), refugiosPublicos()])
+      if (!vivo) return
+      setZonas((z.data || []).map((x) => ({ ...x, nivel: nivelDeZona(x) })))
+      setReportes(rep.data || [])
+      setRefugios(ref.data || [])
+    })()
+    return () => { vivo = false }
+  }, [ubic.lat, ubic.lng, version, tick])
+
+  const dLat = CELDA_M / 2 / 111320
+  const activosIds = useMemo(() => new Set(reportes.map((r) => r.id)), [reportes])
+  const oscuro = prefs.tema !== 'claro'
+  const tiles = oscuro
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+
+  return (
+    <MapContainer center={[ubic.lat, ubic.lng]} zoom={15} zoomControl={false} attributionControl
+      style={{ position: 'absolute', inset: 0 }}>
+      <TileLayer key={tiles} url={tiles} maxZoom={19}
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>' />
+      <Seguir ubic={ubic} centrarSeq={centrarSeq} />
+
+      {zonas.map((z) => {
+        const dLng = dLat / Math.cos((z.lat * Math.PI) / 180)
+        return (
+          <Rectangle key={z.celda} bounds={[[z.lat - dLat, z.lng - dLng], [z.lat + dLat, z.lng + dLng]]}
+            pathOptions={{ color: COLOR[z.nivel], fillColor: COLOR[z.nivel], fillOpacity: 0.45, weight: 2 }}
+            eventHandlers={{ click: () => { setSeleccion({ tipo: 'zona', ...z }); ir('zona', { zona: z }) } }} />
+        )
+      })}
+      {zonas.slice(0, 3).map((z) => (
+        <Marker key={'l' + z.celda} position={[z.lat, z.lng]} icon={etiqueta(z)}
+          eventHandlers={{ click: () => { setSeleccion({ tipo: 'zona', ...z }); ir('zona', { zona: z }) } }} />
+      ))}
+
+      {reportes.filter((r) => r.tipo === 'persona_en_riesgo').map((r) => (
+        <Marker key={r.id} position={[r.lat, r.lng]} zIndexOffset={1000}
+          icon={icono('<div class="mk-risk" aria-label="Persona en riesgo">!</div>')}
+          eventHandlers={{ click: () => ir('zona', { reporte: r }) }} />
+      ))}
+
+      {misReportes.filter((m) => !activosIds.has(m.id) && Date.now() - m.creado < 3 * 3600e3).map((m) => (
+        <Marker key={'m' + m.id} position={[m.lat, m.lng]} icon={icono('<div class="mk-pend" title="Tu reporte · sin confirmar"></div>')}
+          eventHandlers={{ click: () => ir('mireporte', { id: m.id }) }} />
+      ))}
+
+      {refugios.map((f) => (
+        <Marker key={'f' + f.id} position={[f.lat, f.lng]} icon={icono('<div class="mk-ref">⌂</div>', 30)}
+          eventHandlers={{ click: () => ir('refugios') }} />
+      ))}
+
+      <Circle center={[ubic.lat, ubic.lng]} radius={300}
+        pathOptions={{ color: 'var(--acc)', weight: 2, dashArray: '6 6', fillOpacity: 0.04 }} />
+      <Marker position={[ubic.lat, ubic.lng]} icon={icono('<div class="mk-you" aria-label="Tú"></div>', 24)} />
+    </MapContainer>
+  )
+}

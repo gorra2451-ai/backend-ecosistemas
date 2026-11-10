@@ -1,0 +1,9 @@
+# Netlify publica solo el front unificado (D-018). El backend vive en supabase/.
+[build]
+  base = "web"
+  command = "npm ci && npm run build"
+  publish = "dist"
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
