@@ -2,6 +2,50 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-10 · Diego · Claude Code (nube con PR #12 e integración de PR #13)
+**Hecho**
+- PR #12 (LeoFigo74z) revisado, aprobado y fusionado en `main` (ec02c63). Local: `supabase db reset`
+  + `supabase test db` → 380/380 en 20 archivos.
+- `supabase db push` a la nube desde `main`: 14 migraciones aplicadas sin error
+  (20261026203605_perfiles_entradas_anonimos, 20261026215220_evidencias, 20261026220233_realtime_mapa,
+  20261026220654_refugios_publicos, 20261026221116_suscripciones_push, 20261026222822_avisos_push_por_zona,
+  20261026224459_tipo_aviso_clima, 20261026224500_alertas_clima_manuales, 20261026230000_instituciones_derivar,
+  20261027045344_endurecer_entrega_local, 20261027051745_baja_push_condicional,
+  20261027171925_corregir_avisos_y_limites, 20261029005901_retencion_suscripciones_push,
+  20261102204519_parametros_entrega_push). Nube: 22 migraciones.
+- `bash scripts/probar-nube.sh` tras el push: 12 pasan, 0 fallan.
+- PR #13: conflictos con `main` resueltos. Se conservan P-16 a P-26 de `main`; las siete preguntas de la clase
+  5-nov pasan a P-27 a P-33. P-01 separa el hallazgo del testeo (confirmaciones) de la regla actual (reportes cercanos).
+
+**No hecho en la nube (pendiente)**
+- Auth anónima remota sigue apagada (P-16). Edge Functions sin desplegar; secretos VAPID y de Vault sin configurar
+  (sin ellos el cron de avisos no envía nada). No se corrió `supabase config push`.
+
+**Seguimientos de la revisión del PR #12 (no bloqueantes)**
+- Realtime público: cualquiera con la llave publicable puede emitir `cambio` (canales privados + política).
+- `zona_resuelta` se envía también al pasar a `oculto`/`en_revision`.
+- Helpers `es_autor_reporte`, `puede_subir_evidencia`, `puede_borrar_evidencia` expuestos a `authenticated`.
+- `docs/API.md` dice que el payload de `zonas` trae `id`; el trigger solo manda `celda`.
+
+## 2026-11-05 · gorra2451-ai · cierre F1-T6
+**Hecho**
+- PR: https://github.com/gorra2451-ai/backend-ecosistemas/pull/13
+- docs(repo): clase 5-nov (¡Aguas!, P-17 a P-23; renumeradas P-27 a P-33 al integrar main) y handoff al día
+
+## 2026-11-05 · Diego · Claude Code
+**Hecho**
+- Verificado: nube al día con `main` (8 migraciones), `probar-nube.sh` 12/12, 161 pruebas locales en verde.
+- Clase 5-nov registrada en `PREGUNTAS.md` (P-01 actualizada; preguntas de clase hoy P-27 a P-33).
+
+**Decidido en clase (5-nov)**
+- La app se llama **¡Aguas!** (con signos de exclamación).
+- Se usa la paleta, tipografía y componentes del design system de Diego; un solo prototipo unificado.
+- Los equipos entregan lo testeado a Diego y LeoFigo74z para integrarlo. Segundo testeo: 5 cosas con 10 personas, ya en digital.
+- Testeo: con 5 confirmaciones la gente confía en un reporte (ojo: `umbral_activacion` = 5 cuenta reportes cercanos, no confirmaciones; ver P-01).
+
+**Pendiente**
+- Mandar API v1 a los equipos (F1-T6). (Al 2026-11-10: F1-T2 ya fusionada en PR #12.)
+
 ## 2026-11-02 · LeoFigo74z · Codex (ajustes solicitados en PR #12)
 **Hecho**
 - Migración nueva: `lote_procesar_avisos=20` y `ttl_enviar_push_seg=3600`
