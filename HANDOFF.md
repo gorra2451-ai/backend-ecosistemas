@@ -1,36 +1,38 @@
 # HANDOFF — Estado actual
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
-**Última actualización:** 2026-11-05 · Diego (con Claude Code)
-**Fase actual:** módulos de Diego terminados y en la nube; LeoFigo74z sin arrancar F1-T2
-**Rama activa:** `docs/f1-t6-clase-5-nov-y-handoff` (clase 5-nov + este handoff)
+**Última actualización:** 2026-11-10 · Diego (con Claude Code)
+**Fase actual:** backend 100% en `main` y en la nube; integración del front unificado (F5-T3) para el mid-fi
+**Ramas activas:** `docs/f1-t6-clase-5-nov-y-handoff` (PR #13) · `feat/f5-t3-front-midfi-web` (front en `web/`)
 **Repo:** https://github.com/gorra2451-ai/backend-ecosistemas (público, `main` protegida, 1 revisión)
 
 ## Dónde quedamos
-- **Todas las tareas D de `docs/PLAN.md` están hechas** (50% de Diego).
-- PR #10 y #11 mergeados. Nube al día con `main` (8 migraciones), `probar-nube.sh` 12/12,
-  161 pruebas pgTAP en verde (verificado 2026-11-05).
-- `docs/API.md` **v1 congelada**; falta mandarla a los equipos (F1-T6).
-- **Clase 5-nov:** la app se llama **¡Aguas!**; se usa el design system de Diego en un solo
-  prototipo; los equipos entregan lo testeado a Diego y LeoFigo74z. Preguntas nuevas P-17 a P-23.
-- **LeoFigo74z** en modo solo local (D-015); no ha entregado F1-T2.
+- **Las 8 tareas de LeoFigo74z (incl. F1-T2) y las de Diego están en `main`.** PR #12 fusionado (ec02c63).
+- Nube: 22 migraciones, `probar-nube.sh` 12/12 (2026-11-10). Local: 380/380 pgTAP.
+- **Clase 5-nov:** la app se llama **¡Aguas!**; un solo prototipo con el design system de Diego.
+  Preguntas de clase renumeradas **P-27 a P-33** (P-17 a P-26 son de LeoFigo74z).
+- **Mid-fi 2026-11-11 12:00:** front unificado en `web/` (Vite + React + Leaflet/OSM), publicado en
+  https://aguas-zmg.netlify.app (D-018, en el PR del front). Flujo completo probado en local.
 
 ## Siguiente paso (en este orden)
-1. Diego manda a los equipos la API v1 + URL + llave publicable (F1-T6; mensaje redactado en la sesión).
-2. LeoFigo74z construye F1-T2 (sesión anónima). Sin eso ningún front puede escribir.
-   Considerar P-18 (`moto`) antes de cerrar el enum `medio_transporte`.
-3. Resolver con el grupo P-17 (sin "Es falso" no hay moderación) y P-20 (testimonio) antes del
-   segundo testeo digital: cambian el contrato.
-4. Formalizar P-01 como D-XXX con LeoFigo74z (valor 5 ya aplicado; solo falta el registro).
-5. Pendientes de clase: P-02, P-13 (polígono ZMG), P-16 (anti-spam), P-21/22/23.
+1. Auth anónima remota: D-019 (propuesta de Diego para el mid-fi) vs. P-16 (LeoFigo74z: no activar sin
+   captcha y límites). Decidir juntos antes de encenderla; sin ella la liga no puede reportar ni confirmar.
+2. Revisar y fusionar el PR del front (D-018 reemplaza a D-002 y cambia AGENTS §7).
+3. Ronda 2 del front con los HTML de los equipos (`../06_Prototipos_Equipos/`).
+4. Nube: desplegar `enviar-push` y `procesar-avisos`, secretos VAPID y de Vault (ver PROGRESO 2026-11-10).
+5. Seguimientos de la revisión del PR #12 (realtime privado, `zona_resuelta` por ocultos, helpers expuestos).
+6. Decidir P-01 (testeo habla de confirmaciones; la regla cuenta reportes cercanos) y P-27 (sin "Es falso"
+   no hay moderación) con el grupo.
+7. Pendientes de clase: P-02, P-13 (polígono ZMG), P-28 (`moto`), P-30 (testimonio), P-31/32/33.
 
 ## Bloqueos
-- Escritura desde el front: requiere F1-T2 (LeoFigo74z).
-- Merges de Diego: requieren la aprobación de LeoFigo74z.
+- Escritura desde la liga pública: requiere Auth anónima remota (punto 1).
+- Merges: cada PR requiere la aprobación de la otra persona.
 
 ## No olvidar
 - Cada sesión: `bash scripts/sync.sh`; git solo con `scripts/`. BD local: `supabase db start`
-  (puertos 554xx; no chocar con `consultorio-britanico`). Pruebas rápidas: `bash scripts/probar-db.sh`.
-  Tras cada `supabase db push`: `bash scripts/probar-nube.sh` (seguridad de la nube desde fuera).
+  (puertos 554xx; no chocar con `consultorio-britanico`). Pruebas: `supabase db reset && supabase test db`
+  (`scripts/probar-db.sh` falla en `0800_realtime_mapa` por correr todo en una transacción; usar la oficial).
+- Tras cada `supabase db push`: `bash scripts/probar-nube.sh`. **No** correr `supabase config push`.
 - Las funciones nuevas nacen sin EXECUTE: cada RPC lleva su `grant` explícito.
-- Contraseña de Postgres de la nube y llaves: solo en `.env` de Diego.
+- Contraseña de Postgres de la nube y llaves: solo en `.env` de Diego. Front: solo URL + llave publicable.
