@@ -2,6 +2,7 @@ import { useApp } from './lib/store.jsx'
 import MapView from './components/MapView.jsx'
 import { Toast } from './components/ui.jsx'
 import TabBar from './components/TabBar.jsx'
+import LectorVoz from './components/LectorVoz.jsx'
 import { PANTALLAS } from './screens/registro.jsx'
 import { TopBar, Hoja, Sidebar, DeskHeader } from './screens/Mapa.jsx'
 import { HojaEnviado, ColaReportes } from './screens/Reportar.jsx'
@@ -30,6 +31,7 @@ export default function App() {
       {!['acceso', 'privacidad', 'ubicacion', 'avisos', 'onb', 'tipo', 'paso2', 'riesgo'].includes(screen) && <TabBar />}
       <DetectorCercanos />
       <ColaReportes />
+      <LectorVoz />
       {DEMO && <div style={{ position: 'fixed', right: 12, top: 150, zIndex: 950 }}><BotonProbarConfirmar /></div>}
     </div>
   )

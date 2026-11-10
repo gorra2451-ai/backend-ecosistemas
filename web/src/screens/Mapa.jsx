@@ -15,6 +15,8 @@ import {
   centrarEn, debounce, partirLugar,
 } from '../lib/mapa.js'
 import { urlRutaAlterna, grupoMedio } from '../lib/ayuda.js'
+import { hablar } from '../lib/confirmar.js'
+import { fraseEstado } from '../lib/vozAlertas.js'
 import '../styles/mapa.css'
 
 // ---------- Datos compartidos (una sola petición para barra, hoja y sidebar) ----------
@@ -250,7 +252,7 @@ function ListaCercana({ datos, onCalmaAvisos }) {
 
 // ---------- Barra superior (móvil) ----------
 export function TopBar() {
-  const { ir, setSheet } = useApp()
+  const { ir, setSheet, prefs } = useApp()
   const datos = useDatosMapa()
   const { estado, medio } = datos
   const sub = datos.error ? mensajeError(datos.error).titulo : estado.sub
@@ -268,6 +270,12 @@ export function TopBar() {
           <button type="button" className="mp-mas" onClick={() => ir('mas')} aria-label="Más: leyenda, fuentes, seguridad y configuración">
             <IcoMenu /><span>Más</span>
           </button>
+          {prefs.voz && (
+            <button type="button" className="mp-mas" disabled={datos.cargando} aria-label="Escuchar el estado de tu zona"
+              onClick={() => hablar(fraseEstado({ zonas: datos.zonas, ubic: datos.ubic, municipio: datos.municipio }))}>
+              <Icon name="voz" /><span>Escuchar</span>
+            </button>
+          )}
         </div>
         <div className="mp-top-row">
           <button type="button" className="top-mode mp-mode" onClick={() => ir('onb')}

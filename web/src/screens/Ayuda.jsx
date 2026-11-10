@@ -623,7 +623,7 @@ const A11Y = [
   ['grande', 'Texto grande', 'Todo se ve 22 % más grande'],
   ['contraste', 'Alto contraste', 'Negro y blanco, bordes gruesos'],
   ['dalton', 'Modo daltonismo', 'Escala azul → naranja, sin rojo/verde'],
-  ['voz', 'Leer en voz alta', 'Botón “Escuchar” en el mapa'],
+  ['voz', 'Leer en voz alta', 'Lee zonas nuevas o que suben cerca de ti y botón “Escuchar” en el mapa'],
   ['vibra', 'Vibración en avisos', 'Vibra al confirmar y en alertas'],
   ['motion', 'Reducir movimiento', 'Apaga todas las animaciones'],
 ]
