@@ -71,6 +71,9 @@
 .rp-tiles .tile svg{color:var(--acc)}
 .rp-tiles .tile--risk svg{color:var(--ra)}
 .rp-tiles .tile small{font-size:14px;font-weight:400;color:var(--mu)}
+/* Reportar con voz (paso Tipo): botón + estado "Escuchando…" / "No te entendí" */
+.rp-voz{display:flex;flex-direction:column;gap:6px}
+.rp-voz .rp-estado{margin:0;text-align:center}
 
 
 /* Ronda 2 · stepper Tipo · Detalles · Evidencia · Enviado (Equipo Reporte) */

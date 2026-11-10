@@ -15,6 +15,8 @@ import { Screen, Btn } from '../components/ui.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
 import '../styles/reportar.css'
 import { MODO_PRUEBA, radioCercanos } from '../lib/prueba.js'
+import { claseVoz } from '../lib/confirmar.js'
+import { escucharFrase, resolverReporteVoz } from '../lib/vozReporte.js'
 
 // Íconos propios del módulo (mismo estilo de línea que Icon.jsx); el resto viene de Icon.jsx.
 const PROPIOS = {
@@ -24,6 +26,7 @@ const PROPIOS = {
   info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.5" /></>,
   anonimo: <><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" /><path d="M9 12l2 2 4-4" /></>,
   rutas: <><circle cx="6.5" cy="5.5" r="2.5" /><circle cx="17.5" cy="18.5" r="2.5" /><path d="M9 5.5h6.5a3.5 3.5 0 0 1 0 7h-7a3.5 3.5 0 0 0 0 7H15" /></>,
+  microfono: <><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>,
 }
 function Ico({ name, size = 24, stroke = 2 }) {
   if (!PROPIOS[name]) return <Icon name={name} size={size} stroke={stroke} />
@@ -216,10 +219,33 @@ export function Inicio() {
 // ---------- tipo ----------
 const ICONO_TARJETA = { casa: 'casa', coche: 'coche', calle: 'calle', persona_en_riesgo: 'riesgo' }
 
+// Reportar con voz: solo preselecciona tipo (y nivel si lo dijo) y avanza como si tocaras la tarjeta.
+// Nunca envía: ubicación y "Enviar" siguen siendo manuales. Solo aparece si el navegador reconoce voz.
+function useVozTipo(elegir) {
+  const hayVoz = !!claseVoz()
+  const [escuchando, setEscuchando] = useState(false)
+  const [msg, setMsg] = useState('')
+  const cancelar = useRef(() => {})
+  useEffect(() => () => cancelar.current(), [])
+  const escuchar = () => {
+    setMsg(''); setEscuchando(true)
+    cancelar.current = escucharFrase((alts) => {
+      setEscuchando(false)
+      const r = resolverReporteVoz(alts)
+      if (r.ok) elegir(r.tipo, r.gravedad)
+      else setMsg(r.mensaje)
+    })
+  }
+  const parar = () => { cancelar.current(); setEscuchando(false) }
+  return { hayVoz, escuchando, msg, escuchar, parar }
+}
+
 export function Tipo() {
   const { ir, ubic, pedirUbicacion } = useApp()
   // Se pide la ubicación desde ya para que en Detalles esté lista.
   useEffect(() => { if (!ubic.real) pedirUbicacion().catch(() => {}) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const elegir = (tipo, gravedad = null) => ir('paso2', gravedad ? { tipo, gravedad } : { tipo })
+  const voz = useVozTipo(elegir)
   return (
     <Screen onBack={false} label="Reportar inundación · paso 1 de 4 · Tipo">
       <Cabeza onBack={() => ir('inicio')} />
@@ -227,11 +253,21 @@ export function Tipo() {
       <h1 className="rp-h1">¿Qué se inundó?</h1>
       <div className="rp-tiles">
         {TIPOS_REPORTE.map((k) => (
-          <button key={k} className={'tile' + (k === 'persona_en_riesgo' ? ' tile--risk' : '')} onClick={() => ir('paso2', { tipo: k })}>
+          <button key={k} className={'tile' + (k === 'persona_en_riesgo' ? ' tile--risk' : '')} onClick={() => { voz.parar(); elegir(k) }}>
             <Icon name={ICONO_TARJETA[k]} size={54} stroke={1.8} />{TIPO_LABEL[k]}
           </button>
         ))}
       </div>
+      {voz.hayVoz && (
+        <div className="rp-voz">
+          {voz.escuchando
+            ? <Btn variant="ghost" icon="cerrar" onClick={voz.parar}>Cancelar</Btn>
+            : <button className="btn btn-ghost rp-link-btn" onClick={voz.escuchar}><Ico name="microfono" />Reportar con voz</button>}
+          <p className="rp-estado" role="status" aria-live="polite">
+            {voz.escuchando ? 'Escuchando… di qué se inundó y cuánta agua hay.' : voz.msg}
+          </p>
+        </div>
+      )}
       <p className="rp-hint"><Ico name="anonimo" size={20} /><span>Tu reporte es anónimo. No pedimos datos personales.</span></p>
     </Screen>
   )
