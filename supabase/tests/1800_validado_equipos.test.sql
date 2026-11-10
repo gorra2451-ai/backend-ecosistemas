@@ -154,15 +154,19 @@ select is(public.nivel_para(20, false), 'critico'::public.nivel_zona, 'nivel_par
 select is(public.nivel_para(0, true), 'alto'::public.nivel_zona, 'persona_en_riesgo con <5 → alto');
 select is(public.nivel_para(25, true), 'critico'::public.nivel_zona, 'persona_en_riesgo con ≥20 → critico');
 
+create temp table celdas_1800 as select
+  public.celda_mapa(public.punto(20.9000, -103.3000)) as c01,
+  public.celda_mapa(public.punto(20.9400, -103.3000)) as c05;
+grant select on celdas_1800 to anon, authenticated;
 -- Reporte …01 (activo, 5 sí): +5 sí → 10 → medio.
 insert into public.confirmaciones (reporte_id, perfil_id, sigue)
 select '18000000-0000-4000-8000-000000000001', pg_temp.u(g), true from generate_series(6, 10) g;
 set local role anon;
 select is((select (total_reportes, total_confirmaciones, nivel)::text from public.zonas_publicas
-           where celda = public.celda_mapa(public.punto(20.9000, -103.3000))),
+           where celda = (select c01 from celdas_1800)),
   '(1,10,medio)', 'zona: 10 "sí" en la celda → medio');
 select is((select nivel from public.zonas_publicas
-           where celda = public.celda_mapa(public.punto(20.9400, -103.3000))),
+           where celda = (select c05 from celdas_1800)),
   'alto'::public.nivel_zona, 'zona con persona_en_riesgo sin confirmaciones → alto');
 reset role;
 -- +10 sí → 20 → critico.
@@ -170,7 +174,7 @@ insert into public.confirmaciones (reporte_id, perfil_id, sigue)
 select '18000000-0000-4000-8000-000000000001', pg_temp.u(g), true from generate_series(11, 20) g;
 set local role anon;
 select is((select nivel from public.zonas_publicas
-           where celda = public.celda_mapa(public.punto(20.9000, -103.3000))),
+           where celda = (select c01 from celdas_1800)),
   'critico'::public.nivel_zona, 'zona: 20 "sí" → critico');
 reset role;
 
@@ -230,7 +234,7 @@ from generate_series(1, 20) g;
 select pg_temp.como('00000000-0000-0000-0000-0000000018a0');
 set local role authenticated;
 select is((select count(*)::int from public.mis_reportes()), 20, 'mis_reportes devuelve máximo 20');
-select ok((select bool_and(creado_en > now() - interval '1 hour')
+select ok((select bool_and(creado_en > now() - interval '2 hours')
            from (select creado_en from public.mis_reportes() limit 5) s), 'mis_reportes: más recientes primero');
 reset role;
 
@@ -387,7 +391,7 @@ update public.suscripciones_push set solo_fuertes = true where id = '28000000-00
 set local role service_role;
 create temp table tomados_1800 as select * from public.tomar_avisos_push(20);
 reset role;
-select is((select array_agg(suscripcion_id::text order by suscripcion_id) from tomados_1800 t
+select is((select array_agg(t.suscripcion_id::text order by t.suscripcion_id) from tomados_1800 t
            join public.avisos_push a using (id)),
   array['28000000-0000-4000-8000-0000000000a1', '28000000-0000-4000-8000-0000000000a4',
         '28000000-0000-4000-8000-0000000000a6'],

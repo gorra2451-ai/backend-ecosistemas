@@ -8,7 +8,7 @@
 -- Tiempos relativos a now(): los activos expiran solos a los ~30 min
 -- (minutos_expiracion) y los pendientes a los ~60 min (ventana_activacion_min).
 -- Los pendientes están a > 150 m de cualquier otro reporte pendiente/activo para
--- que el trigger de activación no los agrupe.
+-- que no se agrupen. D-021: un pendiente solo se publica con 5 confirmaciones "sí".
 -- =============================================================================
 
 -- Usuarios falsos: 8 anónimos (autores/votantes) + 1 admin de prueba.

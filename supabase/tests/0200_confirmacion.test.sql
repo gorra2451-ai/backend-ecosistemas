@@ -50,21 +50,35 @@ select is((select count(*)::int from public.reportes where estado = 'activo'), 0
 insert into public.reportes (id, perfil_id, tipo, pasan_carros, ubicacion) values
   ('21000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000010', 'calle', true, public.punto(20.6597, -103.3497));
 
+-- D-021: ya no se activa por N reportes cercanos (umbral_activacion obsoleto).
 select is((select count(*)::int from public.reportes
-           where id::text like '21000000-0000-0000-0000-00000000000%' and estado = 'activo'), 5,
-  'el 5.º reporte activa los 5');
-select ok((select bool_and(activado_en = now() and ultima_confirmacion = now()) from public.reportes
-           where id::text like '21000000-0000-0000-0000-00000000000%'),
-  'al activar se ponen activado_en y ultima_confirmacion');
+           where id::text like '21000000-0000-0000-0000-00000000000%' and estado = 'activo'), 0,
+  'el 5.º reporte cercano ya NO activa el grupo (D-021)');
+-- D-021: se publica con 5 confirmaciones "sí" de otras personas (r5 es de G; confirman A..E).
+do $$
+declare u text;
+begin
+  foreach u in array array['a', 'b', 'c', 'd', 'e'] loop
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', '00000000-0000-0000-0000-00000000000' || u, 'role', 'authenticated')::text, true);
+    perform public.confirmar_reporte('21000000-0000-0000-0000-000000000005', true);
+  end loop;
+end $$;
+select ok((select estado = 'activo' and activado_en = now() and ultima_confirmacion >= now() from public.reportes
+           where id = '21000000-0000-0000-0000-000000000005'),
+  'al publicarse por confirmaciones se ponen activado_en y ultima_confirmacion');
+-- r1..r4 se dan por publicados para probar confirmación/falsos sobre activos.
+update public.reportes set estado = 'activo', activado_en = now(), ultima_confirmacion = now()
+  where id::text like '21000000-0000-0000-0000-00000000000%' and estado = 'pendiente';
 select is((select array_agg(estado::text order by id) from public.reportes
            where id in ('21000000-0000-0000-0000-0000000000e1', '21000000-0000-0000-0000-0000000000f1')),
   array['pendiente', 'pendiente'], 'el viejo (fuera de ventana) y el lejano (fuera de radio) siguen pendiente');
 
--- H: nuevo junto a un activo nace activo
+-- H: nuevo junto a un activo ya NO nace activo (D-021 retira P-15)
 insert into public.reportes (id, perfil_id, tipo, pasan_carros, ubicacion) values
   ('21000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000011', 'calle', true, public.punto(20.6601, -103.3496));
-select is((select estado::text from public.reportes where id = '21000000-0000-0000-0000-000000000006'), 'activo',
-  'nuevo junto a un activo nace activo');
+select is((select estado::text from public.reportes where id = '21000000-0000-0000-0000-000000000006'), 'pendiente',
+  'nuevo junto a un activo nace pendiente (D-021)');
 
 -- Z2: persona_en_riesgo activa con 1; un "calle" aislado no
 insert into public.reportes (id, perfil_id, tipo, pasan_carros, ubicacion) values
@@ -122,8 +136,13 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 set local role authenticated;
 select throws_ok($$ select public.confirmar_reporte('21000000-0000-0000-0000-000000000001', true) $$,
   'P0001', 'propio_reporte', 'no se confirma el propio reporte');
+-- D-021: un pendiente sí se confirma (así se publica); un resuelto no.
+reset role;
+update public.reportes set estado = 'resuelto', resuelto_en = now()
+  where id = '22000000-0000-0000-0000-000000000002';
+set local role authenticated;
 select throws_ok($$ select public.confirmar_reporte('22000000-0000-0000-0000-000000000002', true) $$,
-  'P0001', 'reporte_no_activo', 'no se confirma un reporte pendiente');
+  'P0001', 'reporte_no_activo', 'no se confirma un reporte resuelto');
 select throws_ok($$ select public.confirmar_reporte('99999999-0000-0000-0000-000000000000', true) $$,
   'P0001', 'reporte_no_existe', 'reporte inexistente → reporte_no_existe');
 reset role;
@@ -211,8 +230,7 @@ select is((select array[sigue, falso] from public.confirmaciones
   'pasar a "sí" quita falso');
 
 -- -----------------------------------------------------------------------------
--- reportes_cercanos (Z4). Activos insertados directo; el pendiente entra como resuelto y se cambia
--- (si entrara pendiente, el trigger lo activaría por estar junto a un activo).
+-- reportes_cercanos (Z4). D-021: incluye pendientes (para poder confirmarlos) y activos.
 -- -----------------------------------------------------------------------------
 insert into public.reportes (id, perfil_id, tipo, pasan_carros, ubicacion, estado, activado_en, ultima_confirmacion) values
   ('24000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-00000000000c', 'calle', true, public.punto(20.7247, -103.3496), 'activo', now(), now()),
@@ -225,17 +243,18 @@ update public.reportes set estado = 'pendiente' where id = '24000000-0000-0000-0
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
 set local role authenticated;
 select is((select array_agg(id order by distancia_m) from public.reportes_cercanos(20.7197, -103.3496, 5000)),
-  array['24000000-0000-0000-0000-000000000001', '24000000-0000-0000-0000-000000000002',
-        '24000000-0000-0000-0000-000000000003']::uuid[],
-  'reportes_cercanos: solo activos, radio topado a radio_cercanos_max_m');
+  array['24000000-0000-0000-0000-000000000005', '24000000-0000-0000-0000-000000000001',
+        '24000000-0000-0000-0000-000000000002', '24000000-0000-0000-0000-000000000003']::uuid[],
+  'reportes_cercanos: pendientes y activos, radio topado a radio_cercanos_max_m');
 select is((select array_agg(id) from public.reportes_cercanos(20.7197, -103.3496, 5000)),
-  array['24000000-0000-0000-0000-000000000001', '24000000-0000-0000-0000-000000000002',
-        '24000000-0000-0000-0000-000000000003']::uuid[],
+  array['24000000-0000-0000-0000-000000000005', '24000000-0000-0000-0000-000000000001',
+        '24000000-0000-0000-0000-000000000002', '24000000-0000-0000-0000-000000000003']::uuid[],
   'reportes_cercanos ordena por distancia');
 select is((select array_agg(es_propio) from public.reportes_cercanos(20.7197, -103.3496, 5000)),
-  array[true, false, false], 'es_propio solo para el reporte del usuario actual');
+  array[false, true, false, false], 'es_propio solo para el reporte del usuario actual');
 select ok((select abs(distancia_m - 22.1) < 1 and abs(lat - 20.7199) < 1e-9 and abs(lng + 103.3496) < 1e-9
-           from public.reportes_cercanos(20.7197, -103.3496, 5000) limit 1),
+           from public.reportes_cercanos(20.7197, -103.3496, 5000)
+           where id = '24000000-0000-0000-0000-000000000001'),
   'reportes_cercanos devuelve distancia_m y lat/lng');
 select throws_ok($$ select public.expirar_reportes() $$, '42501', null, 'clientes no pueden llamar expirar_reportes');
 reset role;

@@ -2,6 +2,25 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-10 · Diego · Claude Code (front unificado + backend v2 validado)
+**Hecho**
+- Front unificado en `web/` (D-018) en 3 rondas: canvas de Diego → material de los equipos → "manda lo validado"
+  (D-021). Registro (4 pasos + moto), Reporte (gravedad, evidencia antes de enviar, enviado, Mis reportes, barra
+  Mapa·Reportes·Ayuda), Mapa (buscar con Nominatim, capas y leyenda, crítico, Más), Confirmación (Ya no → secó /
+  nunca hubo agua, voz, alerta a 400 m) y Avisos/derivación (6 casos, ¿Puedo pasar?, preferencias). 115/115 vitest.
+- Backend v2 (D-021): 4 migraciones `20261110000000..000300` (enums, publicación y niveles por confirmaciones,
+  gravedad, `mis_reportes`, derivar + `.mov` + moto, preferencias push). Local: `db reset` + `test db` 461/461.
+  Smoke REST local: `crear_reporte` con gravedad, `mis_reportes`, `registrar_entrada('moto')` OK.
+- PR #14 abierto (front + v2). Liga: https://aguas-zmg.netlify.app (aún con la versión de la ronda 1).
+- Material de los equipos en `../06_Prototipos_Equipos/` (incluye `admin.html` del panel de administración).
+
+**Pendiente (en orden)**
+- LeoFigo74z aprueba PR #14 → merge → `supabase db push` desde `main` (4 migraciones) → `probar-nube.sh`.
+- Encender Auth anónima remota (D-019) y desplegar el front (`netlify deploy`).
+- Panel de administración (`admin.html`) con datos reales; sin métricas inventadas.
+- Limpiar duplicados (ver HANDOFF) y revisión visual completa en móvil/escritorio y temas.
+- Registrar D-020 (Nominatim) en DECISIONES.
+
 ## 2026-11-10 · Diego · Claude Code (nube con PR #12 e integración de PR #13)
 **Hecho**
 - PR #12 (LeoFigo74z) revisado, aprobado y fusionado en `main` (ec02c63). Local: `supabase db reset`

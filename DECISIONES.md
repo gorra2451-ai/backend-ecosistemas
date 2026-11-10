@@ -153,3 +153,35 @@ de Supabase Auth (anónimos por hora), sin captcha, mientras duren los testeos d
 Los límites del backend siguen (`max_reportes_por_hora`, `max_entradas_por_hora`).
 **Por qué:** sin sesión el front no puede reportar ni confirmar, y el mid-fi pide el flujo completo.
 **Riesgo:** spam desde varias IP. Se revisa al terminar los testeos; captcha sigue en P-16.
+
+## D-020 · Búsqueda de lugares y dirección con Nominatim (OpenStreetMap)
+**Estado:** Aceptada (Diego) · 2026-11-10
+**Decisión:** el front busca lugares y obtiene la dirección de un punto con Nominatim de OSM, directo desde el
+navegador, máx. 1 petición por segundo, limitado a la ZMG y con atribución. No se envían datos personales; solo el
+texto buscado o la coordenada del reporte.
+**Por qué:** los equipos Mapa y Reporte validaron "Buscar un lugar" y "Ubicación detectada: Av. …". Gratis y sin llave.
+**Riesgo:** límites de uso del servicio público; si se excede, se cae a "Tu ubicación actual ±N m".
+
+## D-021 · Manda lo validado por los equipos (contrato v2)
+**Estado:** Aceptada (Diego y LeoFigo74z) · 2026-11-10
+**Decisión:** "manda lo validado por los equipos" en el testeo del mid-fi. Reemplaza las reglas
+de activación y niveles anteriores (REGLAS_NEGOCIO §1, §3, §5) y amplía el contrato a v2 (`docs/API.md`):
+- **Publicación por confirmaciones (resuelve P-01):** un reporte `pendiente` pasa a `activo` con
+  `confirmaciones_para_publicar` (5) "sí" de otras personas. Se puede confirmar un pendiente.
+  `persona_en_riesgo` sigue naciendo `activo`. Si no junta las confirmaciones en
+  `ventana_activacion_min`, pasa a `resuelto`.
+- **Se retira** la activación por `umbral_activacion` reportes cercanos (queda en `parametros`
+  marcado OBSOLETO) y "un reporte junto a un activo nace activo" (**resuelve P-15**).
+- **Niveles por confirmaciones "sí":** bajo 5–9 · medio 10–14 · alto 15–19 · `critico` ≥ 20
+  (`nivel_*_min`); zona = suma de los activos de la celda. Un activo con < 5 es `bajo`; un
+  pendiente no tiene nivel. `persona_en_riesgo` activa con < 15 es `alto` (nace sin
+  confirmaciones y es lo más urgente). `pasan_carros=false` ya no sube la zona a `alto`.
+- **Gravedad** opcional en el reporte (`bloqueado|limitado|sin_riesgo`); si viene, deduce `pasan_carros`.
+- `mis_reportes()`, `reportes_cercanos` con pendientes y nivel, `moto` (**resuelve P-28**),
+  derivación para `calle|arbol_caido|riesgo_electrico`, video `.mov` y `preferencias_push`
+  (silenciar, solo fuertes, solo cambios).
+**Por qué:** los equipos validaron con usuarios que 5 confirmaciones dan confianza; el contrato
+debe seguir lo que se probó, no lo que se supuso antes.
+**Privacidad:** los pendientes ahora se ven en `reportes_cercanos` (solo con sesión, radio ≤ 1 km,
+sin autor), necesario para poder confirmarlos.
+**Pendiente:** el 071 de CFE requiere fuente oficial (P-34).
