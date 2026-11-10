@@ -6,6 +6,10 @@ import { RADIO_ALERTA_M } from './confirmar.js'
 // Radio para avisar por voz: el mismo de la alerta previa de Confirmar (400 m). Solo front · POR CONFIRMAR.
 export const RADIO_VOZ_M = RADIO_ALERTA_M
 const MAX_FRASES = 2
+export const FRASE_SIN_UBICACION = 'Activa tu ubicación para saber cómo está tu zona.'
+
+// Solo el GPS real del dispositivo cuenta: CENTRO_ZMG (Plaza del Sol, real=false) es un ejemplo, no tu ubicación.
+export const ubicacionReal = (ubic) => !!ubic && ubic.real === true
 
 // 398 → "400 metros" · 1450 → "1.4 kilómetros" (como formatoDist, pero dicho en palabras).
 export function metrosVoz(m) {
@@ -17,9 +21,9 @@ const rango = (n) => NIVELES.indexOf(n)
 const nivelTxt = (n) => textoNivel(n).toLowerCase()
 
 // Frases nuevas entre dos cargas de zonas: zona que aparece a ≤ radio o zona que sube de nivel.
-// anteriores = null (primera carga) → no habla. Máximo 2 frases; el resto, "y N zonas más".
+// anteriores = null (primera carga) o sin GPS real → no habla. Máximo 2 frases; el resto, "y N zonas más".
 export function cambiosParaVoz(anteriores, actuales, ubic, radioM = RADIO_VOZ_M) {
-  if (!anteriores || !ubic) return []
+  if (!anteriores || !ubicacionReal(ubic)) return []
   const antes = new Map(anteriores.map((z) => [z.celda, nivelV2(z)]))
   const cambios = []
   for (const z of actuales || []) {
@@ -40,7 +44,9 @@ export function cambiosParaVoz(anteriores, actuales, ubic, radioM = RADIO_VOZ_M)
 const enPalabras = (s) => s.replace(/(\d) km\b/g, '$1 kilómetros').replace(/(\d) m\b/g, '$1 metros')
 
 // Botón "Escuchar": resume tu zona con la misma frase de la barra superior (estadoZona).
+// Sin GPS real no describe nada: pide activar la ubicación.
 export function fraseEstado({ zonas = [], ubic, municipio, revisado, ahora } = {}) {
+  if (!ubicacionReal(ubic)) return FRASE_SIN_UBICACION
   const e = estadoZona({ zonas: zonas.map((z) => ({ ...z, nivel: nivelV2(z) })), ubic, municipio, revisado, ahora })
   return [e.frase, e.sub].filter(Boolean).map((p) => enPalabras(p) + '.').join(' ')
 }

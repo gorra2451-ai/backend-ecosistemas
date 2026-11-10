@@ -2,6 +2,15 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-10 (2.ª revisión de Leo) · Diego · Claude Code
+**Hecho**
+- Voz sin GPS real: no hay avisos automáticos y "Escuchar" pide la ubicación (habla dentro del toque para Safari iOS);
+  sin GPS dice "Activa tu ubicación…". Nunca describe el punto de ejemplo como si fuera tuyo.
+- Nominatim: `crearLimitador` = fila única para toda la app (antes 2 llamadas concurrentes salían con 0 ms).
+- Aviso de privacidad antes de la primera escucha (Reportar y Confirmar; el navegador puede enviar la voz a su
+  proveedor); el modo vehículo solo escucha si ya se aceptó. Verificado en Chrome con voz/GPS simulados.
+- pgTAP 481/481 · vitest 209/209 · build OK.
+
 ## 2026-11-10 (cierre) · Diego · Claude Code (revisión de Leo + voz)
 **Hecho**
 - Revisión de LeoFigo74z al PR #14 atendida (D-023): `validar_confirmable` rechaza pendientes con la ventana vencida

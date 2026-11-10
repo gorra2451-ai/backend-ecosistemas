@@ -125,13 +125,27 @@ export async function preferenciasPush(endpoint, { soloCambios, soloFuertes, sil
 
 // ---------- Lugares (Nominatim de OpenStreetMap, D-020): máx. 1 petición/s, sin datos personales ----------
 const NOMI = 'https://nominatim.openstreetmap.org'
-let ultimaNomi = 0
-async function nomi(url) {
-  const espera = Math.max(0, ultimaNomi + 1100 - Date.now())
-  if (espera) await new Promise((res) => setTimeout(res, espera))
-  ultimaNomi = Date.now()
-  try { const res = await fetch(url, { headers: { 'Accept-Language': 'es' } }); return { data: res.ok ? await res.json() : null, error: res.ok ? null : 'desconocido' } }
-  catch (e) { return { data: null, error: codigoError(e) } }
+// Fila única para toda la app: cada llamada espera a que la anterior haya salido + `ms`. Antes, dos llamadas
+// concurrentes leían el mismo "última salida" y salían juntas (0 ms; hallazgo de la revisión del PR #14).
+export function crearLimitador(ms) {
+  let cola = Promise.resolve()
+  let ultima = -Infinity
+  return (tarea) => {
+    const turno = cola.then(async () => {
+      const espera = Math.max(0, ultima + ms - Date.now())
+      if (espera) await new Promise((res) => setTimeout(res, espera))
+      ultima = Date.now()
+    })
+    cola = turno.catch(() => {})
+    return turno.then(() => tarea())
+  }
+}
+const limitarNomi = crearLimitador(1100)
+function nomi(url) {
+  return limitarNomi(async () => {
+    try { const res = await fetch(url, { headers: { 'Accept-Language': 'es' } }); return { data: res.ok ? await res.json() : null, error: res.ok ? null : 'desconocido' } }
+    catch (e) { return { data: null, error: codigoError(e) } }
+  })
 }
 export function etiquetaLugar(x) {
   const a = x?.address || {}

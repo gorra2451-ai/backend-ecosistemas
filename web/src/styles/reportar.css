@@ -164,3 +164,8 @@
 .rp-prueba{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:14px;
   border:var(--bw) solid var(--amber);color:var(--tx);background:var(--s1);font-size:14px;font-weight:700}
 .rp-prueba svg{color:var(--amber);flex:none;margin-top:1px}
+
+/* Aviso de privacidad antes de la primera escucha por voz (en línea, sin diálogos del navegador). */
+.rp-aviso-voz{display:flex;flex-direction:column;gap:8px;padding:var(--sp2);border:var(--bw) solid var(--line);border-radius:16px;background:var(--s1)}
+.rp-aviso-voz p{margin:0;font:var(--t-small);color:var(--tx)}
+.rp-nota-voz{margin:0;text-align:center;font:var(--t-small);color:var(--mu)}

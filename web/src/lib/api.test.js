@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { codigoError, mensajeError, nivelDeZona, bboxAlrededor, textoBusqueda } from './api.js'
 
 describe('codigoError', () => {
@@ -59,5 +59,33 @@ describe('bboxAlrededor', () => {
     expect(b.min_lat).toBeLessThan(b.max_lat)
     expect(b.min_lng).toBeLessThan(b.max_lng)
     expect(b.max_lat - b.min_lat).toBeCloseTo(0.036, 2)
+  })
+})
+
+describe('crearLimitador (Nominatim: máx. 1 petición/s para toda la app)', () => {
+  it('llamadas concurrentes salen separadas por al menos el intervalo', async () => {
+    vi.useFakeTimers()
+    const { crearLimitador } = await import('./api.js')
+    const lim = crearLimitador(1100)
+    const salidas = []
+    const tarea = () => { salidas.push(Date.now()); return Promise.resolve('ok') }
+    const ps = [lim(tarea), lim(tarea), lim(tarea)]
+    await vi.advanceTimersByTimeAsync(5000)
+    await Promise.all(ps)
+    expect(salidas).toHaveLength(3)
+    expect(salidas[1] - salidas[0]).toBeGreaterThanOrEqual(1100)
+    expect(salidas[2] - salidas[1]).toBeGreaterThanOrEqual(1100)
+    vi.useRealTimers()
+  })
+  it('un error en una llamada no traba la fila', async () => {
+    vi.useFakeTimers()
+    const { crearLimitador } = await import('./api.js')
+    const lim = crearLimitador(1100)
+    const p1 = lim(() => Promise.reject(new Error('x'))).catch(() => 'falló')
+    const p2 = lim(() => Promise.resolve('ok'))
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(await p1).toBe('falló')
+    expect(await p2).toBe('ok')
+    vi.useRealTimers()
   })
 })

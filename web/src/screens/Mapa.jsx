@@ -16,7 +16,7 @@ import {
 } from '../lib/mapa.js'
 import { urlRutaAlterna, grupoMedio } from '../lib/ayuda.js'
 import { hablar } from '../lib/confirmar.js'
-import { fraseEstado } from '../lib/vozAlertas.js'
+import { fraseEstado, ubicacionReal } from '../lib/vozAlertas.js'
 import '../styles/mapa.css'
 
 // ---------- Datos compartidos (una sola petición para barra, hoja y sidebar) ----------
@@ -252,9 +252,19 @@ function ListaCercana({ datos, onCalmaAvisos }) {
 
 // ---------- Barra superior (móvil) ----------
 export function TopBar() {
-  const { ir, setSheet, prefs } = useApp()
+  const { ir, setSheet, prefs, pedirUbicacion } = useApp()
   const datos = useDatosMapa()
   const { estado, medio } = datos
+  // Escuchar: sin GPS real pide la ubicación y lee con ESA posición (no con el store aún sin actualizar).
+  const escuchar = async () => {
+    const decir = (ubic) => hablar(fraseEstado({ zonas: datos.zonas, ubic, municipio: datos.municipio }))
+    if (ubicacionReal(datos.ubic)) return decir(datos.ubic)
+    // Se habla YA, dentro del toque: Safari iOS bloquea speechSynthesis que arranca fuera de un gesto,
+    // y esto la desbloquea para la frase que llega después del GPS (hasta 12 s).
+    hablar('Buscando tu ubicación.')
+    const u = await pedirUbicacion().catch(() => null)
+    decir(ubicacionReal(u) ? u : null)
+  }
   const sub = datos.error ? mensajeError(datos.error).titulo : estado.sub
   const alTocarEstado = () => (estado.zona ? ir('zona', { zona: estado.zona }) : setSheet('mid'))
   const [capasAbierto, setCapasAbierto] = useState(false)
@@ -272,7 +282,7 @@ export function TopBar() {
           </button>
           {prefs.voz && (
             <button type="button" className="mp-mas" disabled={datos.cargando} aria-label="Escuchar el estado de tu zona"
-              onClick={() => hablar(fraseEstado({ zonas: datos.zonas, ubic: datos.ubic, municipio: datos.municipio }))}>
+              onClick={escuchar}>
               <Icon name="voz" /><span>Escuchar</span>
             </button>
           )}

@@ -17,6 +17,7 @@ import '../styles/reportar.css'
 import { MODO_PRUEBA, radioCercanos } from '../lib/prueba.js'
 import { claseVoz } from '../lib/confirmar.js'
 import { escucharFrase, resolverReporteVoz } from '../lib/vozReporte.js'
+import { TEXTO_AVISO_VOZ, NOTA_VOZ, avisoVozAceptado, aceptarAvisoVoz } from '../lib/avisoVoz.js'
 
 // Íconos propios del módulo (mismo estilo de línea que Icon.jsx); el resto viene de Icon.jsx.
 const PROPIOS = {
@@ -224,9 +225,11 @@ function useVozTipo(elegir) {
   const hayVoz = !!claseVoz()
   const [escuchando, setEscuchando] = useState(false)
   const [msg, setMsg] = useState('')
+  const [aviso, setAviso] = useState(false) // aviso de privacidad en línea, antes de la primera escucha
+  const [aceptado, setAceptado] = useState(() => avisoVozAceptado())
   const cancelar = useRef(() => {})
   useEffect(() => () => cancelar.current(), [])
-  const escuchar = () => {
+  const iniciar = () => {
     setMsg(''); setEscuchando(true)
     cancelar.current = escucharFrase((alts) => {
       setEscuchando(false)
@@ -235,8 +238,12 @@ function useVozTipo(elegir) {
       else setMsg(r.mensaje)
     })
   }
-  const parar = () => { cancelar.current(); setEscuchando(false) }
-  return { hayVoz, escuchando, msg, escuchar, parar }
+  // La primera vez se avisa que el navegador puede mandar el audio a su proveedor; solo al aceptar se escucha.
+  const escuchar = () => { if (avisoVozAceptado()) iniciar(); else setAviso(true) }
+  const aceptar = () => { aceptarAvisoVoz(); setAceptado(true); setAviso(false); iniciar() }
+  const cancelarAviso = () => setAviso(false)
+  const parar = () => { cancelar.current(); setEscuchando(false); setAviso(false) }
+  return { hayVoz, escuchando, msg, aviso, aceptado, escuchar, aceptar, cancelarAviso, parar }
 }
 
 export function Tipo() {
@@ -259,9 +266,16 @@ export function Tipo() {
       </div>
       {voz.hayVoz && (
         <div className="rp-voz">
-          {voz.escuchando
+          {voz.aviso ? (
+            <div className="rp-aviso-voz" role="group" aria-labelledby="rp-aviso-voz-txt">
+              <p id="rp-aviso-voz-txt">{TEXTO_AVISO_VOZ}</p>
+              <Btn variant="primary" onClick={voz.aceptar}>Entendido, usar voz</Btn>
+              <Btn variant="ghost" onClick={voz.cancelarAviso}>Cancelar</Btn>
+            </div>
+          ) : voz.escuchando
             ? <Btn variant="ghost" icon="cerrar" onClick={voz.parar}>Cancelar</Btn>
             : <button className="btn btn-ghost rp-link-btn" onClick={voz.escuchar}><Ico name="microfono" />Reportar con voz</button>}
+          {voz.aceptado && !voz.aviso && <p className="rp-nota-voz">{NOTA_VOZ}</p>}
           <p className="rp-estado" role="status" aria-live="polite">
             {voz.escuchando ? 'Escuchando… di qué se inundó y cuánta agua hay.' : voz.msg}
           </p>

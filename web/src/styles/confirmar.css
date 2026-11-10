@@ -67,3 +67,9 @@
 
 @media (prefers-reduced-motion:reduce){ .confirm,.confirm-bar>i{animation:none} }
 [data-a11y~=motion] .confirm-bar>i{animation:none!important}
+
+/* Aviso de privacidad antes de la primera escucha por voz (en línea, sin diálogos del navegador). */
+.cf-aviso-voz{display:flex;flex-direction:column;gap:var(--sp1)}
+.cf-aviso-voz p{margin:0;font:var(--t-small)}
+.cf-aviso-voz .confirm-link{align-self:center}
+.cf-nota-voz{margin:0;text-align:center;font:var(--t-small);opacity:.85}

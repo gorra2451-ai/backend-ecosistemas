@@ -1,4 +1,5 @@
 // Modo voz (prefs.voz): lee en voz alta las zonas que aparecen o suben de nivel cerca de ti. No renderiza nada.
+// Solo con GPS real (ubic.real): con la ubicación de ejemplo no consulta ni habla.
 // Recarga zonas_publicas con un sondeo de 60 s y con cada refrescar() del store (`version`).
 // No abre su propio canal Realtime: escucharCambios usa los topics 'reportes'/'zonas' y realtime-js 2.10
 // desuscribe el canal previo con el mismo topic (_leaveOpenTopic), lo que apagaría el Realtime de MapView.
@@ -6,13 +7,14 @@ import { useEffect, useRef } from 'react'
 import { useApp } from '../lib/store.jsx'
 import { zonasPublicas } from '../lib/api.js'
 import { hablar } from '../lib/confirmar.js'
-import { cambiosParaVoz } from '../lib/vozAlertas.js'
+import { cambiosParaVoz, ubicacionReal } from '../lib/vozAlertas.js'
 
 const SONDEO_MS = 60_000
 
 export default function LectorVoz() {
   const { prefs, ubic, version } = useApp()
-  const activo = !!prefs.voz
+  const conGps = ubicacionReal(ubic)
+  const activo = !!prefs.voz && conGps
   const anteriores = useRef(null)
   const ubicRef = useRef(ubic)
   ubicRef.current = ubic

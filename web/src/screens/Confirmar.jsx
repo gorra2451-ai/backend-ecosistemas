@@ -14,6 +14,7 @@ import {
   suscribirViaje, puedeTocar, cambiosMios, leerMios, guardarMios,
 } from '../lib/confirmar.js'
 import '../styles/confirmar.css'
+import { TEXTO_AVISO_VOZ, NOTA_VOZ, avisoVozAceptado, aceptarAvisoVoz, escuchaAutomatica } from '../lib/avisoVoz.js'
 import { MODO_PRUEBA } from '../lib/prueba.js'
 
 const usarViaje = () => useSyncExternalStore(suscribirViaje, leerViaje)
@@ -78,6 +79,8 @@ function Aviso({ rep, modo, cerrar }) {
   const [final, setFinal] = useState(null)
   const [escuchando, setEscuchando] = useState(false)
   const [vozMsg, setVozMsg] = useState('')
+  const [avisoVoz, setAvisoVoz] = useState(false) // aviso de privacidad en línea, antes de la primera escucha
+  const [vozAceptada, setVozAceptada] = useState(() => avisoVozAceptado())
   const [calle, setCalle] = useState(rep.calle || rep.nombre || null)
   const primero = useRef(null)
   const cancelarVoz = useRef(() => {})
@@ -163,17 +166,21 @@ function Aviso({ rep, modo, cerrar }) {
   const voz = () => {
     if (ocupado) return
     if (escuchando) { cancelarVoz.current(); setEscuchando(false); return }
-    escuchar()
+    // La primera vez se avisa que el navegador puede mandar el audio a su proveedor; solo al aceptar se escucha.
+    if (avisoVozAceptado()) escuchar(); else setAvisoVoz(true)
   }
+  const aceptarVoz = () => { aceptarAvisoVoz(); setVozAceptada(true); setAvisoVoz(false); if (!ocupado) escuchar() }
 
   // Vehículo en movimiento: aviso de solo lectura; se lee en voz alta y se escucha la respuesta.
   useEffect(() => {
     if (tocar || paso !== 'pregunta') return undefined
     let vivo = true
+    // Sin aviso de voz aceptado no se escucha solo: únicamente se lee en voz alta.
+    const auto = escuchaAutomatica(hayVoz)
     const frase = modo === 'alerta'
-      ? `Reporte en tu ruta. ${textoLlegas(rep.distancia_m, viaje.vel)}. Di desviar ruta para cambiar de camino.`
-      : '¿Sigue inundado aquí? Di sí, o ya no.'
-    const luego = () => { if (vivo && hayVoz) escuchar() }
+      ? `Reporte en tu ruta. ${textoLlegas(rep.distancia_m, viaje.vel)}.${auto ? ' Di desviar ruta para cambiar de camino.' : ''}`
+      : auto ? '¿Sigue inundado aquí? Di sí, o ya no.' : 'Inundación reportada aquí. Te preguntaremos al detenerte.'
+    const luego = () => { if (vivo && auto) escuchar() }
     if (permiteSenal(prefs).sonido) hablar(frase, luego); else luego()
     const t = setTimeout(() => {
       if (ocupadoRef.current) return
@@ -216,7 +223,7 @@ function Aviso({ rep, modo, cerrar }) {
           )}
           <div className={'cf-voz' + (escuchando ? ' activo' : '')}>
             <Mic />
-            <span>{!hayVoz ? 'No toques el teléfono mientras manejas.'
+            <span>{!hayVoz || !vozAceptada ? 'No toques el teléfono mientras manejas.'
               : modo === 'alerta' ? 'Di «desviar ruta» para cambiar de camino. Si no, seguimos tu ruta.'
                 : '¿Sigue inundado? Responde por voz: di «sí» o «ya no».'}</span>
           </div>
@@ -290,12 +297,20 @@ function Aviso({ rep, modo, cerrar }) {
           <button className="confirm-no" disabled={ocupado} onClick={() => setPaso('yaNo')}>
             <Icon name="cerrar" size={24} />Ya no está inundado
           </button>
-          {hayVoz && (
+          {hayVoz && !avisoVoz && (
             <button className={'confirm-voz' + (escuchando ? ' activo' : '')} disabled={ocupado}
               aria-pressed={escuchando} onClick={voz}>
               <Mic />{escuchando ? 'Escuchando… di «sí» o «ya no»' : 'Responder con voz'}
             </button>
           )}
+          {hayVoz && avisoVoz && (
+            <div className="cf-aviso-voz" role="group" aria-labelledby="cf-aviso-voz-txt">
+              <p id="cf-aviso-voz-txt">{TEXTO_AVISO_VOZ}</p>
+              <button className="confirm-voz" disabled={ocupado} onClick={aceptarVoz}><Mic />Entendido, usar voz</button>
+              <button className="confirm-link" onClick={() => setAvisoVoz(false)}>Cancelar</button>
+            </div>
+          )}
+          {hayVoz && vozAceptada && !avisoVoz && <p className="cf-nota-voz">{NOTA_VOZ}</p>}
         </div>
         <p className="confirm-voz-msg" role="status" aria-live="polite">{vozMsg}</p>
         <div className="confirm-links cf-centro">

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { cambiosParaVoz, fraseEstado, metrosVoz, RADIO_VOZ_M } from './vozAlertas.js'
+import { cambiosParaVoz, fraseEstado, metrosVoz, RADIO_VOZ_M, FRASE_SIN_UBICACION } from './vozAlertas.js'
 
-const TU = { lat: 20.6497, lng: -103.4016 }
+const TU = { lat: 20.6497, lng: -103.4016, real: true }
+const EJEMPLO = { lat: 20.6497, lng: -103.4016, precision: 500, real: false } // como CENTRO_ZMG
 const norte = (m) => ({ lat: TU.lat + m / 111195, lng: TU.lng }) // ~m metros al norte
 const zona = (celda, nivel, m, extra = {}) => ({ celda, nivel, ...norte(m), total_reportes: 1, ...extra })
 
@@ -60,6 +61,12 @@ describe('cambiosParaVoz', () => {
     expect(cambiosParaVoz([], [zona('a', 'alto', 10)], null, 400)).toEqual([])
   })
 
+  it('sin GPS real (ubicación de ejemplo, real=false) no habla', () => {
+    expect(cambiosParaVoz([], [zona('a', 'critico', 10)], EJEMPLO, 400)).toEqual([])
+    expect(cambiosParaVoz([zona('a', 'bajo', 10)], [zona('a', 'critico', 10)], EJEMPLO, 400)).toEqual([])
+    expect(cambiosParaVoz([], [zona('a', 'critico', 10)], { lat: TU.lat, lng: TU.lng }, 400)).toEqual([])
+  })
+
   it('el radio por defecto es RADIO_VOZ_M', () => {
     expect(RADIO_VOZ_M).toBeGreaterThan(0)
     expect(cambiosParaVoz([], [zona('a', 'medio', RADIO_VOZ_M - 20)], TU)).toHaveLength(1)
@@ -77,7 +84,13 @@ describe('fraseEstado (botón Escuchar)', () => {
     expect(f).toBe('1 calle inundada a 300 metros. No cruces: zona Alto a 120 metros.')
   })
 
-  it('sin ubicación ni municipio no truena', () => {
-    expect(fraseEstado({ zonas: [], ubic: null })).toBe('Tu zona: sin reportes.')
+  it('sin ubicación ni municipio no truena: pide activar la ubicación', () => {
+    expect(fraseEstado({ zonas: [], ubic: null })).toBe(FRASE_SIN_UBICACION)
+  })
+
+  it('sin GPS real (real=false) no describe la ubicación de ejemplo: pide activar la ubicación', () => {
+    expect(FRASE_SIN_UBICACION).toBe('Activa tu ubicación para saber cómo está tu zona.')
+    expect(fraseEstado({ zonas: [zona('a', 'alto', 120)], ubic: EJEMPLO, municipio: 'Zapopan' })).toBe(FRASE_SIN_UBICACION)
+    expect(fraseEstado({ zonas: [], ubic: EJEMPLO, municipio: 'Zapopan' })).toBe(FRASE_SIN_UBICACION)
   })
 })
