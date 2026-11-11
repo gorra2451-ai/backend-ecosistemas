@@ -316,3 +316,18 @@ textura de las tarjetas "pasan / no pasan"; tarjetas desalineadas (falta saber c
   1) y desde ahí pone el aviso en el mapa con tu ubicación. Reemplaza el aviso dentro del formulario de la ronda 3.
 - **Voz:** ya no se llama `cancel()` antes de cada frase si no hay nada sonando (Safari iOS se quedaba callado) y se
   elige una voz en español si existe. Ajustes usa la misma función.
+
+## D-031 · Rutas dentro de la app, marcas por calle y nivel más visible (2026-11-11)
+**Estado:** Aceptada por Diego · 2026-11-11 (pidió no mandar a Google Maps)
+**Decisión:**
+- **Rutas dentro de la app** con el OSRM público de OpenStreetMap Alemania (`routing.openstreetmap.de`, FOSSGIS;
+  gratis, sin llave, CORS; perfil car/foot/bike según el medio). Se ven en "Buscar → Cómo llegar" y desde el detalle
+  de una alerta: tiempo, distancia, rutas alternativas (si el servidor las da), **reportes en el camino** (a ≤80 m de
+  la línea), paso a paso en español y la línea en el mapa con chip "Quitar". Sustituye los enlaces a Google Maps.
+- **Privacidad (excepción a "el GPS no sale del teléfono"):** para calcular la ruta el origen se manda REDONDEADO a
+  3 decimales (~100 m) a ese servicio; no se guarda en nuestra base. Se avisa en la pantalla. CSP `connect-src` suma
+  `https://routing.openstreetmap.de`. Sin GPS real, la ruta sale del punto de ejemplo (se avisa).
+- **Limitación:** la ruta no esquiva inundaciones sola; las rutas se ordenan por menos reportes en el camino.
+  Servidor público con límites de uso: suficiente para el mid-fi; para producción, servidor propio o con contrato.
+- **Por calle, no por zona:** se quitan los halos de zona del mapa; solo pines en el punto de cada reporte.
+- **Nivel más visible:** aro grueso con el color del nivel alrededor del pin + chapita más grande.

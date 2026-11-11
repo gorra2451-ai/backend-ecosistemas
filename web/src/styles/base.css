@@ -92,3 +92,9 @@ button:disabled{cursor:not-allowed}
 .pin-nivel b{font:800 11px/1 var(--f-body);color:#0B1220;background:rgba(255,255,255,.9);border-radius:4px;padding:1px 3px}
 .pin-pico{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid #fff;margin-top:-3px}
 .pin--sim .pin-cab{border-style:dashed}
+/* D-031: el NIVEL se ve fuerte: aro grueso del color del nivel alrededor del pin + chapita más grande */
+.pin--bajo .pin-cab{box-shadow:0 0 0 4px var(--rb),0 0 14px 2px var(--rb)}
+.pin--medio .pin-cab{box-shadow:0 0 0 4px var(--rm),0 0 14px 2px var(--rm)}
+.pin--alto .pin-cab,.pin--critico .pin-cab{box-shadow:0 0 0 4px var(--ra),0 0 16px 3px var(--ra)}
+.pin-nivel{width:26px;height:26px;right:-11px;bottom:-9px}
+.pin-nivel b{font-size:12px}

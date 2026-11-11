@@ -507,3 +507,7 @@ lo que entrega; municipio "detectado" nunca se detecta.
 ### 2026-11-11 · Color por tipo, barra píldora, 911 completo y voz iOS (D-030)
 - Pines y tarjetas con color por tipo + chapita de nivel; naranja de "medio" más claro; barra inferior con "+" y gota
   líquida; persona en riesgo → pantalla 911 completa; arreglo de voz en Safari iOS. vitest 244/244, build OK.
+
+### 2026-11-11 · Rutas en la app, marcas por calle y nivel visible (D-031)
+- "Cómo llegar" dentro de la app (OSRM de OSM, origen redondeado), reportes en el camino, paso a paso, línea en el
+  mapa; sin halos de zona; aro de nivel en los pines. vitest 250/250, build OK, probado en Chrome a 390 px.

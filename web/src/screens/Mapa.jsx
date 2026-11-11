@@ -10,14 +10,15 @@ import {
 } from '../lib/api.js'
 import {
   loCercano, filaCercana, estadoZona, lluviaPara, textoLluvia, distanciaM, formatoDist, hace,
-  rutaGoogle, textoWhatsApp, reporteParaConfirmar, textoNivel, RADIO_TU_ZONA_M, nivelV2, categoria, transito,
+  textoWhatsApp, reporteParaConfirmar, textoNivel, RADIO_TU_ZONA_M, nivelV2, categoria, transito,
   leerCapas, suscribirCapas, cambiarCapa, restablecerCapas, capasModificadas, filtrarCapas,
   centrarEn, partirLugar, resumenNiveles, zonasConNivelAgua, nivelAgua,
 } from '../lib/mapa.js'
-import { urlRutaAlterna, grupoMedio } from '../lib/ayuda.js'
 import { hablar } from '../lib/confirmar.js'
 import { fraseEstado, ubicacionReal } from '../lib/vozAlertas.js'
 import { useArrastreHoja } from '../lib/hoja.js'
+import { buscarRutas, mostrarRuta } from '../lib/rutas.js'
+import { etiquetaPin } from '../lib/pines.js'
 import NivelAgua from '../components/NivelAgua.jsx'
 import { simularInundacion, quitarSimulaciones, leerSimulacion, suscribirSimulacion, ESCENARIOS, cargarEscenario } from '../lib/simulacion.js'
 import { MODO_PRUEBA } from '../lib/prueba.js'
@@ -607,10 +608,10 @@ export function Zona() {
       )}
       {!dato.riesgo && (
         <>
-          <a className="mp-link mp-link--acc" href={urlRutaAlterna(ubic, grupoMedio(medio))} target="_blank" rel="noopener noreferrer">
-            <Icon name="mapa" />Ver rutas alternativas (Google Maps)
-          </a>
-          <p className="mp-z-nota">Google Maps no conoce esta alerta: elige una ruta que no pase por aquí.</p>
+          <button type="button" className="mp-link mp-link--acc" onClick={() => ir('buscar', { destino: { lat, lng, nombre: direccion || dato.titulo } })}>
+            <Icon name="mapa" />Cómo llegar · ver rutas
+          </button>
+          <p className="mp-z-nota">Te mostramos qué reportes hay en cada camino para que elijas el más seguro.</p>
         </>
       )}
       <button type="button" className="btn" onClick={verEnMapa}>Ver en el mapa</button>
@@ -651,6 +652,45 @@ export function Zona() {
   )
 }
 
+// ---------- Rutas dentro de la app (D-031) ----------
+const IcoRuta = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="6" cy="19" r="2" /><circle cx="18" cy="5" r="2" /><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8" />
+  </svg>
+)
+function PanelRutas({ rutas, elegida, setElegida, onVer, real }) {
+  if (rutas.estado === 'buscando') return <p className="mp-cargando" role="status">Buscando rutas…</p>
+  if (rutas.estado === 'error' || !rutas.lista.length) return <p className="mp-aviso">No pudimos calcular la ruta. Revisa tu conexión e inténtalo de nuevo.</p>
+  const r = rutas.lista[elegida]
+  return (
+    <section className="mp-rutas" aria-label="Rutas para llegar">
+      {!real && <p className="mp-aviso">Sin tu ubicación: la ruta sale del punto de ejemplo del mapa.</p>}
+      <div className="mp-rutas-op" role="radiogroup" aria-label="Elige una ruta">
+        {rutas.lista.map((x, i) => (
+          <button key={i} type="button" role="radio" aria-checked={i === elegida} className="mp-ruta" onClick={() => setElegida(i)}>
+            <b>{x.min} min</b><span>{x.km} km</span>
+            <span className={'mp-ruta-tag' + (x.enCamino.length ? ' mal' : ' bien')}>
+              {x.enCamino.length ? `${x.enCamino.length} reporte${x.enCamino.length === 1 ? '' : 's'} en el camino` : 'Sin reportes en el camino'}
+            </span>
+          </button>
+        ))}
+      </div>
+      {r.enCamino.length > 0 && (
+        <ul className="mp-ruta-alertas">
+          {r.enCamino.map((p) => <li key={p.id}><span className="mp-sw mp-sw--risk" aria-hidden="true" />{etiquetaPin(p)}</li>)}
+        </ul>
+      )}
+      <button type="button" className="btn btn-primary mp-btn-prim" onClick={() => onVer(elegida)}><Icon name="mapa" />Ver ruta en el mapa</button>
+      <details className="mp-pasos">
+        <summary>Paso a paso ({r.pasos.length})</summary>
+        <ol>{r.pasos.map((p, i) => <li key={i}>{p.texto}{p.m > 0 && <span> · {p.m >= 1000 ? (p.m / 1000).toFixed(1) + ' km' : p.m + ' m'}</span>}</li>)}</ol>
+      </details>
+      <p className="mp-z-nota">La ruta no esquiva inundaciones sola: revisa los reportes del camino. Tu punto de salida va
+        redondeado (~100 m) al servicio de rutas de OpenStreetMap y no lo guardamos.</p>
+    </section>
+  )
+}
+
 // ---------- Buscar un lugar · equipo Mapa, pantalla 4 ----------
 // Nombres del equipo como atajos: al tocarlos se buscan en OpenStreetMap (no guardamos coordenadas propias).
 // Sin autocompletar (reglas de Nominatim): se busca solo al enviar (Enter o "Buscar") o al tocar un atajo.
@@ -662,7 +702,10 @@ export function Buscar() {
   const datos = useDatosMapa()
   const [q, setQ] = useState(params?.q || '')
   const [res, setRes] = useState({ estado: 'vacio', lista: [] }) // vacio | buscando | listo | error
-  const [lugar, setLugar] = useState(null)
+  const [lugar, setLugar] = useState(params?.destino || null)
+  const [rutas, setRutas] = useState({ estado: 'nada', lista: [] }) // nada | buscando | listo | error
+  const [elegida, setElegida] = useState(0)
+  const { ubic, medio } = useApp()
   const pedido = useRef(0)
   const inputRef = useRef(null)
 
@@ -677,15 +720,26 @@ export function Buscar() {
     setRes(r.error ? { estado: 'error', lista: [] } : { estado: 'listo', lista: r.data || [] })
   }
   useEffect(() => () => { pedido.current++ }, [])
-  useEffect(() => { inputRef.current?.focus(); if (q) buscar(q) }, []) // eslint-disable-line
+  useEffect(() => { if (params?.destino) { centrarEn(params.destino); calcular(params.destino) } else { inputRef.current?.focus(); if (q) buscar(q) } }, []) // eslint-disable-line
+
+  async function calcular(destino = lugar) {
+    if (!destino) return
+    setRutas({ estado: 'buscando', lista: [] }); setElegida(0)
+    const r = await buscarRutas(medio, ubic, destino, datos.reportes)
+    setRutas(r.error ? { estado: 'error', lista: [] } : { estado: 'listo', lista: r.data })
+  }
+  const verRuta = (i) => {
+    const rt = rutas.lista[i]
+    mostrarRuta({ ...rt, destino: lugar, i }); ir(null)
+  }
 
   // Teclear solo cambia el texto; si se borra todo, vuelven los atajos. No consulta a Nominatim.
   function escribir(v) {
-    setQ(v); setLugar(null)
+    setQ(v); setLugar(null); setRutas({ estado: 'nada', lista: [] })
     if (!v.trim()) { pedido.current++; setRes({ estado: 'vacio', lista: [] }) }
   }
   const atajo = (s) => { setQ(s); setLugar(null); buscar(s) }
-  const elegir = (l) => { setLugar(l); centrarEn(l) }
+  const elegir = (l) => { setLugar(l); centrarEn(l); setRutas({ estado: 'nada', lista: [] }) }
   const cancelar = () => (q ? (escribir(''), inputRef.current?.focus()) : ir(null))
 
   const cercaDelLugar = lugar ? loCercano({ ...filtrarCapas({ zonas: datos.zonas, reportes: datos.reportes }, datos.capas), ubic: lugar }) : []
@@ -712,10 +766,13 @@ export function Buscar() {
           </div>
           <div className="mp-lugar-acc">
             <button type="button" className="btn btn-primary mp-btn-prim" onClick={() => ir(null)}><Icon name="mapa" />Ver en el mapa</button>
-            <a className="mp-link mp-link--line" href={rutaGoogle(lugar.lat, lugar.lng)} target="_blank" rel="noopener noreferrer">
-              Cómo llegar (Google Maps)
-            </a>
+            <button type="button" className="btn mp-btn-ruta" onClick={() => calcular()} disabled={rutas.estado === 'buscando'}>
+              <IcoRuta />{rutas.estado === 'buscando' ? 'Buscando rutas…' : 'Cómo llegar'}
+            </button>
           </div>
+          {rutas.estado !== 'nada' && (
+            <PanelRutas rutas={rutas} elegida={elegida} setElegida={setElegida} onVer={verRuta} real={ubic.real} />
+          )}
           <h2 className="mp-side-h">Alertas cerca de este lugar</h2>
           {datos.cargando ? <p className="mp-cargando" role="status">Cargando alertas…</p>
             : cercaDelLugar.length
