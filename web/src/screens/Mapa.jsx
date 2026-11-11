@@ -6,7 +6,7 @@ import { useApp } from '../lib/store.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
 import { Screen, PorConfirmar } from '../components/ui.jsx'
 import {
-  zonasPublicas, reportesEnArea, alertasClima, reportesCercanos, bboxAlrededor, mensajeError, buscarLugar, textoBusqueda, direccionDe,
+  zonasPublicas, reportesEnArea, alertasClima, guardarAccesibilidad, reportesCercanos, bboxAlrededor, mensajeError, buscarLugar, textoBusqueda, direccionDe,
 } from '../lib/api.js'
 import {
   loCercano, filaCercana, estadoZona, lluviaPara, textoLluvia, distanciaM, formatoDist, hace,
@@ -17,6 +17,8 @@ import {
 import { urlRutaAlterna, grupoMedio } from '../lib/ayuda.js'
 import { hablar } from '../lib/confirmar.js'
 import { fraseEstado, ubicacionReal } from '../lib/vozAlertas.js'
+import { useArrastreHoja } from '../lib/hoja.js'
+import { a11yActivo, alternarA11y } from '../lib/onboarding.js'
 import '../styles/mapa.css'
 
 // ---------- Datos compartidos (una sola petición para barra, hoja y sidebar) ----------
@@ -136,6 +138,14 @@ function Fuentes({ fuenteLluvia }) {
 
 function PanelCapas({ onCerrar, fuenteLluvia }) {
   const capas = useSyncExternalStore(suscribirCapas, leerCapas)
+  const { prefs, setPrefs } = useApp()
+  const dalton = a11yActivo(prefs, 'dalton')
+  // Junto a la leyenda: ahí es donde se nota si los colores no se distinguen.
+  const alternarDalton = () => {
+    const p = alternarA11y(prefs, 'dalton')
+    setPrefs(p)
+    guardarAccesibilidad(a11yActivo(p, 'dalton')).catch(() => {})
+  }
   const cerrarRef = useRef(null)
   useEffect(() => {
     cerrarRef.current?.focus()
@@ -152,6 +162,10 @@ function PanelCapas({ onCerrar, fuenteLluvia }) {
             <Icon name="cerrar" size={22} />
           </button>
         </div>
+        <button type="button" role="switch" aria-checked={dalton} className="mp-capa mp-capa--dalton" onClick={alternarDalton}>
+          <span className="mp-capa-tx"><b>Modo para daltonismo</b><span>Colores azul → naranja, sin rojo ni verde</span></span>
+          <span className="mp-capa-r">{dalton ? 'Sí' : 'No'}<span className="switch" aria-hidden="true"><i /></span></span>
+        </button>
         <h3 className="mp-capas-h overline">Capas del mapa</h3>
         <ul className="mp-capas-lista">
           {CAPAS.map(([k, t, d, sw]) => (
@@ -299,7 +313,9 @@ export function TopBar() {
             {!datos.cargando && sub && <span className="mp-sub">{sub}</span>}
           </button>
         </div>
-        <Leyenda filtrado={datos.filtrado} onCapas={abrirCapas} />
+        <button type="button" className="mp-capas-btn mp-capas-btn--sm" onClick={abrirCapas} aria-haspopup="dialog">
+          <IcoCapas />{datos.filtrado ? 'Leyenda · filtros activos' : 'Leyenda y filtros'}
+        </button>
       </div>
       <div className="only-desk"><Leyenda desk filtrado={datos.filtrado} onCapas={abrirCapas} /></div>
       {capasAbierto && <PanelCapas fuenteLluvia={datos.fuenteLluvia} onCerrar={cerrarCapas} />}
@@ -338,16 +354,30 @@ function TarjetaCercana({ it, onClick }) {
 }
 
 // ---------- Hoja inferior (móvil) ----------
+// Se arrastra con el dedo (arriba = más lista, abajo = más mapa) y también responde a toques en el asa.
+// ¿A quién acudo? y Refugios viven en la pestaña Ayuda: la hoja solo lleva lo cercano y Reportar.
+const IcoBajar = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+)
+
 export function Hoja() {
   const { ir, sheet, setSheet } = useApp()
   const datos = useDatosMapa()
   const n = datos.items.length
+  const arrastre = useArrastreHoja(sheet, setSheet)
 
   if (sheet === 'full') {
     return (
-      <div className="mp-full">
-        <button type="button" className="mp-verlista" onClick={() => setSheet('mid')}><Icon name="lista" size={22} />Ver lista</button>
-        <BtnReportar onClick={() => ir('tipo')} />
+      <div className="mp-full mp-arrastre" {...arrastre}>
+        <button type="button" className="mp-handle mp-handle--solo mp-handle--full" aria-label="Mostrar alertas cercanas" onClick={() => setSheet('min')}>
+          <span className="sheet-handle" />
+        </button>
+        <div className="mp-full-row">
+          <button type="button" className="mp-verlista" onClick={() => setSheet('mid')}><Icon name="lista" size={22} />{n ? `Alertas · ${n}` : 'Alertas'}</button>
+          <BtnReportar onClick={() => ir('tipo')} />
+        </div>
       </div>
     )
   }
@@ -355,15 +385,16 @@ export function Hoja() {
   if (sheet === 'mid') {
     return (
       <section className="sheet mp-sheet rise" aria-label="Lo cercano">
-        <button type="button" className="mp-handle mp-handle--solo" aria-label="Ocultar lista" onClick={() => setSheet('min')}>
-          <span className="sheet-handle" />
-        </button>
-        <div className="mp-mid-head">
-          <div>
-            <h2 className="mp-mid-title">Alertas</h2>
-            <p className="mp-mid-sub">Consulta las condiciones actuales de tu zona</p>
+        <div className="mp-arrastre" {...arrastre}>
+          <button type="button" className="mp-handle mp-handle--solo" aria-label="Ocultar lista" onClick={() => setSheet('min')}>
+            <span className="sheet-handle" />
+          </button>
+          <div className="mp-mid-head">
+            <div>
+              <h2 className="mp-mid-title">Alertas</h2>
+              <p className="mp-mid-sub">Consulta las condiciones actuales de tu zona</p>
+            </div>
           </div>
-          <button type="button" className="mp-btn-sm" onClick={() => setSheet('full')}>Mapa completo</button>
         </div>
         <ListaCercana datos={datos} onCalmaAvisos={() => ir('alertas')} />
         <BtnReportar onClick={() => ir('tipo')} />
@@ -372,17 +403,17 @@ export function Hoja() {
   }
 
   return (
-    <section className="sheet mp-sheet" aria-label="Acciones">
-      <button type="button" className="mp-handle" onClick={() => setSheet('mid')} aria-expanded="false">
-        <span className="sheet-handle" />
-        <span>{n ? `Ver todas las alertas · ${n}` : 'Ver alertas'}</span>
-      </button>
-      {datos.items[0] && <TarjetaCercana it={datos.items[0]} onClick={() => abrirItem(ir, datos.items[0])} />}
-      <div className="mp-row3">
-        <button type="button" className="btn" onClick={() => ir('acudo')}>¿A quién acudo?</button>
-        <button type="button" className="btn" onClick={() => ir('refugios')}>Refugios</button>
-        <button type="button" className="btn" onClick={() => setSheet('full')}>Mapa completo</button>
+    <section className="sheet mp-sheet mp-arrastre" aria-label="Acciones" {...arrastre}>
+      <div className="mp-min-head">
+        <button type="button" className="mp-handle" onClick={() => setSheet('mid')} aria-expanded="false">
+          <span className="sheet-handle" />
+          <span>{n ? `Ver alertas cercanas · ${n}` : 'Ver alertas cercanas'}</span>
+        </button>
+        <button type="button" className="mp-ocultar" onClick={() => setSheet('full')} aria-label="Ocultar y ver solo el mapa">
+          <IcoBajar />
+        </button>
       </div>
+      {datos.items[0] && <TarjetaCercana it={datos.items[0]} onClick={() => abrirItem(ir, datos.items[0])} />}
       <BtnReportar onClick={() => ir('tipo')} />
     </section>
   )

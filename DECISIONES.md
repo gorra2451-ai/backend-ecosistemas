@@ -238,3 +238,22 @@ apagar registro por correo en Auth; caducidad de anónimos y `en_revision`.
 sus PR con `gh pr merge --merge --admin` (sigue siendo merge commit, equivalente a `--no-ff`). Reemplaza la parte
 "revisado por la otra persona" de AGENTS.md §3.12. Todo lo demás sigue igual: rama por tarea, PR, pruebas en verde.
 **Por qué:** esperar la revisión retrasaba la construcción y el despliegue del mid-fi.
+
+## D-026 · Mapa con menos ruido (humo en celular de Diego, 2026-11-11)
+**Estado:** Aceptada por Diego · 2026-11-11 ("todas hazlas")
+**Decisión:**
+- **Hoja inferior arrastrable** (`lib/hoja.js`): arriba = más lista, abajo = solo mapa (full → min → mid). El asa sigue
+  respondiendo a toques y hay botón "Ocultar y ver solo el mapa" para quien no arrastra. Antes solo respondía a toques
+  y en el celular no bajaba con el dedo.
+- **Hoja mínima:** se quita la fila "¿A quién acudo? / Refugios / Mapa completo" (las dos primeras viven en la pestaña
+  Ayuda). Queda: "Ver alertas cercanas", la alerta más cercana (si hay) y Reportar (64 px, antes 76).
+- **Barra superior (móvil):** sin la fila de chips de la leyenda; queda el botón "Leyenda y filtros". El panel abre
+  con el interruptor de **daltonismo** arriba, junto a los colores.
+- **Onboarding:** Accesibilidad pasa a ser el paso 2 (antes 4), para que texto grande o daltonismo apliquen al resto
+  del registro. Reemplaza el orden de pasos del Equipo Registro (ronda 3).
+- **Crédito de OpenStreetMap compacto:** botón "©" que abre "© OpenStreetMap". No se quita: la licencia ODbL y las
+  reglas de uso de los tiles de OSM exigen el crédito.
+- **Interruptores:** cualquier `role=switch` encendido se pinta encendido (el paso de accesibilidad decía "Activado"
+  con el interruptor apagado).
+**Pendiente:** "recorrido" (tutorial) del equipo: falta el material y su aprobación. Voz: falta saber qué falló.
+**Por qué:** feedback de Diego tras probar en su celular: demasiadas cosas encima del mapa y la hoja no bajaba.

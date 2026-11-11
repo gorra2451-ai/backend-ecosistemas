@@ -40,10 +40,20 @@
 .mp-calma b{font:800 21px/1.15 var(--f-head)}
 .mp-calma p{font-size:16px;line-height:1.4;color:var(--mu)}
 .mp-btn-acc{align-self:flex-start;min-height:48px;margin-top:4px;border:var(--bw) solid var(--acc);border-radius:12px;background:transparent;color:var(--acc);font:700 15px var(--f-body);padding:0 12px}
-.mp-full{display:flex;gap:10px;padding:0 14px 18px}
-.mp-verlista{width:96px;flex:none;height:76px;border:var(--bw) solid var(--line);border-radius:22px;background:var(--s1);color:var(--tx);
+.mp-full{display:flex;flex-direction:column;gap:0;padding:0 14px 14px}
+.mp-full-row{display:flex;gap:10px}
+.mp-handle--full{min-height:28px;width:100%}
+.mp-handle--full .sheet-handle{background:var(--tx);box-shadow:0 0 0 2px var(--bg)}
+/* Hoja arrastrable: el navegador no se queda el gesto vertical (si no, no baja con el dedo en el celular). */
+.mp-arrastre{touch-action:none;user-select:none;-webkit-user-select:none}
+.mp-min-head{display:flex;align-items:center;gap:8px}
+.mp-min-head .mp-handle{flex:1}
+.mp-ocultar{width:48px;height:48px;flex:none;border:var(--bw) solid var(--line);border-radius:14px;background:var(--s2);color:var(--tx);
+  display:flex;align-items:center;justify-content:center}
+.mp-sheet .btn-report,.mp-full .btn-report{height:64px;font-size:26px}
+.mp-verlista{width:104px;flex:none;height:64px;border:var(--bw) solid var(--line);border-radius:22px;background:var(--s1);color:var(--tx);
   font:700 15px var(--f-body);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
-.mp-full .btn-report{flex:1;font-size:28px}
+.mp-full .btn-report{flex:1}
 .btn-report > svg,.btn-report > span:not(.wave){position:relative}
 .mp-cargando{font-size:15px;color:var(--mu);padding:8px 2px}
 
@@ -220,3 +230,8 @@
 .mp-conf button{width:100%;min-height:56px;border:0;background:transparent;color:var(--tx);display:flex;align-items:center;gap:12px;font:700 16px var(--f-body);text-align:left;padding:0}
 .mp-conf button > svg:first-child{color:var(--acc)}
 .mp-conf button > svg:last-child{margin-left:auto;color:var(--mu)}
+
+/* Feedback del humo en celular (2026-11-11): menos cosas encima del mapa. */
+.mp-capas-btn--sm{align-self:flex-start;min-height:44px;font-size:13px;padding:0 10px}
+.mp-capa--dalton{border:2px solid var(--acc);margin-bottom:6px}
+.mp-arrastre > .mp-handle{width:100%}

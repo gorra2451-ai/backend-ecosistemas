@@ -484,3 +484,8 @@ lo que entrega; municipio "detectado" nunca se detecta.
 
 **Pendiente**
 - Repo en GitHub (Warp), nombre de la Persona B, aprobar modelo de datos.
+
+### 2026-11-11 · Mapa con menos ruido (D-026)
+- Hoja inferior arrastrable; hoja mínima sin la fila de 3 botones; leyenda dentro de "Leyenda y filtros" con
+  daltonismo arriba; accesibilidad como paso 2 del onboarding; crédito OSM compacto; interruptores con estado visible.
+- vitest 219/219, build OK. Probado en Chrome a 390 px (arrastrar arriba/abajo, daltonismo en vivo, paso 2/4).
