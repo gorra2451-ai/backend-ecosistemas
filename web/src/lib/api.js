@@ -16,7 +16,7 @@ export function codigoError(err) {
   const m = String(err.message || err)
   const c = CODIGOS.find((k) => m.includes(k))
   if (c) return c
-  if (/fetch|network|Load failed/i.test(m)) return 'sin_red'
+  if (/fetch|network|Load failed|abort|timeout|timed out/i.test(m)) return 'sin_red'
   return 'desconocido'
 }
 
