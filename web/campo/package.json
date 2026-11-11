@@ -1,0 +1,7 @@
+{
+  "name": "aguas-pruebas-campo",
+  "private": true,
+  "type": "module",
+  "description": "Escenarios de red/GPS reales contra el sitio publicado (D-032). Aparte de web/ para no tocar el build.",
+  "devDependencies": { "playwright": "1.56.1" }
+}

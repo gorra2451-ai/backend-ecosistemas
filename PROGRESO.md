@@ -2,6 +2,15 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-11 (feedback de usuarios) · Diego · Claude Code
+**Hecho**
+- PR #24: voz mexicana natural (Paulina/Google/Microsoft); antes salía "Eddy", voz novedad de Apple con acento extranjero.
+- PR #25: con señal débil el reporte se quedaba en "Enviando…"; ahora corta a 15 s, va a la cola y se reintenta cada 30 s.
+- D-032: `docs/PRUEBAS_CAMPO.md` + `web/campo/escenario.mjs` (Playwright, WebKit + Chromium contra prod). Medido: 6/6
+  escenarios OK. Encontrado al medir: quieto con ruido normal del GPS la app creía ir a 43 km/h → corregido.
+**Pendiente**
+- Lista de §2 de `docs/PRUEBAS_CAMPO.md` en teléfono real (voz, copiloto en auto, quieto, sótano, permisos).
+
 ## 2026-11-11 (mid-fi enviado) · Diego · Claude Code
 **Hecho**
 - PR #16 (D-024) mergeado tras D-025 (Diego mergea sin revisión de Leo; protección de `main` con 0 aprobaciones,

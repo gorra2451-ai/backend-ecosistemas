@@ -331,3 +331,12 @@ textura de las tarjetas "pasan / no pasan"; tarjetas desalineadas (falta saber c
   Servidor público con límites de uso: suficiente para el mid-fi; para producción, servidor propio o con contrato.
 - **Por calle, no por zona:** se quitan los halos de zona del mapa; solo pines en el punto de cada reporte.
 - **Nivel más visible:** aro grueso con el color del nivel alrededor del pin + chapita más grande.
+
+## D-032 · Pruebas de campo antes de cada entrega del front (2026-11-11)
+**Contexto:** usuarios reportaron voz con acento extranjero en iPhone y un reporte que no salía manejando con señal
+débil. Las pruebas unitarias pasaban porque repetían las mismas suposiciones del código.
+**Decisión:**
+- Antes de cada entrega se corre `docs/PRUEBAS_CAMPO.md`: escenarios automáticos en navegador real (Playwright,
+  WebKit + Chromium) contra el sitio publicado y una lista corta en teléfono real.
+- Playwright (gratuito) vive aparte en `web/campo/` con su propio `package.json`: no entra al build de la app.
+- Los números de la app se justifican con una medición; si no se puede medir, `POR CONFIRMAR`.
