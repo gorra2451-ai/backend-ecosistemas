@@ -7,6 +7,7 @@ Vas a trabajar en el repo `backend-ecosistemas`. Antes de proponer nada:
    supongas su contenido.
 1. Lee `AGENTS.md` completo y síguelo como reglas obligatorias.
 2. Lee `HANDOFF.md` y dime en 3 líneas: fase actual, último avance y siguiente paso.
+   Si HANDOFF tiene pendientes con hora (p. ej. limpiar datos de un testeo), dilos primero.
 3. Lee de `docs/PLAN.md` solo la fase actual.
 4. Dime qué tarea vas a tomar, qué archivos vas a tocar y qué vas a probar.
 5. Espera mi aprobación antes de escribir código.
@@ -14,6 +15,8 @@ Vas a trabajar en el repo `backend-ecosistemas`. Antes de proponer nada:
 Reglas rápidas: una tarea a la vez, rama por tarea, no inventes datos (usa POR CONFIRMAR),
 el esquema solo cambia por migración, toda regla lleva prueba. Git solo con `scripts/`
 (`nueva-tarea.sh`, `guardar.sh`, `cerrar-tarea.sh`).
+
+Merge a `main`: por PR con los 2 checks en verde; Diego mergea sin esperar revisión de Leo (D-025).
 
 Si soy LeoFigo74z: modo solo local (AGENTS.md §3.13). Nada de push sin autorización de Diego;
 al terminar cada tarea, mensaje para Diego y alto; dudas, a Diego.

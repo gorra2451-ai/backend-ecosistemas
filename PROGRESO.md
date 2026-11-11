@@ -2,6 +2,21 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-11 (mid-fi enviado) · Diego · Claude Code
+**Hecho**
+- PR #16 (D-024) mergeado tras D-025 (Diego mergea sin revisión de Leo; protección de `main` con 0 aprobaciones,
+  siguen PR + 2 checks). `db push` de `banderas_midfi` (6) y `accesibilidad_vibracion`; `probar-nube.sh` 12/12.
+- Feedback del humo en celular, PR #17–#22, todo en prod (https://aguas-zmg.netlify.app/?prueba=1):
+  D-026 hoja arrastrable y menos ruido · D-027 atrás dentro de la app, vibración, voz de muestra, simulaciones ·
+  D-028 pines por reporte, NivelAgua (banqueta/llanta), hoja v2, escenario local, semilla `5eed` · D-029 escala
+  única por altura del agua, distancia real, onboarding sin pantalla final · D-030 color por tipo, barra píldora con
+  "+" y gota líquida, 911 a pantalla completa, voz Safari iOS · D-031 rutas dentro de la app (OSRM de OSM), sin
+  halos de zona, aro de nivel en pines.
+- pgTAP 493/493 · vitest 250/250 · build OK. Cada deploy verificado en prod (bundle, CSP, pines, sin errores).
+- Nube al enviar la liga (~11:15): solo la semilla (9 reportes `5eed`, vencen 14:07); humo de Diego borrado.
+**Decidido:** D-025 a D-031.
+**Pendiente:** ver HANDOFF (limpiar semilla, revertir D-022/D-024, alinear nivel en backend, P-35 a P-37).
+
 ## 2026-11-10 (seguridad) · Diego · Claude Code + auditoría Claude Fable 5.2
 **Hecho**
 - E2E de API en local, 27/27 (reportar → 5 "sí" → activo → Realtime → zona; privacidad; evidencias; derivación).
@@ -484,30 +499,3 @@ lo que entrega; municipio "detectado" nunca se detecta.
 
 **Pendiente**
 - Repo en GitHub (Warp), nombre de la Persona B, aprobar modelo de datos.
-
-### 2026-11-11 · Mapa con menos ruido (D-026)
-- Hoja inferior arrastrable; hoja mínima sin la fila de 3 botones; leyenda dentro de "Leyenda y filtros" con
-  daltonismo arriba; accesibilidad como paso 2 del onboarding; crédito OSM compacto; interruptores con estado visible.
-- vitest 219/219, build OK. Probado en Chrome a 390 px (arrastrar arriba/abajo, daltonismo en vivo, paso 2/4).
-
-### 2026-11-11 · Gestos, vibración, voz de muestra y simulaciones (D-027)
-- Atrás/deslizar se queda dentro de la app; vibración al tocar (se apaga, se guarda en el perfil); voz de muestra;
-  simulaciones locales en Más (modo prueba). Migración `20261111151345_accesibilidad_vibracion` + pgTAP 2300.
-- pgTAP 493/493, vitest 234/234, build OK. Probado en Chrome a 390 px (atrás desde Más → mapa, simulación medio).
-
-### 2026-11-11 · Pines, niveles objetivos, hoja v2, escenario y semilla (D-028)
-- Pines por reporte en el mapa; zonas como halo; "¿Cuánta agua hay?" con dibujo banqueta/llanta; hoja mínima con
-  resumen por nivel; botón Accesibilidad móvil; tic háptico iPhone; escenario local de 8 reportes; viñetas del inicio
-  alineadas. Semilla `5eed` (9 reportes) en la nube para el testeo — borrar al terminar.
-
-### 2026-11-11 · Auditoría UX (D-029)
-- Escala única por altura del agua; distancia real en "Tu zona"; persona en riesgo sin nivel; barra superior compacta;
-  detalle con acciones arriba y datos plegados; onboarding sin pantalla final. vitest 244/244, build OK.
-
-### 2026-11-11 · Color por tipo, barra píldora, 911 completo y voz iOS (D-030)
-- Pines y tarjetas con color por tipo + chapita de nivel; naranja de "medio" más claro; barra inferior con "+" y gota
-  líquida; persona en riesgo → pantalla 911 completa; arreglo de voz en Safari iOS. vitest 244/244, build OK.
-
-### 2026-11-11 · Rutas en la app, marcas por calle y nivel visible (D-031)
-- "Cómo llegar" dentro de la app (OSRM de OSM, origen redondeado), reportes en el camino, paso a paso, línea en el
-  mapa; sin halos de zona; aro de nivel en los pines. vitest 250/250, build OK, probado en Chrome a 390 px.
