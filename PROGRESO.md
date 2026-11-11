@@ -2,6 +2,18 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-10 (seguridad) · Diego · Claude Code + auditoría Claude Fable 5.2
+**Hecho**
+- E2E de API en local, 27/27 (reportar → 5 "sí" → activo → Realtime → zona; privacidad; evidencias; derivación).
+- Auditoría independiente (solo lectura; ataques reales solo en local): sin críticos. RLS, grants, 46 funciones con
+  `search_path=''`, Storage, Edge Functions y front, sin hallazgos. Riesgos: 3 sesiones tumbaban cualquier reporte
+  (A1), persona en riesgo con 1 sesión (A2, ya aceptado en P-16), Realtime público inyectable (M2), sin cabeceras (M3).
+- D-024: `banderas_para_revision` 3 → 6 (migración + `2200_banderas_midfi`; 0200 y 0500 fijan 3 en su transacción);
+  `agruparRafaga` en el mapa (máx. 1 recarga/3 s, `rafaga.test.js`); cabeceras + CSP en `netlify.toml`, probadas en
+  un deploy de prueba (mapa, fuentes, Nominatim, Realtime, sin violaciones; `example.com` bloqueado).
+- pgTAP 486/486 · vitest 214/214 · build OK. Historial de git y bundle sin secretos. Nube: 0 administradores.
+**Pendiente:** ver D-024 (tope por identidad en marcar_falso, captcha, canales privados, apagar registro por correo).
+
 ## 2026-11-10 (deploy del mid-fi) · Diego · Claude Code
 **Hecho**
 - LeoFigo74z aprobó el PR #14 en `862e43c`; auto-merge → `main` en `7374f02`.

@@ -84,6 +84,6 @@
 
 ## 8. Moderación
 - El admin puede ocultar reportes; cada acción queda en `acciones_admin` con motivo.
-- Marcar como falso = confirmación "no" + `falso = true`; `banderas_para_revision` (3) lo mandan a
+- Marcar como falso = confirmación "no" + `falso = true`; `banderas_para_revision` (3; 6 TEMPORAL en el mid-fi, D-024) lo mandan a
   `en_revision` (sale del mapa) **(propuesta)**. El admin lo regresa a `activo` u `oculto`.
 - Los admins están en la tabla `administradores` (alta solo por SQL con llave de servicio).

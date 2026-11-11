@@ -82,7 +82,7 @@ await supabase.rpc('reportes_cercanos', { p_lat, p_lng, p_radio_m: 300 })   // p
 //      confirmaciones_si, nivel, estado, es_propio }]   error: sin_sesion
 // v2: incluye 'pendiente' y 'activo' (para poder confirmarlos). Sin autor.
 await supabase.rpc('confirmar_reporte', { p_reporte_id, p_sigue: true })   // true = "Sí, sigue"; false = "Ya se secó / El agua bajó"
-await supabase.rpc('marcar_falso', { p_reporte_id })                       // "Calle seca / Nunca hubo agua"
+await supabase.rpc('marcar_falso', { p_reporte_id })                       // "Calle seca / Nunca hubo agua" · 6 marcas → en_revision en el mid-fi (D-024; normal 3)
 // ambas → { reporte_id, estado }; estado pasa a 'activo' cuando el "sí" publica un pendiente
 ```
 Errores de confirmar/marcar_falso: `sin_sesion`, `parametros_invalidos` (p_sigue nulo), `reporte_no_existe`, `propio_reporte`, `reporte_no_activo` (v2: ni `pendiente` ni `activo`; D-023: también un `pendiente` cuya `ventana_activacion_min` ya venció, aunque el cron no haya corrido).

@@ -5,7 +5,8 @@
 **Fase actual:** F5-T3, mid-fi desplegado en la nube (falta humo en celulares)
 **Meta:** mid-fi de ¡Aguas! el 2026-11-11 a las 12:00. La maestra manda la liga a personas distintas,
 repartidas por la ZMG → la liga va con **`?prueba=1`**: https://aguas-zmg.netlify.app/?prueba=1
-**Rama activa:** ninguna de código. PR #14 aprobado por Leo y mergeado (`7374f02`).
+**Rama activa:** `fix/f5-t3-endurecer-seguridad-midfi` (D-024: banderas 6, throttle Realtime, cabeceras/CSP).
+Tras aprobación de Leo: `db push` (1 migración) → probar-nube → deploy.
 
 ## Dónde quedamos
 - Nube al día: `db push` de 7 migraciones (v2 + D-022 + D-023); `probar-nube.sh` 12/12; Auth anónima OK.
@@ -16,11 +17,12 @@ repartidas por la ZMG → la liga va con **`?prueba=1`**: https://aguas-zmg.netl
 ## Siguiente paso (en este orden)
 1. Humo con 2 celulares: liga con `?prueba=1` → reportar en uno → confirmar desde Reportes → "Cerca de ti" en el
    otro. Probar voz con micrófono real, Safari iPhone (colores de zonas) y Realtime.
-2. Antes de las 12:00: borrar los reportes del humo (`supabase db query --linked`, con aprobación de Diego).
-3. Después del testeo: **revertir D-022** (nueva migración 1000/60/30; `0000_base` a 30; quitar bloque D-022 de
+2. Moderación en vivo (D-024): vigilar `en_revision` y `persona_en_riesgo` con `supabase db query --linked`.
+3. Antes de las 12:00: borrar los reportes del humo (`supabase db query --linked`, con aprobación de Diego).
+4. Después del testeo: **revertir D-022 y D-024** (nueva migración 1000/60/30; `0000_base` a 30; quitar bloque D-022 de
    `0200_confirmacion` y `1800_validado_equipos`).
-4. Limpiar `web/.vite/` del repo + `.gitignore`; borrar rama `feat/f5-t3-web-voz` (ya integrada).
-5. Panel de admin desde `admin.html` (sin métricas inventadas) y los DUPLICADOS de abajo.
+5. Limpiar `web/.vite/` del repo + `.gitignore`; borrar rama `feat/f5-t3-web-voz` (ya integrada).
+6. Panel de admin desde `admin.html` (sin métricas inventadas) y los DUPLICADOS de abajo.
 
 ## Decisiones abiertas de Diego
 - Nivel de zona sale de confirmaciones (D-021): quien reporta "Medio" ve "Bajo". Confunde.

@@ -7,6 +7,7 @@ import 'leaflet/dist/leaflet.css'
 import { useApp } from '../lib/store.jsx'
 import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor } from '../lib/api.js'
 import { leerCapas, suscribirCapas, filtrarCapas, nivelV2, zonasConEtiqueta, leerCentro, suscribirCentro } from '../lib/mapa.js'
+import { agruparRafaga } from '../lib/rafaga.js'
 
 const CELDA_M = 300 // parametros.tamano_celda_m (POR CONFIRMAR)
 const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)', critico: 'var(--risk)' }
@@ -60,7 +61,12 @@ export default function MapView({ centrarSeq = 0 }) {
   const [tick, setTick] = useState(0)
   const capas = useSyncExternalStore(suscribirCapas, leerCapas)
 
-  useEffect(() => escucharCambios(() => setTick((t) => t + 1)), [])
+  useEffect(() => {
+    // Máx. 1 recarga cada 3 s aunque lleguen eventos falsos al canal público (auditoría M2).
+    const refrescar = agruparRafaga(() => setTick((t) => t + 1), 3000)
+    const dejar = escucharCambios(refrescar)
+    return () => { refrescar.cancelar(); dejar() }
+  }, [])
   useEffect(() => {
     let vivo = true
     ;(async () => {
