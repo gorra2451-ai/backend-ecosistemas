@@ -12,13 +12,14 @@ import {
   loCercano, filaCercana, estadoZona, lluviaPara, textoLluvia, distanciaM, formatoDist, hace,
   rutaGoogle, textoWhatsApp, reporteParaConfirmar, textoNivel, RADIO_TU_ZONA_M, nivelV2, categoria, transito,
   leerCapas, suscribirCapas, cambiarCapa, restablecerCapas, capasModificadas, filtrarCapas,
-  centrarEn, partirLugar,
+  centrarEn, partirLugar, resumenNiveles,
 } from '../lib/mapa.js'
 import { urlRutaAlterna, grupoMedio } from '../lib/ayuda.js'
 import { hablar } from '../lib/confirmar.js'
 import { fraseEstado, ubicacionReal } from '../lib/vozAlertas.js'
 import { useArrastreHoja } from '../lib/hoja.js'
-import { simularInundacion, quitarSimulaciones, zonasSimuladas, suscribirSimulacion, ESCENARIOS } from '../lib/simulacion.js'
+import NivelAgua from '../components/NivelAgua.jsx'
+import { simularInundacion, quitarSimulaciones, leerSimulacion, suscribirSimulacion, ESCENARIOS, cargarEscenario } from '../lib/simulacion.js'
 import { MODO_PRUEBA } from '../lib/prueba.js'
 import { vibrar } from '../lib/haptica.js'
 import { a11yActivo, alternarA11y } from '../lib/onboarding.js'
@@ -316,9 +317,15 @@ export function TopBar() {
             {!datos.cargando && sub && <span className="mp-sub">{sub}</span>}
           </button>
         </div>
-        <button type="button" className="mp-capas-btn mp-capas-btn--sm" onClick={abrirCapas} aria-haspopup="dialog">
-          <IcoCapas />{datos.filtrado ? 'Leyenda · filtros activos' : 'Leyenda y filtros'}
-        </button>
+        <div className="mp-top-row mp-top-row--chips">
+          <button type="button" className="mp-capas-btn mp-capas-btn--sm" onClick={abrirCapas} aria-haspopup="dialog">
+            <IcoCapas />{datos.filtrado ? 'Leyenda · filtros activos' : 'Leyenda y filtros'}
+          </button>
+          {/* Accesibilidad siempre a un toque (humo 2026-11-11: "se perdió la parte de accesibilidad") */}
+          <button type="button" className="mp-capas-btn mp-capas-btn--sm" onClick={() => ir('ajustes')}>
+            <Icon name="accesibilidad" size={20} />Accesibilidad
+          </button>
+        </div>
       </div>
       <div className="only-desk"><Leyenda desk filtrado={datos.filtrado} onCapas={abrirCapas} /></div>
       {capasAbierto && <PanelCapas fuenteLluvia={datos.fuenteLluvia} onCerrar={cerrarCapas} />}
@@ -337,22 +344,39 @@ const IcoMenu = () => (
   </svg>
 )
 
-// Tarjeta "INUNDACIÓN CERCA DE TI" (equipo, pantalla 3): la alerta más cercana.
+// Tarjeta de lo más cercano (D-028): dibujo de hasta dónde llega el agua + datos clave, sin repetir el título.
 function TarjetaCercana({ it, onClick }) {
   const f = filaCercana(it)
+  const riesgo = it.clase === 'riesgo'
+  const nivel = riesgo ? null : nivelV2(it.dato)
   return (
-    <button type="button" className="mp-near" onClick={onClick}>
-      <span className="overline mp-near-o">{f.t} cerca de ti</span>
-      <span className="mp-near-row">
-        <span className={'row-swatch ' + f.cls}><span className="mp-pill">{f.lvl}</span></span>
-        <span className="mp-row-tx">
-          <span className="mp-row-t">{f.t} · {f.lugar.toLowerCase()}</span>
-          {f.m && <span className="mp-row-m">{f.m}</span>}
-          <span className="mp-badges"><span className="mp-badge mp-badge--nivel">{f.nivel}</span><Badge t={f.transito} /></span>
-        </span>
-        <Icon name="chevron" size={20} />
+    <button type="button" className={'mp-near' + (riesgo ? ' mp-near--riesgo' : '')} onClick={onClick}
+      aria-label={[`Lo más cerca de ti: ${f.t}`, f.lugar, f.nivel, f.transito?.txt, f.m].filter(Boolean).join(', ')}>
+      <span className={'mp-near-art' + (nivel ? ' p-' + nivel : '')} aria-hidden="true">
+        {riesgo ? <Icon name="riesgo" size={36} stroke={2.4} /> : <NivelAgua nivel={nivel === 'critico' ? 'alto' : nivel} size={64} />}
       </span>
+      <span className="mp-row-tx">
+        <span className="overline mp-near-o">Lo más cerca · {f.lugar.replace(/^A /, 'a ')}</span>
+        <span className="mp-row-t">{f.t}</span>
+        <span className="mp-badges"><span className="mp-badge mp-badge--nivel">{f.nivel}</span><Badge t={f.transito} /></span>
+        {f.m && <span className="mp-row-m">{f.m}</span>}
+      </span>
+      <Icon name="chevron" size={20} />
     </button>
+  )
+}
+
+const RESUMEN_TXT = { riesgo: 'en riesgo', critico: 'crítico', alto: 'alto', medio: 'medio', bajo: 'bajo' }
+function ResumenNiveles({ items }) {
+  const r = resumenNiveles(items)
+  if (!r.length) return <span className="mp-resumen mp-resumen--calma">Sin alertas cerca</span>
+  return (
+    <span className="mp-resumen">
+      {r.map(([k, n]) => (
+        <span key={k} className="mp-res-pill"><span className={'mp-sw ' + (k === 'riesgo' ? 'mp-sw--risk' : 'p-' + k)} aria-hidden="true" />
+          <b>{n}</b> {RESUMEN_TXT[k]}</span>
+      ))}
+    </span>
   )
 }
 
@@ -408,9 +432,10 @@ export function Hoja() {
   return (
     <section className="sheet mp-sheet mp-arrastre" aria-label="Acciones" {...arrastre}>
       <div className="mp-min-head">
-        <button type="button" className="mp-handle" onClick={() => setSheet('mid')} aria-expanded="false">
+        <button type="button" className="mp-handle mp-handle--min" onClick={() => setSheet('mid')} aria-expanded="false"
+          aria-label={n ? `Ver las ${n} alertas cercanas` : 'Ver alertas cercanas'}>
           <span className="sheet-handle" />
-          <span>{n ? `Ver alertas cercanas · ${n}` : 'Ver alertas cercanas'}</span>
+          <span className="mp-min-t"><b>Cerca de ti</b><ResumenNiveles items={datos.items} /></span>
         </button>
         <button type="button" className="mp-ocultar" onClick={() => setSheet('full')} aria-label="Ocultar y ver solo el mapa">
           <IcoBajar />
@@ -733,7 +758,9 @@ export function Buscar() {
 // Solo en este teléfono (lib/simulacion.js): no se manda nada a la nube.
 function Simulaciones() {
   const { ir, ubic, prefs, avisar, refrescar, setSheet } = useApp()
-  const activa = useSyncExternalStore(suscribirSimulacion, zonasSimuladas)[0]
+  const sim = useSyncExternalStore(suscribirSimulacion, leerSimulacion)
+  const activa = sim.reportes.length === 1 ? sim.zonas[0] : null
+  const escenario = sim.reportes.length > 1
   const simular = (e) => {
     simularInundacion(ubic, e.nivel)
     refrescar(); setSheet('min'); ir(null)
@@ -741,12 +768,21 @@ function Simulaciones() {
     avisar(`Simulación: ${e.titulo.toLowerCase()} a unos 150 m. Solo la ves tú.`)
     if (prefs.voz) hablar(`Simulación. Inundación de ${e.titulo.toLowerCase()} a unos 150 metros de ti.`)
   }
+  const cargar = () => {
+    cargarEscenario(ubic)
+    refrescar(); setSheet('mid'); ir(null)
+    vibrar(prefs, [60, 40, 60])
+    avisar('Escenario de prueba: 8 reportes de todos los tipos cerca de ti. Solo los ves tú.')
+  }
   const quitar = () => { quitarSimulaciones(); refrescar(); avisar('Simulación quitada') }
   return (
     <section className="mp-card mp-sim" aria-labelledby="mp-sim-t">
-      <h2 id="mp-sim-t">Simular una inundación</h2>
-      <p>Para la prueba: aparece una inundación falsa cerca de ti para que veas cómo te avisa la app.
-        <b> Solo la ves tú</b>; no se manda a nadie.</p>
+      <h2 id="mp-sim-t">Simulaciones de prueba</h2>
+      <p>Reportes falsos cerca de ti para ver cómo te avisa la app. <b>Solo los ves tú</b>; no se mandan a nadie.</p>
+      <button type="button" className="btn btn-primary mp-btn-prim" aria-pressed={escenario} onClick={cargar}>
+        Cargar escenario de prueba (8 reportes)
+      </button>
+      <p className="mp-sim-o">O una sola inundación a ~150 m:</p>
       <div className="mp-sim-grid">
         {ESCENARIOS.map((e) => (
           <button key={e.nivel} type="button" className="mp-sim-btn" aria-pressed={activa?.nivel === e.nivel} onClick={() => simular(e)}>
@@ -755,7 +791,7 @@ function Simulaciones() {
           </button>
         ))}
       </div>
-      {activa && <button type="button" className="btn" onClick={quitar}>Quitar simulación</button>}
+      {(activa || escenario) && <button type="button" className="btn" onClick={quitar}>Quitar simulaciones</button>}
     </section>
   )
 }

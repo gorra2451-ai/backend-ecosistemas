@@ -246,3 +246,24 @@
 .mp-sim-btn span span{display:block;font-size:13px;line-height:1.3;color:var(--mu);margin-top:2px}
 .mp-sim-btn .mp-sw{margin-top:2px}
 .mp-sim-btn[aria-pressed=true]{border:2px solid var(--acc)}
+.mp-sim-o{font-size:14px;font-weight:700;color:var(--tx)!important;margin-top:4px}
+.mp-top-row--chips{gap:6px;align-self:flex-start}
+
+/* Hoja mínima v2 (D-028): "Cerca de ti" + resumen por nivel, tarjeta con dibujo del agua */
+.mp-handle--min{align-items:stretch}
+.mp-handle--min .sheet-handle{align-self:center}
+.mp-min-t{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 4px 0}
+.mp-min-t>b{font:800 19px var(--f-head);flex:none}
+.mp-resumen{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.mp-resumen--calma{font:600 14px var(--f-body);color:var(--mu)}
+.mp-res-pill{display:inline-flex;align-items:center;gap:5px;font:600 13px var(--f-body);color:var(--mu);background:var(--s2);
+  border:var(--bw) solid var(--line);border-radius:999px;padding:3px 9px 3px 6px}
+.mp-res-pill b{color:var(--tx)}
+.mp-near{display:flex;flex-direction:row;align-items:center;gap:12px;text-align:left;padding:12px;background:var(--s2)}
+.mp-near--riesgo{border:2px solid var(--risk)}
+.mp-near-art{width:76px;height:64px;flex:none;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);position:relative;overflow:hidden}
+.mp-near-art.p-bajo,.mp-near-art.p-medio,.mp-near-art.p-alto,.mp-near-art.p-critico{box-shadow:inset 0 -6px 0 0 var(--line)}
+.mp-near--riesgo .mp-near-art{background:var(--risk);color:#fff}
+.mp-near-art>svg{position:relative;background:var(--bg);border-radius:10px;padding:2px}
+.mp-near--riesgo .mp-near-art>svg{background:transparent}

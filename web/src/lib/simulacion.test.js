@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { simularInundacion, quitarSimulaciones, zonasSimuladas, conSimuladas, ESCENARIOS } from './simulacion.js'
+import { simularInundacion, quitarSimulaciones, zonasSimuladas, conSimuladas, ESCENARIOS, cargarEscenario, reportesSimulados, conReportesSimulados } from './simulacion.js'
 
 const ubic = { lat: 20.6497, lng: -103.4016 }
 const distM = (a, b) => Math.hypot((a.lat - b.lat) * 111320, (a.lng - b.lng) * 111320 * Math.cos((a.lat * Math.PI) / 180))
@@ -10,6 +10,7 @@ describe('simulaciones del modo prueba (solo en este teléfono)', () => {
   it('crea una zona con la forma de zonas_publicas, marcada como simulada y cerca de ti', () => {
     const z = simularInundacion(ubic, 'medio', Date.parse('2026-11-11T15:00:00Z'))
     expect(z).toMatchObject({ nivel: 'medio', simulada: true, total_confirmaciones: 10, alguno_no_pasan_carros: false })
+    expect(reportesSimulados()[0]).toMatchObject({ tipo: 'calle', gravedad: 'limitado', estado: 'activo', simulada: true })
     expect(typeof z.celda).toBe('string')
     expect(distM(z, ubic)).toBeGreaterThan(80)
     expect(distM(z, ubic)).toBeLessThan(300)
@@ -36,5 +37,17 @@ describe('simulaciones del modo prueba (solo en este teléfono)', () => {
 
   it('hay un escenario por nivel', () => {
     expect(ESCENARIOS.map((e) => e.nivel)).toEqual(['bajo', 'medio', 'alto', 'critico'])
+  })
+})
+
+describe('escenario de prueba', () => {
+  beforeEach(() => quitarSimulaciones())
+  it('trae un reporte de cada tipo, todos marcados como simulados y dentro de 1.5 km', () => {
+    const { reportes, zonas } = cargarEscenario(ubic)
+    expect(new Set(reportes.map((r) => r.tipo))).toEqual(new Set(['calle', 'casa', 'coche', 'persona_en_riesgo']))
+    expect(new Set(reportes.map((r) => r.gravedad).filter(Boolean))).toEqual(new Set(['sin_riesgo', 'limitado', 'bloqueado']))
+    expect(reportes.every((r) => r.simulada && distM(r, ubic) < 1500)).toBe(true)
+    expect(zonas.length).toBe(reportes.length - 1) // persona en riesgo no forma zona
+    expect(conReportesSimulados({ data: [{ id: 'real' }] }).data).toHaveLength(reportes.length + 1)
   })
 })

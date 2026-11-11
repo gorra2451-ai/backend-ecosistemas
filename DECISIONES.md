@@ -273,3 +273,18 @@ sus PR con `gh pr merge --merge --admin` (sigue siendo merge commit, equivalente
 **Pendiente:** persona en riesgo antes del 911 y niveles de agua subjetivos por estatura (revisar con el equipo);
 textura de las tarjetas "pasan / no pasan"; tarjetas desalineadas (falta saber cuáles).
 **Por qué:** feedback de Diego tras probar en su celular.
+
+## D-028 · Pines en la calle, niveles con referencia fija, hoja v2 y reportes de ejemplo (2026-11-11)
+**Estado:** Aceptada por Diego · 2026-11-11
+**Decisión:**
+- **Pines:** cada reporte activo se ve en su punto exacto (ícono del tipo + color/patrón del nivel; persona en riesgo
+  roja y pulsando). Las zonas dejan de ser cuadros de 300 m con etiqueta: quedan como halo suave de 150 m.
+- **Niveles con referencia fija:** "¿Cuánta agua hay?" usa banqueta y llanta (dibujo `NivelAgua`), no la estatura de
+  quien reporta. Bajo = no sube de la banqueta; Medio = media llanta; Alto = cubre la llanta / no pasan carros.
+- **Hoja mínima v2:** "Cerca de ti" + resumen por nivel (pastillas con conteo) + tarjeta de lo más cercano con el
+  dibujo del agua (sin repetir el título).
+- **Accesibilidad** a un toque en la barra superior móvil. **Tic háptico en iPhone** (Safari 18+, interruptor oculto).
+- **Escenario de prueba local** (Más → Simulaciones): 8 reportes de todos los tipos y niveles, solo en ese teléfono.
+- **Semilla en la nube** para el testeo: 9 reportes de ejemplo (todos los tipos y niveles) por la ZMG. Usuarios y
+  reportes con prefijo `5eed`; limpieza: `delete from auth.users where id::text like '5eed0000-%'` (cascada).
+**No se hizo:** rutas dentro de la app (requiere servicio de ruteo y que evite inundaciones; después del mid-fi).

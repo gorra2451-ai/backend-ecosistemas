@@ -83,9 +83,8 @@ export function transito(x) {
   return { txt: 'Sin información suficiente', cls: 'sin' }
 }
 export function categoria(x) {
-  if (x?.simulada) return 'Simulación · Inundación'
-  if (x?.tipo === 'persona_en_riesgo') return 'Persona en riesgo'
-  return CATEGORIA[x?.gravedad] || 'Inundación'
+  const base = x?.tipo === 'persona_en_riesgo' ? 'Persona en riesgo' : CATEGORIA[x?.gravedad] || 'Inundación'
+  return (x?.simulada ? 'Simulación · ' : '') + base
 }
 const plural = (n, s) => `${n} ${s}${n === 1 ? '' : 's'}`
 
@@ -216,4 +215,12 @@ export function zonasConEtiqueta(zonas = [], max = 3, sepM = 700) {
     if (elegidas.every((e) => distanciaM(e, z) >= sepM)) elegidas.push(z)
   }
   return elegidas
+}
+
+// Conteo por nivel para el resumen de la hoja (D-028): [['riesgo', 1], ['alto', 2], …] en orden de gravedad, sin ceros.
+const ORDEN_RESUMEN = ['riesgo', 'critico', 'alto', 'medio', 'bajo']
+export function resumenNiveles(items = []) {
+  const c = {}
+  items.forEach((it) => { const k = it.clase === 'riesgo' ? 'riesgo' : nivelV2(it.dato); c[k] = (c[k] || 0) + 1 })
+  return ORDEN_RESUMEN.filter((k) => c[k]).map((k) => [k, c[k]])
 }

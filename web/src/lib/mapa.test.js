@@ -216,3 +216,13 @@ describe('zonasConEtiqueta', () => {
     expect(zonasConEtiqueta(lejos, 3)).toHaveLength(3)
   })
 })
+
+import { resumenNiveles } from './mapa.js'
+describe('resumenNiveles (hoja del mapa)', () => {
+  it('cuenta por nivel en orden de gravedad y omite los ceros', () => {
+    const items = [{ clase: 'zona', dato: { nivel: 'bajo' } }, { clase: 'riesgo', dato: {} },
+      { clase: 'zona', dato: { nivel: 'alto' } }, { clase: 'zona', dato: { nivel: 'bajo' } }]
+    expect(resumenNiveles(items)).toEqual([['riesgo', 1], ['alto', 1], ['bajo', 2]])
+    expect(resumenNiveles([])).toEqual([])
+  })
+})

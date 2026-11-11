@@ -1,7 +1,7 @@
 // Capa única de datos. Las pantallas NO llaman a supabase directo: usan estas funciones.
 // Contrato: docs/API.md. Cada función regresa { data, error } donde error es un código del contrato.
 import { supabase } from './supabase.js'
-import { conSimuladas } from './simulacion.js'
+import { conSimuladas, conReportesSimulados } from './simulacion.js'
 
 const CODIGOS = [ // códigos reales de supabase/migrations (los más largos primero: se busca por substring)
   'reporte_no_autorizado', 'proveedor_push_no_permitido', 'video_deshabilitado', 'tipo_archivo_invalido', 'area_demasiado_grande',
@@ -100,7 +100,7 @@ export const marcarFalso = async (id) => (await asegurarSesion(), r(supabase.rpc
 // ---------- Mapa ----------
 // + la inundación simulada del modo prueba (solo en este teléfono · lib/simulacion.js)
 export const zonasPublicas = () => r(supabase.from('zonas_publicas').select('*')).then(conSimuladas)
-export const reportesEnArea = (b) => r(supabase.rpc('reportes_activos_en_area', b))
+export const reportesEnArea = (b) => r(supabase.rpc('reportes_activos_en_area', b)).then(conReportesSimulados)
 export const refugiosPublicos = () => r(supabase.from('refugios_publicos').select('*'))
 export const alertasClima = () => r(supabase.from('alertas_clima_vigentes').select('*'))
 

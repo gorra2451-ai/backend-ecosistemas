@@ -13,6 +13,7 @@ import {
 } from '../lib/reportar.js'
 import { Screen, Btn } from '../components/ui.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
+import NivelAgua from '../components/NivelAgua.jsx'
 import '../styles/reportar.css'
 import { MODO_PRUEBA, radioCercanos } from '../lib/prueba.js'
 import { claseVoz } from '../lib/confirmar.js'
@@ -368,7 +369,7 @@ function Detalles() {
       <div className="rp-opts" role="group" aria-label="¿Cuánta agua hay?">
         {GRAVEDAD.map((g) => (
           <button key={g.k} className={'rp-opt' + (gravedad === g.k ? ' sel' : '')} aria-pressed={gravedad === g.k} onClick={() => setGravedad(g.k)}>
-            <Muestra patron={`p-${g.nivel}`} />
+            <NivelAgua nivel={g.nivel} />
             <span className="txt"><b>{g.t}</b><small>{g.d}</small></span>
             <span className="radio" aria-hidden="true" />
           </button>

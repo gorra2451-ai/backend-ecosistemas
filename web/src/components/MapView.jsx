@@ -1,24 +1,27 @@
 // Mapa real (Leaflet + OSM/CARTO, sin llave · D-018). Pinta zonas_publicas, reportes activos,
 // mis reportes sin confirmar, refugios y "tú". Se recarga con Realtime y con refrescar().
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { MapContainer, TileLayer, Rectangle, Marker, Circle, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet'
+import { renderToStaticMarkup } from 'react-dom/server'
+import Icon from './Icon.jsx'
+import { htmlPin } from '../lib/pines.js'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useApp } from '../lib/store.jsx'
 import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor } from '../lib/api.js'
-import { leerCapas, suscribirCapas, filtrarCapas, nivelV2, zonasConEtiqueta, leerCentro, suscribirCentro } from '../lib/mapa.js'
+import { leerCapas, suscribirCapas, filtrarCapas, nivelV2, leerCentro, suscribirCentro } from '../lib/mapa.js'
 import { agruparRafaga } from '../lib/rafaga.js'
 
-const CELDA_M = 300 // parametros.tamano_celda_m (POR CONFIRMAR)
 const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)', critico: 'var(--risk)' }
-const TEXTO = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto', critico: 'Crítico' }
 
+const ICONO_TIPO = { calle: 'calle', casa: 'casa', coche: 'coche', persona_en_riesgo: 'riesgo' }
+const svgTipo = {}
+const pin = (r) => {
+  const k = ICONO_TIPO[r.tipo] || 'calle'
+  svgTipo[k] ||= renderToStaticMarkup(<Icon name={k} size={22} stroke={2.4} />)
+  return L.divIcon({ html: htmlPin(r, svgTipo[k]), className: '', iconSize: [44, 54], iconAnchor: [22, 52] })
+}
 const icono = (html, size = 32) => L.divIcon({ html, className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2] })
-const etiqueta = (z) => L.divIcon({
-  className: '', iconSize: null, iconAnchor: [-14, 14], // sin iconSize Leaflet fija 12×12 y aplasta la caja
-  html: `<div class="zone-label" style="position:static;white-space:nowrap"><span class="p-${z.nivel}" style="width:18px;height:18px;border-radius:5px;display:inline-block"></span>
-    <span><b style="font-size:14px">${z.simulada ? 'Simulación · ' : ''}${TEXTO[z.nivel]}${z.alguno_no_pasan_carros ? ' · no pasan' : ''}</b><br><span style="font-size:13px;color:var(--mu)">${z.total_reportes} reporte${z.total_reportes === 1 ? '' : 's'}</span></span></div>`,
-})
 
 function Seguir({ ubic, centrarSeq }) {
   const map = useMap()
@@ -101,7 +104,6 @@ export default function MapView({ centrarSeq = 0 }) {
     return () => { vivo = false }
   }, [ubic.lat, ubic.lng, version, tick])
 
-  const dLat = CELDA_M / 2 / 111320
   const activosIds = useMemo(() => new Set(reportes.map((r) => r.id)), [reportes])
   const ver = filtrarCapas({ zonas, reportes, refugios, misReportes }, capas)
   const oscuro = prefs.tema !== 'claro'
@@ -114,23 +116,17 @@ export default function MapView({ centrarSeq = 0 }) {
       <Controles ubic={ubic} />
       <CentrarEn />
 
-      {ver.zonas.map((z) => {
-        const dLng = dLat / Math.cos((z.lat * Math.PI) / 180)
-        return (
-          <Rectangle key={z.celda} bounds={[[z.lat - dLat, z.lng - dLng], [z.lat + dLat, z.lng + dLng]]}
-            pathOptions={{ color: COLOR[z.nivel], fillColor: COLOR[z.nivel], fillOpacity: 0.45, weight: 2 }}
-            eventHandlers={{ click: () => { setSeleccion({ tipo: 'zona', ...z }); ir('zona', { zona: z }) } }} />
-        )
-      })}
-      {zonasConEtiqueta(ver.zonas).map((z) => (
-        <Marker key={'l' + z.celda} position={[z.lat, z.lng]} icon={etiqueta(z)}
+      {/* Zonas: halo suave de 150 m (sin cuadro ni etiqueta: el detalle lo dan los pines · D-028) */}
+      {ver.zonas.map((z) => (
+        <Circle key={z.celda} center={[z.lat, z.lng]} radius={150}
+          pathOptions={{ color: COLOR[z.nivel], fillColor: COLOR[z.nivel], fillOpacity: 0.16, weight: 1.5, dashArray: '4 6' }}
           eventHandlers={{ click: () => { setSeleccion({ tipo: 'zona', ...z }); ir('zona', { zona: z }) } }} />
       ))}
 
-      {ver.reportes.filter((r) => r.tipo === 'persona_en_riesgo').map((r) => (
-        <Marker key={r.id} position={[r.lat, r.lng]} zIndexOffset={1000}
-          icon={icono('<div class="mk-risk" aria-label="Persona en riesgo">!</div>')}
-          eventHandlers={{ click: () => ir('zona', { reporte: r }) }} />
+      {/* Cada reporte en su calle: ícono del tipo + color/patrón del nivel. Al tocarlo, todos sus datos. */}
+      {ver.reportes.map((r) => (
+        <Marker key={r.id} position={[r.lat, r.lng]} zIndexOffset={r.tipo === 'persona_en_riesgo' ? 1000 : 500}
+          icon={pin(r)} eventHandlers={{ click: () => ir('zona', { reporte: r }) }} />
       ))}
 
       {ver.misReportes.filter((m) => !activosIds.has(m.id) && Date.now() - m.creado < 3 * 3600e3).map((m) => (
