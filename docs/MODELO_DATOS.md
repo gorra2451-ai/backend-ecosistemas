@@ -31,9 +31,10 @@ que el módulo de reportes no dependa del de registro.
 |---|---|---|
 | `tipo_reporte` | `calle`, `casa`, `coche`, `persona_en_riesgo` | D |
 | `estado_reporte` | `pendiente`, `activo`, `resuelto`, `oculto`, `en_revision` | D |
-| `nivel_zona` | `bajo`, `medio`, `alto` | D |
-| `tipo_caso` | `casa`, `coche`, `persona_herida`, `tercero`, `otro` (derivación; ≠ `tipo_reporte`) | C |
-| `medio_transporte` | `peaton`, `bici`, `auto`, `transporte_publico` | C |
+| `nivel_zona` | `bajo`, `medio`, `alto`, `critico` (D-021) | D |
+| `gravedad_reporte` | `bloqueado`, `limitado`, `sin_riesgo` (D-021) | D |
+| `tipo_caso` | `casa`, `coche`, `persona_herida`, `tercero`, `otro`, `calle`, `arbol_caido`, `riesgo_electrico` (derivación; ≠ `tipo_reporte`; D-021) | C |
+| `medio_transporte` | `peaton`, `bici`, `moto`, `auto`, `transporte_publico` (D-021, P-28) | C |
 | `tipo_evidencia` | `foto`, `video` | C |
 
 ## Tablas
@@ -44,24 +45,25 @@ Valores iniciales (**5 y 30 salieron de clase; el resto son propuestas** a ajust
 
 | Clave | Valor | Para qué |
 |---|---|---|
-| `umbral_activacion` | 5 | reportes cercanos que activan una alerta |
+| `umbral_activacion` | 5 | **OBSOLETO (D-021)**: ya no se usa; antes, reportes cercanos que activaban una alerta |
+| `confirmaciones_para_publicar` | 5 | "sí" de otras personas para que un `pendiente` pase a `activo` (D-021) |
 | `umbral_persona_en_riesgo` | 1 | reportes `persona_en_riesgo` que la activan (POR CONFIRMAR) |
-| `radio_agrupacion_m` | 150 | radio que agrupa reportes / detecta duplicados |
-| `ventana_activacion_min` | 60 | minutos para juntar el umbral; si no, `pendiente` → `resuelto` |
-| `minutos_expiracion` | 30 | minutos sin "sí" para que un `activo` pase a `resuelto` |
+| `radio_agrupacion_m` | 150 | duplicados del mismo usuario y agrupación de `persona_en_riesgo` |
+| `ventana_activacion_min` | 60 (**1440 temporal mid-fi, D-022**) | minutos para juntar las confirmaciones; si no, `pendiente` → `resuelto` |
+| `minutos_expiracion` | 30 (**180 temporal mid-fi, D-022**) | minutos sin "sí" para que un `activo` pase a `resuelto` |
 | `votos_no_para_resolver` | 3 | votos "no" (desde el último "sí") que lo resuelven |
 | `banderas_para_revision` | 3 | marcas de falso que lo mandan a `en_revision` |
 | `max_reportes_por_hora` | 5 | límite por usuario |
 | `tamano_celda_m` | 300 | lado de la celda de zonas de calor |
-| `nivel_medio_min` | 3 | reportes activos en la celda para nivel `medio` (POR CONFIRMAR) |
-| `nivel_alto_min` | 6 | reportes activos en la celda para nivel `alto` (POR CONFIRMAR) |
-| `radio_cercanos_max_m` | 1000 | tope de `p_radio_m` en `reportes_cercanos` |
+| `nivel_bajo_min` / `nivel_medio_min` / `nivel_alto_min` / `nivel_critico_min` | 5 / 10 / 15 / 20 | confirmaciones "sí" para cada nivel (D-021) |
+| `radio_cercanos_max_m` | 1000 (**40000 temporal mid-fi, D-022**) | tope de `p_radio_m` en `reportes_cercanos` |
 | `area_max_consulta_km2` | 2500 | tope del rectángulo en `reportes_activos_en_area` |
 | `minutos_entre_avisos` | 30 | máx. 1 aviso por zona por usuario en este lapso (módulo C) |
 | `max_intentos_push` / `minutos_reintento_push` / `minutos_bloqueo_aviso_push` / `dias_retencion_avisos_push` | 3 / 5 / 2 / 7 | cola de avisos (P-22) |
 | `lote_procesar_avisos` | 20 | máximo de avisos reclamados por ejecución del trabajador |
 | `ttl_enviar_push_seg` | 3600 | segundos de retención del mensaje en el proveedor Web Push |
 | `radio_refugios_derivacion_m` / `max_refugios_derivacion` | 20000 / 5 | límites de orientación (P-24) |
+| `max_minutos_silencio_push` | 10080 | tope de `p_silenciar_min` en `preferencias_push` (7 días, propuesta D-021) |
 
 ### limites_zmg [D]
 | id smallint PK | nombre | area geography(MultiPolygon) | fuente | actualizado_en |
@@ -79,7 +81,8 @@ Sin políticas para `anon`/`authenticated`: solo se da de alta por SQL con la ll
 | id | uuid PK | Lo genera el cliente → reintentos no duplican |
 | perfil_id | uuid → auth.users | Nunca se expone (sin grant de columna) |
 | tipo | `tipo_reporte` | |
-| pasan_carros | boolean | Medida simple de gravedad |
+| pasan_carros | boolean | Medida simple de gravedad; con `gravedad` se deduce |
+| gravedad | `gravedad_reporte`? | Opcional (D-021). Lectura pública como el resto |
 | ubicacion | geography(Point) | Obligatoria, dentro de la ZMG |
 | precision_m | int ≥ 0 | Precisión del GPS (opcional) |
 | estado | `estado_reporte` | Ver REGLAS_NEGOCIO §1 |
@@ -101,6 +104,7 @@ Solo los admins la leen.
 Agrupa reportes `activo` en celdas de `tamano_celda_m` (metros en UTM 13N, EPSG:32613).
 Columnas: `celda` text, `lat`, `lng` (centro), `total_reportes`, `total_confirmaciones`,
 `nivel` (`nivel_zona`, como texto), `alguno_no_pasan_carros`, `actualizado_en`.
+D-021: `nivel = nivel_para(total_confirmaciones, hay persona_en_riesgo)`, mínimo `bajo`.
 
 ### perfiles [C]
 | id uuid PK = auth.users.id | accesibilidad jsonb | creado_en |
@@ -129,7 +133,8 @@ Las políticas de alta y borrado serializan por reporte para respetar el límite
 con peticiones simultáneas y no borrar un objeto mientras se registra como evidencia.
 
 ### suscripciones_push [C]
-| id | perfil_id | endpoint | p256dh | auth | municipio text? | celda text? | creado_en | actualizado_en | ultimo_aviso_entregado_en? |
+| id | perfil_id | endpoint | p256dh | auth | municipio text? | celda text? | creado_en | actualizado_en | ultimo_aviso_entregado_en? | solo_cambios bool | solo_fuertes bool | silenciado_hasta? |
+D-021: preferencias por suscripción; solo el dueño las cambia con `preferencias_push`.
 Interés por **municipio o celda**, nunca un punto (D-006: un punto suele ser la casa).
 El endpoint identifica un dispositivo y sus claves permiten cifrar el mensaje; la tabla
 no concede SELECT a usuarios. Solo las RPC `suscribir_push`/`baja_push` la modifican,
@@ -137,7 +142,8 @@ con límite por perfil en `parametros`. Se borra con `baja_push`, al eliminar el
 interna usa clave secreta de servidor y VAPID para enviar; no se guardan coordenadas.
 
 ### avisos_push [C]
-| id | suscripcion_id | celda | tipo | titulo | mensaje | estado | intentos | proximo_intento_en | bloqueado_hasta | token_reclamo | creado_en | enviado_en |
+| id | suscripcion_id | celda | tipo | titulo | mensaje | estado | intentos | proximo_intento_en | bloqueado_hasta | token_reclamo | creado_en | enviado_en | nivel_zona? |
+`nivel_zona` (D-021): nivel de la celda al encolar `zona_activada`; filtra `solo_fuertes` al reclamar.
 Cola privada y sin datos del autor ni coordenadas. Un trigger de `reportes` encola el
 primer evento activo y la última resolución de cada celda, respetando el intervalo de
 `parametros`. Solo `service_role` puede reclamar y cerrar envíos; el token de reclamo

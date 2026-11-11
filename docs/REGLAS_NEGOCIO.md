@@ -6,8 +6,8 @@
            crear_reporte
                 │
                 ▼
-          ┌──pendiente──┐  se juntan ≥ umbral_activacion reportes
-          │             │  a ≤ radio_agrupacion_m en ventana_activacion_min
+          ┌──pendiente──┐  junta ≥ confirmaciones_para_publicar "sí"
+          │             │  de otras personas (D-021)
           │             ▼
           │          activo ◄──── confirmación "sí" (reinicia el reloj)
           │             │
@@ -15,16 +15,21 @@
           │             ├── minutos_expiracion sin "sí" ──► resuelto
           │             ├── banderas_para_revision falsos ► en_revision ──admin──► activo | oculto
           │             └── admin lo oculta ─────────────► oculto
-          └── ventana_activacion_min sin juntar umbral ──► resuelto
+          └── ventana_activacion_min sin juntar confirmaciones ──► resuelto
 ```
-- Solo los reportes `activo` se ven en el mapa y cuentan para zonas.
-- `persona_en_riesgo` se activa con `umbral_persona_en_riesgo` (1) reportes y aparece primero. **Propuesta, POR CONFIRMAR con el grupo.**
-- Activación: al crear un reporte se cuentan los reportes `pendiente`/`activo` a ≤ `radio_agrupacion_m`
-  creados en los últimos `ventana_activacion_min`. Si llegan a `umbral_activacion`, todos los
-  `pendiente` de ese grupo pasan a `activo`. Un reporte nuevo junto a uno ya `activo` nace `activo`.
+- Solo los reportes `activo` se ven en el mapa y cuentan para zonas. Los `pendiente` se ven en
+  `reportes_cercanos` (con sesión) para que otras personas los confirmen.
+- `persona_en_riesgo` se activa con `umbral_persona_en_riesgo` (1) reportes: nace `activo` y aparece primero.
+- **Publicación (D-021, validado por los equipos):** un `pendiente` pasa a `activo` cuando junta
+  `confirmaciones_para_publicar` (5) confirmaciones "sí" de **otras** personas. Se evalúa tras cada "sí".
+- **Retirado (D-021):** la activación por `umbral_activacion` reportes cercanos (P-01) y "un reporte
+  nuevo junto a uno `activo` nace `activo`" (P-15). `umbral_activacion` queda en `parametros` marcado OBSOLETO.
 
 ## 2. Crear reporte (`crear_reporte`)
 - Requiere sesión (anónima vale).
+- `gravedad` opcional (`bloqueado|limitado|sin_riesgo`). Si viene, deduce `pasan_carros`
+  (`bloqueado` → no pasan; otros → pasan) y manda sobre lo que mande el cliente. Sin gravedad,
+  `pasan_carros` es obligatorio.
 - Ubicación dentro de la ZMG (tabla `limites_zmg`, función `dentro_de_zmg`). Fuera → `fuera_de_zmg`.
 - Fecha y hora las pone el servidor, nunca el cliente.
 - Límite: `max_reportes_por_hora` por usuario.
@@ -34,7 +39,7 @@
 ## 3. Confirmar (`confirmar_reporte`)
 - Una confirmación por usuario por reporte; se puede cambiar de "sí" a "no".
 - No puedes confirmar tu propio reporte.
-- Solo se confirman reportes `activo`.
+- Se confirman reportes `pendiente` (así se publican) y `activo`. Los demás → `reporte_no_activo`.
 - "sí" actualiza `ultima_confirmacion`. "no" suma hacia `votos_no_para_resolver`; cuentan los "no"
   registrados después del último "sí".
 - El aviso "¿sigue inundado?" lo dispara el front al estar cerca (D-006).
@@ -44,15 +49,22 @@
 - Cada cambio de estado se publica por Realtime y puede disparar notificación.
 
 ## 5. Zonas de calor
-- Celdas de `tamano_celda_m`. Nivel por reportes activos en la celda:
-  `bajo` < `nivel_medio_min` (3) · `medio` < `nivel_alto_min` (6) · `alto` el resto **(propuesta, POR CONFIRMAR)**.
-- Si algún reporte dice `pasan_carros=false`, la zona sube a `alto`.
+- Celdas de `tamano_celda_m`. **Nivel por confirmaciones "sí" (D-021)**, sumando las de los reportes
+  activos de la celda: `bajo` ≥ `nivel_bajo_min` (5) · `medio` ≥ `nivel_medio_min` (10) ·
+  `alto` ≥ `nivel_alto_min` (15) · `critico` ≥ `nivel_critico_min` (20).
+- Una celda o reporte activo con menos de 5 "sí" es `bajo` (ya está publicado). Un `pendiente` no tiene nivel.
+- **Decisión D-021:** `persona_en_riesgo` activa con menos de `nivel_alto_min` "sí" es `alto` (nace activa
+  sin confirmaciones y es lo más urgente); con ≥ 20 es `critico`. La celda que la contiene, igual.
+- `pasan_carros=false` ya no sube la zona a `alto` (el nivel sale solo de las confirmaciones).
 - El front no debe depender solo del color: la API entrega también `nivel` como texto.
 
 ## 6. Notificaciones
 - Se notifica por **cambio de estado** (zona nueva activa, zona resuelta) y por alerta de clima.
 - Nunca más de 1 aviso por zona cada `minutos_entre_avisos` (30) por usuario **(propuesta)**.
 - Solo a quien se suscribió y aceptó permisos.
+- Preferencias (D-021, `preferencias_push`): `silenciado_hasta` vigente → no se encola ni se entrega;
+  `solo_fuertes` → solo clima `alto` y zonas que se activan en `alto|critico`. Lo ya encolado que deja de
+  cumplir se descarta al reclamar. `solo_cambios` se guarda (los avisos de zona ya son solo de cambio).
 - `procesar-avisos` reclama hasta `lote_procesar_avisos` (20) por ejecución;
   `enviar-push` usa `ttl_enviar_push_seg` (3600 s) para el proveedor Web Push.
 - Los avisos por reporte se agrupan por celda; sin polígonos oficiales no se asigna un
@@ -60,7 +72,11 @@
   requieren fuente HTTPS, verificación y vigencia antes de aparecer o encolarse (P-06/P-23).
 
 ## 7. Derivación
-- Entrada: tipo de caso (`casa`,`coche`,`persona_herida`,`tercero`,`otro`) + municipio.
+- Entrada: tipo de caso (`casa`,`coche`,`persona_herida`,`tercero`,`otro`,`calle`,`arbol_caido`,
+  `riesgo_electrico`) + municipio. Pasos generales (D-021): `riesgo_electrico` → alejarse 10 m de cables,
+  no tocar agua cercana, reportar a CFE al 071 (POR CONFIRMAR, P-34) o al 911; `arbol_caido` → no mover
+  cables enredados, avisar a Protección Civil por el 911; `calle` → no cruzar si el agua cubre la
+  banqueta o pasa de la rodilla.
 - Salida: instituciones verificadas para ese caso, refugios más cercanos y pasos a seguir.
 - La plataforma no da seguimiento al folio: solo orienta a dónde acudir.
 - Sin fuentes verificadas, las listas de instituciones y refugios quedan vacías. Los

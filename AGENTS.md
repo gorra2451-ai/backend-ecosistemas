@@ -7,7 +7,7 @@
 Backend de la plataforma de inundaciones de la ZMG (materia Ecosistemas, ITESO, Otoño 2026).
 La plataforma permite **reportar inundaciones, confirmarlas, verlas en un mapa, recibir alertas
 y saber a qué institución acudir**. Este repo es solo el backend: base de datos, reglas,
-seguridad y funciones. Los equipos de front consumen lo que define `docs/API.md`.
+seguridad y funciones. El front unificado vive en `web/` (D-018) y consume lo que define `docs/API.md`.
 
 ## 2. Orden de lectura al iniciar una sesión (obligatorio)
 1. `HANDOFF.md` — dónde quedamos y cuál es el siguiente paso. **Empieza aquí.**
@@ -73,7 +73,7 @@ bash scripts/probar-nube.sh  # revisa la seguridad de la nube desde fuera (tras 
 ```
 
 ## 7. Qué NO hacer
-- No crear frontend aquí (cada equipo tiene el suyo).
+- No crear frontend fuera de `web/` (D-018: front unificado ¡Aguas!; `supabase/` sigue siendo el backend).
 - No agregar dependencias o servicios de pago sin registrarlo en `DECISIONES.md`.
 - No cambiar una decisión de `DECISIONES.md` sin agregar una nueva que la reemplace.
 - No borrar archivos de documentación; si algo ya no aplica, márcalo como obsoleto.

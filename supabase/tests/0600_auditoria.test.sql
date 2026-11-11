@@ -18,7 +18,8 @@ select has_index('public', 'acciones_admin', 'acciones_admin_admin_idx', 'índic
 set local role anon;
 select is(public.param('umbral_activacion'), 5::numeric, 'anon usa param');
 select ok(public.dentro_de_zmg(20.6597, -103.3496), 'anon usa dentro_de_zmg');
-select is(public.nivel_para(7, false), 'alto'::public.nivel_zona, 'anon usa nivel_para');
+-- D-021: nivel por confirmaciones "sí" (alto = 15–19).
+select is(public.nivel_para(15, false), 'alto'::public.nivel_zona, 'anon usa nivel_para');
 select lives_ok($$ select * from public.zonas_publicas $$, 'anon lee zonas_publicas');
 reset role;
 

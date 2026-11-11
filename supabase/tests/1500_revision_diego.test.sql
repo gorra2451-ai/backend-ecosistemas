@@ -9,7 +9,8 @@ insert into prueba_usuarios (id) values
  ('00000000-0000-0000-0000-00000000015b'),
  ('00000000-0000-0000-0000-00000000015c'),
  ('00000000-0000-0000-0000-00000000015d'),
- ('00000000-0000-0000-0000-00000000015e');
+ ('00000000-0000-0000-0000-00000000015e'),
+ ('00000000-0000-0000-0000-00000000015f');
 insert into auth.users (id,aud,role)
  select id,'authenticated','authenticated' from prueba_usuarios;
 grant select on prueba_usuarios to authenticated;
@@ -18,23 +19,29 @@ insert into public.suscripciones_push (perfil_id,endpoint,p256dh,auth,celda)
 values ('00000000-0000-0000-0000-00000000015a',
  'https://fcm.googleapis.com/fcm/send/15a',repeat('A',87),repeat('B',22),
  public.celda_mapa(public.punto(20.95,-103.70)));
+-- D-021: la zona ya no se activa con 5 reportes cercanos sino con 5 confirmaciones "sí"
+-- de otras personas. Regresión equivalente: 15a reporta y 15b..15f confirman con las RPC.
+select set_config('request.jwt.claims',
+ '{"sub":"00000000-0000-0000-0000-00000000015a","role":"authenticated"}',true);
 set local role authenticated;
+select public.crear_reporte('10000000-0000-4000-8000-00000000015a','calle',true,20.95,-103.70);
 do $$
 declare u record;
 begin
-  for u in select id from pg_temp.prueba_usuarios order by id loop
+  for u in select id from pg_temp.prueba_usuarios
+           where id <> '00000000-0000-0000-0000-00000000015a' order by id loop
     perform set_config('request.jwt.claims',
       jsonb_build_object('sub',u.id,'role','authenticated','is_anonymous',true)::text, true);
-    perform public.crear_reporte(gen_random_uuid(),'calle',true,20.95,-103.70);
+    perform public.confirmar_reporte('10000000-0000-4000-8000-00000000015a', true);
   end loop;
 end $$;
 reset role;
 select is((select count(*) from public.reportes where estado='activo'
  and public.celda_mapa(ubicacion)=public.celda_mapa(public.punto(20.95,-103.70)))::int,
- 5,'cinco crear_reporte activan el grupo');
+ 1,'cinco confirmaciones "sí" activan el reporte (D-021)');
 select is((select count(*) from public.avisos_push where tipo='zona_activada'
  and celda=public.celda_mapa(public.punto(20.95,-103.70)))::int,
- 1,'activación de grupo produce exactamente un aviso');
+ 1,'activación por confirmaciones produce exactamente un aviso');
 
 insert into public.suscripciones_push (perfil_id,endpoint,p256dh,auth,celda)
 values ('00000000-0000-0000-0000-00000000015a',

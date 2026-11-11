@@ -1,0 +1,65 @@
+/* Tokens del design system ¡Aguas! (Claude Design, canvas Aguas). No inventar colores: usar estas variables. */
+:root{
+  /* superficies (oscuro “Noche de tormenta”, default) */
+  --bg:#0B1220; --s1:#121C2E; --s2:#1A2740; --line:#26354F;
+  --tx:#EAF2FF; --mu:#A9B8CE; --mu2:#C9D6EA;
+  --acc:#2EE6D6; --accTx:#04201E; --acc-hover:#8CF5EC; --chip:rgba(46,230,214,.16);
+  --amber:#F5B83D; --amberTx:#0B1220;            /* aviso: pendiente, por confirmar */
+  /* mapa */
+  --map:#0F1B2D; --grid:#16243A; --road:#2D3F5C; --roadC:#0A1322; --park:#173049; --lab:#A9B8CE;
+  /* escala de riesgo (nunca decorativa) */
+  --rb:#F5B83D;  /* Bajo  · puntos */
+  --rm:#FF7A59;  /* Medio · líneas horizontales */
+  --ra:#FF4D5E;  /* Alto  · diagonales */
+  --risk:#C81E2E;/* Persona en riesgo · sólido, texto blanco (5.7:1) */
+  --risk-tx-on-white:#8A1420; /* texto del botón blanco “Llamar al 911” */
+  --resuelto:var(--mu);
+  --bw:1px;      /* grosor de borde; 2px en alto contraste */
+  /* tipografía */
+  --f-head:'Bricolage Grotesque',sans-serif; /* opsz 12..96, 400..800 */
+  --f-body:'Atkinson Hyperlegible',system-ui,sans-serif; /* 400, 700 */
+  --t-display:800 52px/56px var(--f-head);
+  --t-h1:800 32px/36px var(--f-head);
+  --t-h2:800 24px/28px var(--f-head);
+  --t-h3:700 20px/26px var(--f-body);
+  --t-body:400 17px/24px var(--f-body);
+  --t-small:400 15px/21px var(--f-body);
+  --t-caption:700 13px/16px var(--f-body);  /* solo leyenda y nombres de calles */
+  --t-overline:700 13px/1 var(--f-body);     /* + letter-spacing:.12em; uppercase */
+  /* espacio (múltiplos de 4) */
+  --sp1:4px; --sp2:8px; --sp3:12px; --sp4:16px; --sp5:20px; --sp6:24px; --sp8:32px; --sp12:48px;
+  /* radios */
+  --r-chip:8px; --r-field:12px; --r-btn:16px; --r-card:22px; --r-sheet:28px; --r-pill:999px;
+  /* toque */
+  --touch-min:48px; --touch-primary:56px; --touch-car:88px;
+  /* sombras (reales del canvas) */
+  --sh-label:0 4px 14px rgba(0,0,0,.35);   /* etiqueta de zona sobre mapa */
+  --sh-pill:0 4px 14px rgba(0,0,0,.25);    /* botón Accesibilidad */
+  --sh-toast:0 8px 24px rgba(0,0,0,.4);
+  --sh-dialog:0 12px 30px rgba(0,0,0,.35); /* globo del tutorial */
+  --sh-panel-light:0 12px 40px rgba(11,18,32,.16); /* tarjeta flotante escritorio */
+  --sh-legend-light:0 8px 24px rgba(11,18,32,.1);
+  --sh-maplabel-light:0 6px 20px rgba(11,18,32,.25);
+  --scrim:rgba(6,11,21,.6); --scrim-admin:rgba(3,6,12,.72); --spotlight:0 0 0 2000px rgba(6,11,21,.74);
+  /* movimiento */
+  --dur-fill:300ms; --dur-sheet:250ms; --dur-rise:240ms; --dur-toast:200ms; --dur-theme:150ms;
+  /* breakpoints sugeridos */
+  --bp-tablet:768px; --bp-desk:1024px;
+}
+[data-theme=light]{ /* “Día nublado” */
+  --bg:#F3F6FA; --s1:#FFFFFF; --s2:#E9EEF4; --line:#C9D5E3;
+  --tx:#0B1220; --mu:#4A5B73; --mu2:#2C3A4F;
+  --acc:#0A7F78; --accTx:#FFFFFF; --acc-hover:#065A55; --chip:rgba(10,127,120,.12);
+  --amber:#9A6416; --amberTx:#FFFFFF;
+  --map:#E6ECF3; --grid:#D8E0EA; --road:#FFFFFF; --roadC:#C3CFDD; --park:#CFE3D6; --lab:#3A4B63;
+  --ra:#F0435A; /* rb, rm, risk iguales */
+}
+[data-a11y~=dalton]{ --rb:#9AD0F5; --rm:#3A8FD9; --ra:#E66100; --risk:#B34700; --amber:#9AD0F5; }
+[data-theme=light][data-a11y~=dalton]{ --amber:#1F5F99; --amberTx:#FFFFFF; }
+[data-a11y~=contraste]{ /* se impone al modo claro */
+  --bg:#000; --s1:#000; --s2:#000; --line:#FFF; --tx:#FFF; --mu:#FFF; --mu2:#FFF;
+  --map:#000; --grid:#1E1E1E; --road:#8A8A8A; --roadC:#000; --park:#262626; --lab:#FFF;
+  --bw:2px; --acc:#2EE6D6; --accTx:#04201E; --amber:#F5B83D; --amberTx:#0B1220; --chip:transparent;
+}
+[data-a11y~=grande]{ zoom:1.22; } /* el canvas escala la pantalla ×1.22 */
+[data-a11y~=motion] *{ animation:none!important; transition:none!important; }

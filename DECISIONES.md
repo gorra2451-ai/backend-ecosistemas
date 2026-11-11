@@ -132,3 +132,87 @@ en la suscripción aunque se limpie el historial de avisos.
 estén listos captcha y límites (P-16); en local puede estar encendida para pruebas.
 **Por qué:** limitar el abuso y retener la ubicación aproximada y las claves push
 solo mientras el dispositivo siga usando el servicio.
+
+## D-018 · Front unificado ¡Aguas! dentro de este repo (reemplaza a D-002)
+**Estado:** Aceptada (Diego) · 2026-11-10 · falta visto bueno de LeoFigo74z en el PR
+**Decisión:** la clase acordó un solo prototipo con el design system de Diego (P-33). El front
+vive en `web/` de este repo (Vite + React + `supabase-js` + Leaflet/OpenStreetMap) y se publica
+en Netlify (plan gratuito, solo `web/`). `supabase/` no cambia de estructura ni de CI.
+Los HTML de los 5 equipos son referencia de pantallas; el front final es uno.
+**Por qué:** mid-fi el 2026-11-11 con liga clickeable para que los equipos testeen; un repo
+evita desfasar contrato y front. Mapa con OSM (P-04): gratis y sin llave; Google Maps queda
+solo como link de "ruta alterna".
+**Costo:** $0 (Netlify Free, OSM). El repo es público (D-012): el front no lleva secretos,
+solo URL y llave publicable.
+
+## D-019 · Sesión anónima encendida en la nube para el mid-fi (atiende parte de P-16)
+**Estado:** Aceptada (Diego y LeoFigo74z) · 2026-11-10 · condicionada: solo durante los testeos del mid-fi,
+límite de 30 sesiones anónimas por hora por IP, y se apaga al terminar los testeos. Captcha sigue en P-16.
+**Decisión:** se enciende el inicio de sesión anónimo en el proyecto remoto con el límite por IP
+de Supabase Auth (anónimos por hora), sin captcha, mientras duren los testeos del mid-fi.
+Los límites del backend siguen (`max_reportes_por_hora`, `max_entradas_por_hora`).
+**Por qué:** sin sesión el front no puede reportar ni confirmar, y el mid-fi pide el flujo completo.
+**Riesgo:** spam desde varias IP. Se revisa al terminar los testeos; captcha sigue en P-16.
+
+## D-020 · Búsqueda de lugares y dirección con Nominatim (OpenStreetMap)
+**Estado:** Aceptada (Diego) · 2026-11-10
+**Decisión:** el front busca lugares y obtiene la dirección de un punto con Nominatim de OSM, directo desde el
+navegador, máx. 1 petición por segundo, limitado a la ZMG y con atribución. No se envían datos personales; solo el
+texto buscado o la coordenada del reporte.
+**Por qué:** los equipos Mapa y Reporte validaron "Buscar un lugar" y "Ubicación detectada: Av. …". Gratis y sin llave.
+**Riesgo:** límites de uso del servicio público; si se excede, se cae a "Tu ubicación actual ±N m".
+
+## D-021 · Manda lo validado por los equipos (contrato v2)
+**Estado:** Aceptada (Diego y LeoFigo74z) · 2026-11-10
+**Decisión:** "manda lo validado por los equipos" en el testeo del mid-fi. Reemplaza las reglas
+de activación y niveles anteriores (REGLAS_NEGOCIO §1, §3, §5) y amplía el contrato a v2 (`docs/API.md`):
+- **Publicación por confirmaciones (resuelve P-01):** un reporte `pendiente` pasa a `activo` con
+  `confirmaciones_para_publicar` (5) "sí" de otras personas. Se puede confirmar un pendiente.
+  `persona_en_riesgo` sigue naciendo `activo`. Si no junta las confirmaciones en
+  `ventana_activacion_min`, pasa a `resuelto`.
+- **Se retira** la activación por `umbral_activacion` reportes cercanos (queda en `parametros`
+  marcado OBSOLETO) y "un reporte junto a un activo nace activo" (**resuelve P-15**).
+- **Niveles por confirmaciones "sí":** bajo 5–9 · medio 10–14 · alto 15–19 · `critico` ≥ 20
+  (`nivel_*_min`); zona = suma de los activos de la celda. Un activo con < 5 es `bajo`; un
+  pendiente no tiene nivel. `persona_en_riesgo` activa con < 15 es `alto` (nace sin
+  confirmaciones y es lo más urgente). `pasan_carros=false` ya no sube la zona a `alto`.
+- **Gravedad** opcional en el reporte (`bloqueado|limitado|sin_riesgo`); si viene, deduce `pasan_carros`.
+- `mis_reportes()`, `reportes_cercanos` con pendientes y nivel, `moto` (**resuelve P-28**),
+  derivación para `calle|arbol_caido|riesgo_electrico`, video `.mov` y `preferencias_push`
+  (silenciar, solo fuertes, solo cambios).
+**Por qué:** los equipos validaron con usuarios que 5 confirmaciones dan confianza; el contrato
+debe seguir lo que se probó, no lo que se supuso antes.
+**Privacidad:** los pendientes ahora se ven en `reportes_cercanos` (solo con sesión, radio ≤ 1 km,
+sin autor), necesario para poder confirmarlos.
+**Pendiente:** el 071 de CFE requiere fuente oficial (P-34).
+
+## D-022 · Parámetros temporales y modo prueba para el testeo del mid-fi
+**Estado:** Aceptada por Diego · 2026-11-10 · pendiente revisión de LeoFigo74z (PR #14) · **TEMPORAL**
+**Decisión:** durante el testeo del mid-fi (desde 2026-11-11), migración `20261110192439_parametros_midfi`:
+`radio_cercanos_max_m` 1000 → **40000**, `ventana_activacion_min` 60 → **1440**, `minutos_expiracion`
+30 → **180**. `confirmaciones_para_publicar` se queda en **5** (el copy del front dice 5; bajarlo exige
+primero que el front lea `parametros`). En el front, la liga con `?prueba=1` hace que "Cerca de ti"
+liste pendientes y activos de toda la ZMG (sin GPS) con aviso visible "Modo prueba"; `?prueba=0` lo apaga.
+**Por qué:** la maestra manda la liga a personas distintas, repartidas por la ZMG y a distintas horas.
+Con 150–300 m de cercanía, 1 km de tope, 60 min de ventana y 30 min de expiración, casi ningún reporte
+juntaría 5 confirmaciones y nadie vería activarse una zona. `confirmar_reporte` no valida distancia;
+la cercanía solo se exige en el front, así que el modo prueba no toca el esquema.
+**Privacidad:** con `?prueba=1` cualquier sesión ve los pendientes de toda la ZMG (sin autor, igual que
+D-021). No se guarda nada nuevo de la persona; `aguas.prueba` vive solo en su navegador.
+**Reversión:** al cerrar el testeo, nueva migración que regrese 1000 / 60 / 30, regresar
+`0000_base.test.sql` a 30 y quitar el bloque D-022 de `0200_confirmacion` y `1800_validado_equipos`.
+
+## D-023 · Privacidad y plazo tras la revisión del PR #14 (reemplaza en parte D-021)
+**Estado:** Aceptada por Diego · 2026-11-10 · a pedido de LeoFigo74z (revisión del PR #14)
+**Decisión:**
+- **Sin video (TEMPORAL):** los videos conservan GPS en sus metadatos y se podían descargar sin sesión. El bucket
+  `evidencias` acepta solo jpeg/png/webp y `agregar_evidencia` rechaza `video` (`video_deshabilitado`). Reemplaza
+  "video `.mov`" de D-021 hasta tener limpieza de metadatos en video. Las fotos ya se re-codifican sin EXIF.
+  El bucket de la nube estaba vacío (revisado 2026-11-10), no hubo videos que limpiar.
+- **Plazo bajo bloqueo:** `validar_confirmable` (lo usan `confirmar_reporte` y `marcar_falso`) rechaza con
+  `reporte_no_activo` un pendiente con la ventana vencida aunque el cron no haya corrido. No lo marca `resuelto`
+  ahí (la excepción revertiría el cambio); lo cierra `expirar_reportes`.
+- **Nominatim:** nunca se envían coordenadas del dispositivo (solo de reportes, ya públicas). La búsqueda por texto
+  se conserva (sin GPS es la única forma de ubicar un reporte), pero solo al presionar "Buscar", sin autocompletar
+  (reglas de uso de Nominatim). Tocar el mapa para elegir el punto queda para después del mid-fi.
+**Por qué:** privacidad (AGENTS.md §3.8) y que una zona no se publique fuera del plazo que dice la regla.

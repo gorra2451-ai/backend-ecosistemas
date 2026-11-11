@@ -1,0 +1,98 @@
+/* Módulo A · Primera vez (ronda 3: flujo del Equipo Registro). Solo tokens del design system. */
+.onb{display:flex;flex-direction:column;gap:14px;flex:1}
+.onb .btn{width:100%}
+.onb-spacer{flex:1;min-height:8px}
+.onb-h1{font:800 32px/1.06 var(--f-head)}
+.onb-lead{font-size:17px;line-height:1.45;color:var(--mu)}
+.onb .c{text-align:center}
+.onb .onb-link{align-self:center;min-height:48px;font-size:16px;padding:0 12px}
+.onb-ic{width:44px;height:44px;border-radius:14px;background:var(--chip);color:var(--acc);display:flex;align-items:center;justify-content:center;flex:none}
+
+/* Encabezado: marca o Atrás + "n/4" + barra de 4 segmentos */
+.onb-cabeza{display:flex;flex-direction:column;gap:10px}
+.onb-top{display:flex;align-items:center;justify-content:space-between;min-height:48px}
+.onb-marca{display:flex;align-items:center;gap:10px}
+.onb-marca span{font:800 26px/1 var(--f-head)}
+.onb-cnt{font-weight:700;font-size:15px;color:var(--mu)}
+.onb-atras{width:48px;height:48px;border-radius:14px;border:var(--bw) solid var(--line);background:var(--s1);color:var(--tx);
+  display:flex;align-items:center;justify-content:center}
+.onb .onb-volver{width:auto!important;min-height:48px;border-radius:14px;background:var(--s1)}
+.onb-pasos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.onb-pasos > span{height:6px;border-radius:3px;background:var(--line)}
+.onb-pasos > span.on{background:var(--acc)}
+
+/* Paso 1: beneficios, sin cuenta, aviso */
+.onb-beneficios{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.onb-beneficios li{display:flex;align-items:center;gap:12px;font-size:17px;font-weight:700}
+.onb-sello{display:flex;align-items:flex-start;gap:12px;background:var(--s1);border:var(--bw) solid var(--line);border-radius:18px;padding:14px}
+.onb-sello .t{font-weight:700;font-size:17px}
+.onb-sello .s{font-size:14px;color:var(--mu)}
+.onb-puntos{margin:6px 0 10px;padding-left:18px;font-size:15px;line-height:1.4;color:var(--mu2)}
+.onb-idchip{display:inline-flex;align-items:center;min-height:32px;padding:4px 12px;border-radius:999px;border:2px dashed var(--acc);
+  font:700 14px var(--f-body);color:var(--tx);letter-spacing:.02em}
+.onb-priv{align-items:center}
+.onb-priv-t{flex:1;min-width:0}
+.onb .onb-leer{width:auto!important;min-height:48px;padding:0 18px;flex:none}
+
+/* Paso 2: opciones tipo radio + consejo */
+.onb-medios{display:flex;flex-direction:column;gap:10px}
+.onb-opt{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 14px;border:var(--bw) solid var(--line);border-radius:18px;
+  background:var(--s1);color:var(--tx);font:700 17px var(--f-body);text-align:left;cursor:pointer}
+.onb-opt .t{flex:1}
+.onb-opt .rd{width:24px;height:24px;border-radius:50%;border:2px solid var(--mu);flex:none;display:flex;align-items:center;justify-content:center}
+.onb-opt.sel{border:2px solid var(--acc)}
+.onb-opt.sel .rd{border-color:var(--acc)}
+.onb-opt.sel .rd::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--acc)}
+.onb-tip{display:flex;gap:10px;align-items:flex-start;background:var(--chip);border-radius:16px;padding:12px 14px;font-size:15px;line-height:1.4}
+.onb-tip svg{color:var(--acc);margin-top:1px}
+
+/* Paso 3: permisos */
+.onb-permiso{background:var(--s1);border:var(--bw) solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.onb-permiso-c{display:flex;gap:12px;align-items:flex-start}
+.onb-permiso .t{font-weight:700;font-size:17px}
+.onb-permiso .s{font-size:14px;color:var(--mu);line-height:1.4}
+.onb-tag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--s2);color:var(--mu2);font-size:12px;vertical-align:2px}
+.onb-acts{display:grid;grid-template-columns:1.4fr 1fr;gap:8px}
+.onb-acts .btn{min-height:52px;font-size:15px;padding:0 8px}
+.onb-acts .btn.sel{border:2px solid var(--acc);background:var(--chip)}
+.onb-resumen{display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--mu2);line-height:1.5;padding:4px 2px}
+.onb-resumen b{color:var(--tx)}
+
+/* Paso 4: ajustes (switch del design system) */
+.onb-ajustes{display:flex;flex-direction:column;gap:10px}
+.onb-ajuste{display:flex;align-items:center;gap:12px;min-height:72px;padding:10px 14px;border:var(--bw) solid var(--line);border-radius:18px;
+  background:var(--s1);color:var(--tx);text-align:left;cursor:pointer}
+.onb-ajuste .tx{flex:1;display:flex;flex-direction:column;gap:2px}
+.onb-ajuste .tx b{font-size:17px}
+.onb-ajuste .tx span{font-size:14px;color:var(--mu);line-height:1.35}
+.onb-sw{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none}
+.onb-sw .switch{display:flex;align-items:center;box-sizing:border-box}
+.onb-sw .switch>i{display:block}
+.onb-sw .st{font-size:12px;font-weight:700;color:var(--mu)}
+.onb-ajuste[aria-checked=true] .st{color:var(--acc)}
+
+/* Final: registro terminado */
+.onb-ok{align-self:center;width:88px;height:88px;border-radius:50%;background:var(--acc);color:var(--accTx);display:flex;align-items:center;justify-content:center;margin-top:12px}
+.onb-final{flex-direction:column;gap:8px}
+.onb-conf{list-style:none;margin:0;padding:0;font-size:15px;line-height:1.8;color:var(--mu2)}
+.onb-conf b{color:var(--tx)}
+
+/* Aviso de privacidad */
+.onb-aviso summary{min-height:48px;display:flex;align-items:center;color:var(--acc);font-weight:700;font-size:15px;
+  text-decoration:underline;cursor:pointer;list-style:none}
+.onb-aviso summary::-webkit-details-marker{display:none}
+.onb-aviso-cuerpo{display:flex;flex-direction:column;gap:8px;background:var(--s1);border:var(--bw) solid var(--line);
+  border-radius:16px;padding:14px;font-size:15px;line-height:1.45;color:var(--mu2)}
+.onb-aviso-cuerpo h2{font:700 17px var(--f-body);color:var(--tx);margin-top:4px}
+.onb-aviso-cuerpo ul{margin:0;padding-left:20px}
+.onb-aviso-cuerpo b{color:var(--tx)}
+
+/* Escritorio: tarjeta centrada que cubre header, sidebar y mapa (solo el flujo de primera vez) */
+@media (min-width:1024px){
+  .screen.full:has(.onb){position:fixed;inset:0;z-index:850;padding:32px} /* bajo el toast (900) */
+  .screen.full:has(.onb) > .screen-inner{flex:none;margin:auto;max-width:520px;background:var(--s1);border:var(--bw) solid var(--line);
+    border-radius:var(--r-card);padding:32px;box-shadow:var(--sh-dialog)}
+  .screen.full .onb-sello,.screen.full .onb-opt,.screen.full .onb-permiso,.screen.full .onb-ajuste,
+  .screen.full .onb-aviso-cuerpo,.screen.full .onb-atras,.screen.full .onb .onb-volver{background:var(--bg)}
+  .onb-spacer{flex:none;min-height:4px}
+}

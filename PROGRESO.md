@@ -2,6 +2,64 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-10 (2.ª revisión de Leo) · Diego · Claude Code
+**Hecho**
+- Voz sin GPS real: no hay avisos automáticos y "Escuchar" pide la ubicación (habla dentro del toque para Safari iOS);
+  sin GPS dice "Activa tu ubicación…". Nunca describe el punto de ejemplo como si fuera tuyo.
+- Nominatim: `crearLimitador` = fila única para toda la app (antes 2 llamadas concurrentes salían con 0 ms).
+- Aviso de privacidad antes de la primera escucha (Reportar y Confirmar; el navegador puede enviar la voz a su
+  proveedor); el modo vehículo solo escucha si ya se aceptó. Verificado en Chrome con voz/GPS simulados.
+- pgTAP 481/481 · vitest 209/209 · build OK.
+
+## 2026-11-10 (cierre) · Diego · Claude Code (revisión de Leo + voz)
+**Hecho**
+- Revisión de LeoFigo74z al PR #14 atendida (D-023): `validar_confirmable` rechaza pendientes con la ventana vencida
+  bajo `FOR UPDATE` (prueba 2000, 10 casos); bucket solo imágenes y `agregar_evidencia` lanza `video_deshabilitado`
+  (prueba 2100, 6 casos; además `.mp4` nunca se podía registrar por la regex `[a-z]+`); el front no manda coordenadas
+  del dispositivo a Nominatim y busca solo con el botón "Buscar" (verificado en Chrome: 0 llamadas al teclear, 1 al buscar).
+- Voz integrada al PR #14: "Modo voz" (zonas nuevas o que suben ≤ 400 m, sondeo 60 s) + "Escuchar"; "Reportar con voz"
+  (tipo y gravedad, envío manual). Verificado en Chrome con reconocedor/síntesis simulados.
+- Auth anónima en la nube encendida (`anonymous_users: true`). Bucket `evidencias` en la nube vacío (sin videos).
+- pgTAP 481/481 · vitest 194/194 · build OK.
+**Pendiente:** nueva aprobación de Leo → merge → `db push` → probar-nube → deploy; probar voz con micrófono real.
+
+## 2026-11-10 (noche) · Diego · Claude Code (recorrido local del mid-fi + modo prueba)
+**Hecho**
+- Recorrido local en Chrome (escritorio y móvil 390 px, claro/oscuro/contraste): registro → reportar → 5 confirmaciones
+  (sesiones anónimas por API) → zona activa en el mapa vía Realtime. Fixes: etiquetas de zona 12×12 y encimadas,
+  stepper de Reportar anulado por CSS huérfano (+ prueba que parsea todos los CSS), GPS colgado si se ignora el
+  permiso (límite propio de 12 s), botón Reportar fuera de pantalla en escritorio, mapa que no centraba al llegar el GPS,
+  ruta alterna que apuntaba a la inundación, "De dónde quiero avisos", moto, `--mu2` en contraste, Confirmar trabado en
+  "Enviando…", nota al publicar, insignia "0 personas", videos > 10 MB, conteo de confirmaciones (403), doble envío.
+- Modo prueba `?prueba=1` (D-022): "Cerca de ti" lista toda la ZMG y se puede confirmar sin estar cerca.
+- Migración `20261110192439_parametros_midfi` (D-022, TEMPORAL): radio 40000, ventana 1440, expiración 180.
+  vitest 143/143 · `db reset` + `test db` 465/465.
+**Aviso de contrato (regla 10):** `radio_cercanos_max_m`, `ventana_activacion_min` y `minutos_expiracion` cambian en la
+nube al hacer `db push` (ver `docs/API.md`, `docs/MODELO_DATOS.md`). LeoFigo74z: revisar en el PR #14.
+**Decidido:** D-022. `confirmaciones_para_publicar` se queda en 5.
+**Pendiente:** revertir D-022 al cerrar el testeo; que el front lea `parametros` (umbrales 5/10/15/20 y `MIN_ATENUAR`
+fijos); nivel de zona por confirmaciones vs. gravedad reportada (confunde); "Mis avisos" por municipio promete más de
+lo que entrega; municipio "detectado" nunca se detecta.
+
+## 2026-11-10 · Diego · Claude Code (front unificado + backend v2 validado)
+**Hecho**
+- Front unificado en `web/` (D-018) en 3 rondas: canvas de Diego → material de los equipos → "manda lo validado"
+  (D-021). Registro (4 pasos + moto), Reporte (gravedad, evidencia antes de enviar, enviado, Mis reportes, barra
+  Mapa·Reportes·Ayuda), Mapa (buscar con Nominatim, capas y leyenda, crítico, Más), Confirmación (Ya no → secó /
+  nunca hubo agua, voz, alerta a 400 m) y Avisos/derivación (6 casos, ¿Puedo pasar?, preferencias). 115/115 vitest.
+- Backend v2 (D-021): 4 migraciones `20261110000000..000300` (enums, publicación y niveles por confirmaciones,
+  gravedad, `mis_reportes`, derivar + `.mov` + moto, preferencias push). Local: `db reset` + `test db` 461/461.
+  Smoke REST local: `crear_reporte` con gravedad, `mis_reportes`, `registrar_entrada('moto')` OK.
+- PR #14 abierto (front + v2). Liga: https://aguas-zmg.netlify.app (aún con la versión de la ronda 1).
+- Material de los equipos en `../06_Prototipos_Equipos/` (incluye `admin.html` del panel de administración).
+
+**Pendiente (en orden)**
+- LeoFigo74z aprueba PR #14 → merge → `supabase db push` desde `main` (4 migraciones) → `probar-nube.sh`.
+- Encender Auth anónima remota (D-019) y desplegar el front (`netlify deploy`).
+- Panel de administración (`admin.html`) con datos reales; sin métricas inventadas.
+- Limpiar duplicados (ver HANDOFF) y revisión visual completa en móvil/escritorio y temas.
+- Registrar D-020 (Nominatim) en DECISIONES.
+
 ## 2026-11-10 · Diego · Claude Code (nube con PR #12 e integración de PR #13)
 **Hecho**
 - PR #12 (LeoFigo74z) revisado, aprobado y fusionado en `main` (ec02c63). Local: `supabase db reset`
