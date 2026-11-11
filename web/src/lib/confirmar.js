@@ -257,6 +257,33 @@ export function senal(prefs) {
     o.onended = () => ctx.close()
   } catch { /* sin audio */ }
 }
+// Voces "novedad" de Apple (Siri): existen en cada idioma pero suenan con acento extranjero.
+const VOZ_NOVEDAD = /^(Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley|Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox)\b/i
+// Voces nativas conocidas, de mejor a peor: México primero, luego EE. UU. latino, luego cualquier español.
+const VOZ_PREFERIDA = [/paulina/i, /juan/i, /sabina|raul|dalia|jorge|renata|beatriz|candela|cecilio|gerardo|larissa|liberto|luciano|marina|nuria|pelayo|yago/i, /google.*espa/i]
+
+// Elige la voz con acento mexicano/latino más natural. null = que el navegador decida con lang es-MX.
+export function elegirVoz(voces = []) {
+  const es = voces.filter((v) => /^es([-_]|$)/i.test(v.lang || '') && !VOZ_NOVEDAD.test(v.name || ''))
+  if (!es.length) return null
+  const rango = (v) => {
+    const i = VOZ_PREFERIDA.findIndex((re) => re.test(v.name || ''))
+    const region = /MX/i.test(v.lang) ? 0 : /US|419/i.test(v.lang) ? 1 : 2
+    return (i === -1 ? VOZ_PREFERIDA.length : i) * 10 + region
+  }
+  return [...es].sort((a, b) => rango(a) - rango(b))[0]
+}
+
+// Chrome/Safari cargan las voces en diferido: getVoices() puede venir vacío la primera vez.
+let vozCache = null
+function vozMexicana(s) {
+  if (!vozCache) vozCache = elegirVoz(s.getVoices?.() || [])
+  return vozCache
+}
+if (typeof window !== 'undefined' && window.speechSynthesis?.addEventListener) {
+  window.speechSynthesis.addEventListener('voiceschanged', () => { vozCache = null })
+}
+
 // Lee en voz alta (es-MX). cb() al terminar (o de inmediato si no hay síntesis).
 export function hablar(texto, cb = () => {}) {
   try {
@@ -264,8 +291,8 @@ export function hablar(texto, cb = () => {}) {
     const s = window.speechSynthesis
     const u = new SpeechSynthesisUtterance(texto)
     u.lang = 'es-MX'; u.onend = () => cb(); u.onerror = () => cb()
-    const voz = s.getVoices?.().find((v) => /^es[-_]MX/i.test(v.lang)) || s.getVoices?.().find((v) => /^es/i.test(v.lang))
-    if (voz) u.voice = voz
+    const voz = vozMexicana(s)
+    if (voz) { u.voice = voz; u.lang = voz.lang }
     // Safari iOS se queda callado si se llama cancel() y speak() seguidos sin que haya algo sonando.
     if (s.speaking || s.pending) s.cancel()
     s.resume?.()
