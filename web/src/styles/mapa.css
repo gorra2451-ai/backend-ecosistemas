@@ -267,3 +267,8 @@
 .mp-near--riesgo .mp-near-art{background:var(--risk);color:#fff}
 .mp-near-art>svg{position:relative;background:var(--bg);border-radius:10px;padding:2px}
 .mp-near--riesgo .mp-near-art>svg{background:transparent}
+/* Auditoría UX (D-029): barra superior compacta y detalle con datos plegados */
+.mp-mode--sm{width:56px;min-height:56px;padding:0}
+.mp-z-datos .mp-det-c{display:flex;flex-direction:column;gap:14px}
+.mp-z-datos .mp-det-c h2{font:800 17px var(--f-head);margin-bottom:6px}
+.mp-z-agua{align-self:flex-start;background:var(--bg);border-radius:12px;padding:4px;margin-top:4px;display:inline-flex}

@@ -180,8 +180,12 @@ describe('ronda 3 · HTML validado del Equipo Reporte + contrato v2', () => {
   })
   it('filaCercano: distancia, estado y nivel', () => {
     const f = filaCercano({ tipo: 'calle', distancia_m: 120.4, estado: 'pendiente', gravedad: 'bloqueado', ultima_confirmacion: null, creado_en: new Date(0).toISOString() }, 7 * 60000)
-    expect(f).toEqual({ titulo: 'Calle inundada', lugar: 'A 120 m de ti', estado: 'Sin confirmar', nivel: { texto: 'Alto', patron: 'p-alto' }, hace: 'Actualizado hace 7 min' })
-    expect(filaCercano({ tipo: 'casa', estado: 'activo', nivel: 'medio' }).nivel).toEqual({ texto: 'Medio', patron: 'p-medio' })
+    expect(f).toEqual({ titulo: 'Calle inundada', lugar: 'A 120 m de ti', estado: 'Sin confirmar', nivel: { texto: 'Agua: alto', patron: 'p-alto' }, hace: 'Actualizado hace 7 min' })
+    expect(filaCercano({ tipo: 'casa', estado: 'activo', nivel: 'medio' }).nivel).toEqual({ texto: 'Nivel medio', patron: 'p-medio' })
+    // D-029: manda la altura del agua aunque las confirmaciones digan otro nivel; persona en riesgo sin nivel
+    expect(filaCercano({ tipo: 'casa', nivel: 'bajo', gravedad: 'limitado' }).nivel.texto).toBe('Agua: medio')
+    expect(filaCercano({ tipo: 'persona_en_riesgo', nivel: 'alto' }).nivel).toBe(null)
+    expect(filaMiReporte({ tipo: 'persona_en_riesgo', nivel: 'alto' }).nivel).toBe(null)
   })
 })
 

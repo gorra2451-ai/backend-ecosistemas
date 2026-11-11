@@ -150,6 +150,15 @@ export function unirMisReportes(servidor, local = []) {
   return [...s, ...local.filter((r) => !ids.has(r.id))].sort((a, b) => (b.creado || 0) - (a.creado || 0)).slice(0, 20)
 }
 
+// D-029: el nivel de la fila es la altura del agua reportada; el de confirmaciones solo si no hay gravedad.
+// Persona en riesgo no lleva nivel (se atiende con el 911, no por altura del agua).
+function nivelFila(r) {
+  if (r?.tipo === 'persona_en_riesgo') return null
+  const g = gravedadInfo(r?.gravedad)
+  if (g) return { texto: `Agua: ${g.t.toLowerCase()}`, patron: PATRON[g.nivel] }
+  return r?.nivel && NIVEL_LABEL[r.nivel] ? { texto: `Nivel ${NIVEL_LABEL[r.nivel].toLowerCase()}`, patron: PATRON[r.nivel] } : null
+}
+
 // Texto de la fila en "Mis reportes".
 export function filaMiReporte(r, ahora = Date.now()) {
   const estado = {
@@ -161,20 +170,18 @@ export function filaMiReporte(r, ahora = Date.now()) {
     titulo: TIPO_LARGO[r.tipo] || 'Reporte',
     estado,
     confirmaciones: n == null ? null : `${n} ${n === 1 ? 'confirmación' : 'confirmaciones'} “sí”`,
-    nivel: r.nivel && NIVEL_LABEL[r.nivel] ? { texto: `Nivel ${NIVEL_LABEL[r.nivel].toLowerCase()}`, patron: PATRON[r.nivel] } : null,
+    nivel: nivelFila(r),
     hace: r.creado ? haceCuanto(new Date(r.creado).toISOString(), ahora) : '—',
   }
 }
 
 // Fila "Cerca de ti" para reportes de otros (reportes_cercanos v2).
 export function filaCercano(x, ahora = Date.now()) {
-  const g = gravedadInfo(x.gravedad)
-  const n = NIVEL_LABEL[x.nivel]
   return {
     titulo: TIPO_LARGO[x.tipo] || 'Inundación',
     lugar: x.distancia_m != null ? `A ${Math.round(x.distancia_m)} m de ti` : '',
     estado: x.estado === 'activo' ? 'Confirmado' : 'Sin confirmar',
-    nivel: n ? { texto: n, patron: PATRON[x.nivel] } : g ? { texto: g.t, patron: PATRON[g.nivel] } : null,
+    nivel: nivelFila(x),
     hace: x.ultima_confirmacion || x.creado_en ? `Actualizado ${haceCuanto(x.ultima_confirmacion || x.creado_en, ahora)}` : '',
   }
 }

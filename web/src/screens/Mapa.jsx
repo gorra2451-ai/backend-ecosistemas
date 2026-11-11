@@ -12,7 +12,7 @@ import {
   loCercano, filaCercana, estadoZona, lluviaPara, textoLluvia, distanciaM, formatoDist, hace,
   rutaGoogle, textoWhatsApp, reporteParaConfirmar, textoNivel, RADIO_TU_ZONA_M, nivelV2, categoria, transito,
   leerCapas, suscribirCapas, cambiarCapa, restablecerCapas, capasModificadas, filtrarCapas,
-  centrarEn, partirLugar, resumenNiveles,
+  centrarEn, partirLugar, resumenNiveles, zonasConNivelAgua, nivelAgua,
 } from '../lib/mapa.js'
 import { urlRutaAlterna, grupoMedio } from '../lib/ayuda.js'
 import { hablar } from '../lib/confirmar.js'
@@ -33,7 +33,7 @@ function cargar(key, ubic) {
   if (cache.key === key && cache.prom) return cache.prom
   const prom = Promise.all([zonasPublicas(), reportesEnArea(bboxAlrededor(ubic.lat, ubic.lng, 8000)), alertasClima()])
     .then(([z, r, a]) => ({
-      zonas: (z.data || []).map((x) => ({ ...x, nivel: nivelV2(x) })),
+      zonas: zonasConNivelAgua(z.data || [], r.data || []), // D-029: nivel = altura del agua
       reportes: r.data || [],
       alertas: a.data || [],
       error: z.error || r.error || null,
@@ -81,7 +81,7 @@ function Leyenda({ desk = false, filtrado = false, onCapas }) {
   return (
     <div className="mp-legend-row">
       <div className="mp-legend" role="list" aria-label="Leyenda del mapa">
-        {[it('mp-sw p-bajo', 'Bajo'), it('mp-sw p-medio', 'Medio'), it('mp-sw p-alto', 'Alto'), it('mp-sw p-critico', 'Crítico'),
+        {[it('mp-sw p-bajo', 'Bajo'), it('mp-sw p-medio', 'Medio'), it('mp-sw p-alto', 'Alto'),
           desk ? it('mp-sw--risk', 'Persona en riesgo') : null, it('mp-sw--pend', 'Sin confirmar'), desk ? null : it('mp-sw--tu', 'Tú')]
           .filter(Boolean).map((el) => <span role="listitem" key={el.key}>{el}</span>)}
       </div>
@@ -107,7 +107,7 @@ const CAPAS = [
   ['refugios', 'Refugios', 'Lugares para resguardarte', 'mp-sw--ref'],
   ['misReportes', 'Mis reportes en verificación', 'Lo que reportaste y aún no se confirma', 'mp-sw--pend'],
 ]
-const NIVELES_UI = [['bajo', 'Bajo'], ['medio', 'Medio'], ['alto', 'Alto'], ['critico', 'Crítico']]
+const NIVELES_UI = [['bajo', 'Bajo'], ['medio', 'Medio'], ['alto', 'Alto']] // D-029: altura del agua (sin crítico)
 
 // Leyenda de símbolos (la usan el panel y "Más").
 export function LeyendaSimbolos() {
@@ -116,10 +116,9 @@ export function LeyendaSimbolos() {
   )
   return (
     <ul className="mp-capas-sim">
-      {fila('mp-sw p-bajo', 'Riesgo bajo · puntos', 'Agua confirmada por 5 a 9 personas')}
-      {fila('mp-sw p-medio', 'Riesgo medio · rayas', 'Confirmada por 10 a 14 personas')}
-      {fila('mp-sw p-alto', 'Riesgo alto · diagonales', 'Confirmada por 15 a 19 personas')}
-      {fila('mp-sw p-critico', 'Riesgo crítico · cuadrícula', 'Confirmada por 20 personas o más')}
+      {fila('mp-sw p-bajo', 'Bajo · puntos', 'El agua no sube de la banqueta')}
+      {fila('mp-sw p-medio', 'Medio · rayas', 'Llega a media llanta')}
+      {fila('mp-sw p-alto', 'Alto · diagonales', 'Cubre la llanta: no pasan carros')}
       {fila('mp-sw--risk', 'Persona en riesgo', 'Alguien necesita ayuda · llama al 911')}
       {fila('mp-sw--ref', 'Refugio', 'Lugar para resguardarte')}
       {fila('mp-sw--pend', 'En verificación', 'Tu reporte, aún sin confirmar')}
@@ -301,15 +300,14 @@ export function TopBar() {
           {prefs.voz && (
             <button type="button" className="mp-mas" disabled={datos.cargando} aria-label="Escuchar el estado de tu zona"
               onClick={escuchar}>
-              <Icon name="voz" /><span>Escuchar</span>
+              <Icon name="voz" />
             </button>
           )}
         </div>
         <div className="mp-top-row">
-          <button type="button" className="top-mode mp-mode" onClick={() => ir('onb')}
+          <button type="button" className="top-mode mp-mode mp-mode--sm" onClick={() => ir('onb')}
             aria-label={`Cambiar cómo me muevo hoy: ${MEDIO_TXT[medio] || 'A pie'}`}>
             <span className="mp-mode-ico"><Icon name={MEDIO_TXT[medio] ? medio : 'peaton'} /></span>
-            <span className="mp-mode-tx">{MEDIO_TXT[medio] || 'A pie'}</span>
           </button>
           <button type="button" className="top-status mp-status" onClick={alTocarEstado} aria-live="polite">
             {datos.lluvia && <span className="mp-rain"><Icon name="lluvia" size={15} stroke={2.4} />{datos.lluvia}</span>}
@@ -509,6 +507,8 @@ const QUE_HACER = {
   sin: ['Evita cruzar si no ves el piso.', 'Consulta una ruta alternativa.', 'Vuelve a revisar el mapa en unos minutos.'],
 }
 
+const personas = (n) => `${n ?? 0} ${n === 1 ? 'persona' : 'personas'}`
+
 function describir({ zona, reporte }) {
   if (zona) {
     const tr = transito(zona)
@@ -516,24 +516,24 @@ function describir({ zona, reporte }) {
       punto: zona, titulo: categoria(zona), cls: 'p-' + zona.nivel, lvl: 'Riesgo ' + textoNivel(zona.nivel).toLowerCase(),
       consejo: tr.cls === 'no' ? 'No pasan carros · no cruces' : 'Pasan carros con precaución',
       transito: tr, confirmada: true,
-      filas: [['Nivel de riesgo', textoNivel(zona.nivel)], ['Confirmaciones', zona.total_confirmaciones ?? 0], ['Reportes en la zona', zona.total_reportes ?? 0]],
+      filas: [['Altura del agua', textoNivel(zona.nivel)], ['Confirmado por', personas(zona.total_confirmaciones)], ['Reportes en la zona', zona.total_reportes ?? 0]],
       reportado: null, actualizado: zona.actualizado_en,
-      riesgo: false, reporteId: null, consejos: QUE_HACER[tr.cls],
+      riesgo: false, reporteId: null, consejos: QUE_HACER[tr.cls], agua: zona.nivel,
       share: `${categoria(zona)}, riesgo ${textoNivel(zona.nivel).toLowerCase()}${tr.cls === 'no' ? ', no transitable' : ''}`,
     }
   }
   const riesgo = reporte.tipo === 'persona_en_riesgo'
   const tr = transito(reporte)
-  const nivel = reporte.nivel ? nivelV2(reporte) : null
+  const nivel = nivelAgua(reporte) || (reporte.nivel ? (nivelV2(reporte) === 'critico' ? 'alto' : nivelV2(reporte)) : null) // D-029
   return {
     punto: reporte, titulo: categoria(reporte), cls: riesgo ? 'c-risk' : nivel ? 'p-' + nivel : 'c-res',
     lvl: riesgo ? 'Persona en riesgo' : nivel ? 'Riesgo ' + textoNivel(nivel).toLowerCase() : 'En verificación',
     consejo: riesgo ? 'Si la ves, llama al 911 · no entres al agua' : tr.txt,
     transito: riesgo ? null : tr, confirmada: riesgo || reporte.estado !== 'pendiente',
-    filas: [nivel && !riesgo && ['Nivel de riesgo', textoNivel(nivel)],
-      Number.isFinite(reporte.confirmaciones_si) && ['Confirmaciones "sí"', reporte.confirmaciones_si]].filter(Boolean),
+    filas: [nivel && !riesgo && ['Altura del agua', textoNivel(nivel)],
+      Number.isFinite(reporte.confirmaciones_si) && ['Confirmado por', personas(reporte.confirmaciones_si)]].filter(Boolean),
     reportado: reporte.creado_en, actualizado: reporte.ultima_confirmacion || reporte.creado_en,
-    riesgo, reporteId: reporte.id, consejos: QUE_HACER[riesgo ? 'riesgo' : tr.cls],
+    riesgo, reporteId: reporte.id, consejos: QUE_HACER[riesgo ? 'riesgo' : tr.cls], agua: riesgo ? null : nivel,
     share: riesgo ? 'Persona en riesgo por inundación. Si la ves, llama al 911' : categoria(reporte),
   }
 }
@@ -591,32 +591,10 @@ export function Zona() {
       <div className={'mp-z-nivel ' + dato.cls}>
         <span className="mp-z-lvl">{dato.lvl}</span>
         <span className="mp-z-consejo">{dato.consejo}</span>
+        {dato.agua && <span className="mp-z-agua"><NivelAgua nivel={dato.agua} size={84} /></span>}
       </div>
 
       {dato.riesgo && <a className="mp-link btn-danger mp-link--911" href="tel:911"><Icon name="telefono" />Llamar al 911</a>}
-
-      <section className="mp-card" aria-labelledby="mp-cond">
-        <h2 id="mp-cond">Condiciones actuales</h2>
-        {dato.transito && <div><Badge t={dato.transito} /></div>}
-        <dl className="mp-dl">
-          {dato.filas.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
-        </dl>
-      </section>
-
-      <section className="mp-card" aria-labelledby="mp-info">
-        <h2 id="mp-info">Información del reporte</h2>
-        <div>
-          <span className={'mp-badge ' + (dato.confirmada ? 'mp-badge--ok' : 'mp-badge--sin')}>
-            {dato.confirmada && <Icon name="escudo" size={14} stroke={2.4} />}
-            {dato.confirmada ? 'Información confirmada' : 'En verificación'}
-          </span>
-        </div>
-        <dl className="mp-dl">
-          {hora(dato.reportado) && <div><dt>Reportado</dt><dd>{hora(dato.reportado)}</dd></div>}
-          <div><dt>Actualizado</dt><dd>{hora(dato.actualizado) || '—'}</dd></div>
-          <div><dt>Fuente</dt><dd>Reportes ciudadanos anónimos</dd></div>
-        </dl>
-      </section>
 
       <section className="mp-card mp-card--acc" aria-labelledby="mp-hacer">
         <h2 id="mp-hacer">¿Qué debes hacer?</h2>
@@ -640,6 +618,35 @@ export function Zona() {
       <a className="mp-link mp-link--line" href={textoWhatsApp({ titulo: dato.share, lat, lng })} target="_blank" rel="noopener noreferrer">
         <Icon name="compartir" />Compartir por WhatsApp
       </a>
+      {/* Datos completos plegados (auditoría: la pantalla tenía 5 tarjetas antes de las acciones) */}
+      <details className="mp-card mp-det mp-z-datos">
+        <summary><h2>Más datos del reporte</h2><Icon name="chevron" size={20} /></summary>
+        <div className="mp-det-c">
+      <section aria-labelledby="mp-cond">
+        <h2 id="mp-cond">Condiciones actuales</h2>
+        {dato.transito && <div><Badge t={dato.transito} /></div>}
+        <dl className="mp-dl">
+          {dato.filas.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+        </dl>
+      </section>
+
+      <section aria-labelledby="mp-info">
+        <h2 id="mp-info">Información del reporte</h2>
+        <div>
+          <span className={'mp-badge ' + (dato.confirmada ? 'mp-badge--ok' : 'mp-badge--sin')}>
+            {dato.confirmada && <Icon name="escudo" size={14} stroke={2.4} />}
+            {dato.confirmada ? 'Información confirmada' : 'En verificación'}
+          </span>
+        </div>
+        <dl className="mp-dl">
+          {hora(dato.reportado) && <div><dt>Reportado</dt><dd>{hora(dato.reportado)}</dd></div>}
+          <div><dt>Actualizado</dt><dd>{hora(dato.actualizado) || '—'}</dd></div>
+          <div><dt>Fuente</dt><dd>Reportes ciudadanos anónimos</dd></div>
+        </dl>
+      </section>
+
+        </div>
+      </details>
       <p className="mp-z-priv">No mostramos quién lo reportó.</p>
     </Screen>
   )
@@ -825,8 +832,9 @@ export function Mas() {
         </ul>
       </Seccion>
       <Seccion titulo="Cómo interpretar las alertas">
-        <p>El nivel sale de cuántas personas confirmaron que sigue el agua: <b>Bajo</b> (5 a 9), <b>Medio</b> (10 a 14),
-          {' '}<b>Alto</b> (15 a 19) y <b>Crítico</b> (20 o más). Cada nivel tiene su patrón para no depender del color.</p>
+        <p>El nivel es <b>hasta dónde llega el agua</b>, con la banqueta y la llanta de un carro como medida (igual para
+          todos): <b>Bajo</b> no sube de la banqueta, <b>Medio</b> llega a media llanta, <b>Alto</b> cubre la llanta.
+          Aparte te decimos cuántas personas lo confirmaron. Cada nivel tiene su patrón para no depender del color.</p>
         <p><b>No transitable</b> quiere decir que alguien reportó que no pasan carros. Una alerta desaparece cuando la gente
           confirma que el agua bajó. Que no haya alerta no garantiza que la calle esté seca.</p>
       </Seccion>

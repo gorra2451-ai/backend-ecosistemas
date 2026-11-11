@@ -121,7 +121,8 @@ export function estadoZona({ zonas = [], ubic, municipio, revisado, ahora = Date
     : [municipio, masReciente && 'actualizado ' + hace(masReciente, ahora)].filter(Boolean).join(' · ')
   return {
     calma: false,
-    frase: `${n} ${n === 1 ? 'calle inundada' : 'calles inundadas'} a ${RADIO_TU_ZONA_M} m`,
+    // Distancia REAL a la más cercana (antes decía siempre "a 300 m", el radio de tu zona).
+    frase: n === 1 ? `1 calle inundada a ${formatoDist(cerca[0].d)}` : `${n} calles inundadas · la más cerca a ${formatoDist(cerca[0].d)}`,
     sub, zona: (peor || cerca[0]).z,
   }
 }
@@ -223,4 +224,21 @@ export function resumenNiveles(items = []) {
   const c = {}
   items.forEach((it) => { const k = it.clase === 'riesgo' ? 'riesgo' : nivelV2(it.dato); c[k] = (c[k] || 0) + 1 })
   return ORDEN_RESUMEN.filter((k) => c[k]).map((k) => [k, c[k]])
+}
+
+// D-029 · Una sola escala: el nivel que se MUESTRA es la altura del agua que reportó la gente (banqueta / media
+// llanta / cubre la llanta), no cuántos confirmaron. Las confirmaciones se muestran aparte ("Confirmado por N").
+const NIVEL_DE_GRAVEDAD = { sin_riesgo: 'bajo', limitado: 'medio', bloqueado: 'alto' }
+const RANGO_AGUA = ['bajo', 'medio', 'alto']
+export const nivelAgua = (r) => NIVEL_DE_GRAVEDAD[r?.gravedad] || null
+export function zonasConNivelAgua(zonas = [], reportes = [], radio = 220) {
+  return zonas.map((z) => {
+    const peor = reportes
+      .filter((r) => r.tipo !== 'persona_en_riesgo' && distanciaM(z, r) <= radio)
+      .map(nivelAgua).filter(Boolean)
+      .sort((a, b) => RANGO_AGUA.indexOf(b) - RANGO_AGUA.indexOf(a))[0]
+    const porConfirmacion = nivelV2(z)
+    const respaldo = z.alguno_no_pasan_carros ? 'alto' : porConfirmacion === 'critico' ? 'alto' : porConfirmacion
+    return { ...z, nivel_confirmacion: porConfirmacion, nivel: peor || respaldo }
+  })
 }

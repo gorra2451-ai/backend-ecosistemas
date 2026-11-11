@@ -9,7 +9,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useApp } from '../lib/store.jsx'
 import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor } from '../lib/api.js'
-import { leerCapas, suscribirCapas, filtrarCapas, nivelV2, leerCentro, suscribirCentro } from '../lib/mapa.js'
+import { leerCapas, suscribirCapas, filtrarCapas, zonasConNivelAgua, leerCentro, suscribirCentro } from '../lib/mapa.js'
 import { agruparRafaga } from '../lib/rafaga.js'
 
 const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)', critico: 'var(--risk)' }
@@ -97,7 +97,7 @@ export default function MapView({ centrarSeq = 0 }) {
       const [z, rep, ref] = await Promise.all([
         zonasPublicas(), reportesEnArea(bboxAlrededor(ubic.lat, ubic.lng, 8000)), refugiosPublicos()])
       if (!vivo) return
-      setZonas((z.data || []).map((x) => ({ ...x, nivel: nivelV2(x) })))
+      setZonas(zonasConNivelAgua(z.data || [], rep.data || [])) // D-029: nivel = altura del agua
       setReportes(rep.data || [])
       setRefugios(ref.data || [])
     })()

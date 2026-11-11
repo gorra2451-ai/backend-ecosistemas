@@ -85,13 +85,13 @@ describe('estadoZona', () => {
   })
   it('cuenta calles a 300 m y avisa del Alto', () => {
     const e = estadoZona({ zonas: [zona(100), zona(250, 'alto'), zona(900)], ubic: TU, municipio: 'Zapopan', ahora })
-    expect(e.frase).toBe('2 calles inundadas a 300 m')
+    expect(e.frase).toBe('2 calles inundadas · la más cerca a 100 m')
     expect(e.sub).toBe('No cruces: zona Alto a 250 m')
     expect(e.zona.celda).toBe('c250')
   })
   it('singular y fecha de actualización', () => {
     const e = estadoZona({ zonas: [zona(100)], ubic: TU, municipio: 'Zapopan', ahora })
-    expect(e.frase).toBe('1 calle inundada a 300 m')
+    expect(e.frase).toBe('1 calle inundada a 100 m')
     expect(e.sub).toBe('Zapopan · actualizado hace 10 min')
   })
 })
@@ -224,5 +224,26 @@ describe('resumenNiveles (hoja del mapa)', () => {
       { clase: 'zona', dato: { nivel: 'alto' } }, { clase: 'zona', dato: { nivel: 'bajo' } }]
     expect(resumenNiveles(items)).toEqual([['riesgo', 1], ['alto', 1], ['bajo', 2]])
     expect(resumenNiveles([])).toEqual([])
+  })
+})
+
+import { zonasConNivelAgua, nivelAgua } from './mapa.js'
+describe('D-029 · nivel = altura del agua', () => {
+  const z = { celda: 'c', lat: 20.65, lng: -103.40, nivel: 'critico', alguno_no_pasan_carros: false }
+  it('la zona toma el peor nivel de agua de sus reportes, no el de confirmaciones', () => {
+    const reps = [{ lat: 20.6501, lng: -103.40, gravedad: 'sin_riesgo' }, { lat: 20.6502, lng: -103.40, gravedad: 'limitado' },
+      { lat: 20.70, lng: -103.40, gravedad: 'bloqueado' }] // este está lejos
+    const [r] = zonasConNivelAgua([z], reps)
+    expect(r.nivel).toBe('medio')
+    expect(r.nivel_confirmacion).toBe('critico')
+  })
+  it('sin reportes cercanos usa el respaldo (no pasan → alto; crítico → alto)', () => {
+    expect(zonasConNivelAgua([z], [])[0].nivel).toBe('alto')
+    expect(zonasConNivelAgua([{ ...z, nivel: 'bajo' }], [])[0].nivel).toBe('bajo')
+    expect(zonasConNivelAgua([{ ...z, nivel: 'bajo', alguno_no_pasan_carros: true }], [])[0].nivel).toBe('alto')
+  })
+  it('persona en riesgo no define altura del agua', () => {
+    expect(zonasConNivelAgua([{ ...z, nivel: 'bajo' }], [{ lat: 20.65, lng: -103.40, tipo: 'persona_en_riesgo', gravedad: 'bloqueado' }])[0].nivel).toBe('bajo')
+    expect(nivelAgua({ gravedad: 'bloqueado' })).toBe('alto')
   })
 })
