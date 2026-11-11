@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { nivelPin, htmlPin, etiquetaPin } from './pines.js'
 
 describe('pines de reporte en la calle', () => {
-  it('el nivel sale del nivel publicado o, si no hay, de la gravedad', () => {
+  it('el nivel sale de la altura del agua (gravedad) o, si no hay, del nivel publicado', () => {
     expect(nivelPin({ nivel: 'alto' })).toBe('alto')
+    expect(nivelPin({ nivel: 'bajo', gravedad: 'bloqueado' })).toBe('alto') // D-029: manda la altura del agua
     expect(nivelPin({ gravedad: 'limitado' })).toBe('medio')
     expect(nivelPin({ gravedad: 'bloqueado' })).toBe('alto')
     expect(nivelPin({})).toBe('bajo')

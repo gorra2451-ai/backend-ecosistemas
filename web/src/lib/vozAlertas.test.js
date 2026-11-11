@@ -81,7 +81,7 @@ describe('fraseEstado (botón Escuchar)', () => {
 
   it('con zona grave cerca: frase y aviso de no cruzar, con unidades en palabras', () => {
     const f = fraseEstado({ zonas: [zona('a', 'alto', 120)], ubic: TU, municipio: 'Zapopan' })
-    expect(f).toBe('1 calle inundada a 300 metros. No cruces: zona Alto a 120 metros.')
+    expect(f).toBe('1 calle inundada a 120 metros. No cruces: zona Alto a 120 metros.')
   })
 
   it('sin ubicación ni municipio no truena: pide activar la ubicación', () => {

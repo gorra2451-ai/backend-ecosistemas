@@ -5,8 +5,10 @@ import { GRAVEDAD, TIPO_LARGO } from './reportar.js'
 const NIVELES = ['bajo', 'medio', 'alto', 'critico']
 export function nivelPin(r) {
   if (r?.tipo === 'persona_en_riesgo') return 'riesgo'
-  if (NIVELES.includes(r?.nivel)) return r.nivel
-  return GRAVEDAD.find((g) => g.k === r?.gravedad)?.nivel || 'bajo'
+  // D-029: primero la altura del agua que reportaron; el nivel por confirmaciones solo si no hay gravedad.
+  const agua = GRAVEDAD.find((g) => g.k === r?.gravedad)?.nivel
+  if (agua) return agua
+  return NIVELES.includes(r?.nivel) ? (r.nivel === 'critico' ? 'alto' : r.nivel) : 'bajo'
 }
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))

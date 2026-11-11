@@ -193,7 +193,8 @@ function Flujo({ desde = 1 }) {
           <span>Nunca pedimos tu nombre, correo ni teléfono.</span>
         </div>
         <div className="onb-spacer" />
-        <button type="button" className="btn btn-primary" disabled={!!pidiendo} onClick={() => setPaso(5)}>Continuar</button>
+        {/* Auditoría: la pantalla "Registro terminado" sobraba; se entra directo al mapa */}
+        <button type="button" className="btn btn-primary" disabled={!!pidiendo} onClick={() => { entrar(); avisar('¡Listo! Ya puedes usar la app.') }}>Entrar a la app</button>
       </Onb>
     )
   }

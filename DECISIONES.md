@@ -288,3 +288,17 @@ textura de las tarjetas "pasan / no pasan"; tarjetas desalineadas (falta saber c
 - **Semilla en la nube** para el testeo: 9 reportes de ejemplo (todos los tipos y niveles) por la ZMG. Usuarios y
   reportes con prefijo `5eed`; limpieza: `delete from auth.users where id::text like '5eed0000-%'` (cascada).
 **No se hizo:** rutas dentro de la app (requiere servicio de ruteo y que evite inundaciones; después del mid-fi).
+
+## D-029 · Auditoría UX del mid-fi: una sola escala de nivel y menos ruido (2026-11-11)
+**Estado:** Aceptada por Diego · 2026-11-11 ("vamos con tu recomendación")
+**Decisión:**
+- **Una sola escala:** el nivel que se MUESTRA (pines, zonas, lista, detalle, leyenda, filtros) es la altura del agua
+  reportada (banqueta / media llanta / cubre la llanta → bajo / medio / alto). Las confirmaciones se muestran aparte
+  ("Confirmado por N personas"). La zona toma el peor nivel de agua de sus reportes a ≤220 m (`zonasConNivelAgua`);
+  sin reportes cercanos usa el nivel por confirmaciones (crítico → alto). Sin "crítico" en la UI. Solo front: el
+  backend sigue calculando `nivel` por confirmaciones (D-021) — alinearlo queda para después del mid-fi.
+- **Distancia real** en "Tu zona" (antes siempre "a 300 m").
+- **Persona en riesgo sin nivel** en las listas (se atiende con el 911, no por altura del agua).
+- **Barra superior compacta:** modo de transporte y Escuchar solo con ícono (con aria-label).
+- **Detalle de alerta:** "¿Qué debes hacer?" y acciones arriba, con el dibujo del agua; datos completos plegados.
+- **Onboarding sin "Registro terminado":** "Entrar a la app" desde el paso 4.

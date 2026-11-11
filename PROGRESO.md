@@ -499,3 +499,7 @@ lo que entrega; municipio "detectado" nunca se detecta.
 - Pines por reporte en el mapa; zonas como halo; "¿Cuánta agua hay?" con dibujo banqueta/llanta; hoja mínima con
   resumen por nivel; botón Accesibilidad móvil; tic háptico iPhone; escenario local de 8 reportes; viñetas del inicio
   alineadas. Semilla `5eed` (9 reportes) en la nube para el testeo — borrar al terminar.
+
+### 2026-11-11 · Auditoría UX (D-029)
+- Escala única por altura del agua; distancia real en "Tu zona"; persona en riesgo sin nivel; barra superior compacta;
+  detalle con acciones arriba y datos plegados; onboarding sin pantalla final. vitest 244/244, build OK.
