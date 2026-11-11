@@ -1,10 +1,11 @@
 // Mapa real (Leaflet + OSM/CARTO, sin llave · D-018). Pinta zonas_publicas, reportes activos,
 // mis reportes sin confirmar, refugios y "tú". Se recarga con Realtime y con refrescar().
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Circle, Polyline, useMap } from 'react-leaflet'
 import { renderToStaticMarkup } from 'react-dom/server'
 import Icon from './Icon.jsx'
 import { htmlPin } from '../lib/pines.js'
+import { leerRuta, suscribirRuta, mostrarRuta } from '../lib/rutas.js'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useApp } from '../lib/store.jsx'
@@ -57,6 +58,31 @@ function Creditos() {
         style={{ width: 32, height: 32, border: 'var(--bw) solid var(--line)', borderRadius: 10, background: 'var(--s1)',
           color: 'var(--mu)', font: '700 15px var(--f-body)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>©</button>
     </div>
+  )
+}
+
+// Ruta elegida en "Cómo llegar" (D-031): línea gruesa, encuadre y chip para quitarla.
+function RutaEnMapa() {
+  const map = useMap()
+  const r = useSyncExternalStore(suscribirRuta, leerRuta)
+  const linea = useMemo(() => (r ? r.coords.map(([lng, lat]) => [lat, lng]) : null), [r])
+  useEffect(() => { if (linea?.length) map.fitBounds(linea, { padding: [40, 40] }) }, [linea]) // eslint-disable-line
+  if (!r) return null
+  return (
+    <>
+      <Polyline positions={linea} pathOptions={{ color: '#05080F', weight: 10, opacity: 0.6 }} />
+      <Polyline positions={linea} pathOptions={{ color: 'var(--acc)', weight: 6 }} />
+      <div ref={(el) => { if (el) { L.DomEvent.disableClickPropagation(el) } }}
+        style={{ position: 'absolute', left: 12, top: 196, zIndex: 455, display: 'flex', gap: 8, alignItems: 'center',
+          background: 'var(--s1)', border: 'var(--bw) solid var(--acc)', borderRadius: 14, padding: '6px 6px 6px 12px',
+          color: 'var(--tx)', font: '700 14px var(--f-body)' }}>
+        <span>Ruta · {r.min} min · {r.km} km{r.enCamino.length ? ` · ⚠ ${r.enCamino.length} en el camino` : ''}</span>
+        <button type="button" onClick={() => mostrarRuta(null)} aria-label="Quitar ruta"
+          style={{ minHeight: 36, border: 'var(--bw) solid var(--line)', borderRadius: 10, background: 'var(--s2)', color: 'var(--tx)', padding: '0 10px', font: '700 13px var(--f-body)' }}>
+          Quitar
+        </button>
+      </div>
+    </>
   )
 }
 
@@ -115,14 +141,9 @@ export default function MapView({ centrarSeq = 0 }) {
       <Seguir ubic={ubic} centrarSeq={centrarSeq} />
       <Controles ubic={ubic} />
       <CentrarEn />
+      <RutaEnMapa />
 
-      {/* Zonas: halo suave de 150 m (sin cuadro ni etiqueta: el detalle lo dan los pines · D-028) */}
-      {ver.zonas.map((z) => (
-        <Circle key={z.celda} center={[z.lat, z.lng]} radius={150}
-          pathOptions={{ color: COLOR[z.nivel], fillColor: COLOR[z.nivel], fillOpacity: 0.16, weight: 1.5, dashArray: '4 6' }}
-          eventHandlers={{ click: () => { setSeleccion({ tipo: 'zona', ...z }); ir('zona', { zona: z }) } }} />
-      ))}
-
+      {/* D-031: sin halos de zona; cada reporte se marca en su calle */}
       {/* Cada reporte en su calle: ícono del tipo + color/patrón del nivel. Al tocarlo, todos sus datos. */}
       {ver.reportes.map((r) => (
         <Marker key={r.id} position={[r.lat, r.lng]} zIndexOffset={r.tipo === 'persona_en_riesgo' ? 1000 : 500}
