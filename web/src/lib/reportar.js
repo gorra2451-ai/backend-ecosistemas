@@ -11,9 +11,10 @@ export const TIPOS_REPORTE = ['casa', 'coche', 'calle', 'persona_en_riesgo'] // 
 // "¿Cuánta agua hay?" (Bajo · Medio · Alto) → gravedad del contrato v2 (gravedad_reporte). Para TODOS los tipos.
 // Mapeo propio (el equipo no usa los nombres del contrato): Bajo → sin_riesgo · Medio → limitado · Alto → bloqueado.
 export const GRAVEDAD = [
-  { k: 'sin_riesgo', nivel: 'bajo', t: 'Bajo', d: 'Hay agua, se puede pasar con cuidado.', pasanCarros: true },
-  { k: 'limitado', nivel: 'medio', t: 'Medio', d: 'Agua a media llanta o a la rodilla. Mejor esperar.', pasanCarros: true },
-  { k: 'bloqueado', nivel: 'alto', t: 'Alto', d: 'No pasan carros. No cruzar.', pasanCarros: false },
+  // D-028: referencia fija (banqueta / llanta), no la estatura de quien reporta.
+  { k: 'sin_riesgo', nivel: 'bajo', t: 'Bajo', d: 'El agua no sube de la banqueta. Se puede pasar con cuidado.', pasanCarros: true },
+  { k: 'limitado', nivel: 'medio', t: 'Medio', d: 'Sube la banqueta y llega a media llanta. Mejor esperar.', pasanCarros: true },
+  { k: 'bloqueado', nivel: 'alto', t: 'Alto', d: 'Cubre la llanta o más. No pasan carros: no cruzar.', pasanCarros: false },
 ]
 export const GRAVEDAD_CALLE = GRAVEDAD // alias de la ronda 2
 export const pasanCarrosDeGravedad = (k) => GRAVEDAD.find((g) => g.k === k)?.pasanCarros ?? true

@@ -494,3 +494,8 @@ lo que entrega; municipio "detectado" nunca se detecta.
 - Atrás/deslizar se queda dentro de la app; vibración al tocar (se apaga, se guarda en el perfil); voz de muestra;
   simulaciones locales en Más (modo prueba). Migración `20261111151345_accesibilidad_vibracion` + pgTAP 2300.
 - pgTAP 493/493, vitest 234/234, build OK. Probado en Chrome a 390 px (atrás desde Más → mapa, simulación medio).
+
+### 2026-11-11 · Pines, niveles objetivos, hoja v2, escenario y semilla (D-028)
+- Pines por reporte en el mapa; zonas como halo; "¿Cuánta agua hay?" con dibujo banqueta/llanta; hoja mínima con
+  resumen por nivel; botón Accesibilidad móvil; tic háptico iPhone; escenario local de 8 reportes; viñetas del inicio
+  alineadas. Semilla `5eed` (9 reportes) en la nube para el testeo — borrar al terminar.
