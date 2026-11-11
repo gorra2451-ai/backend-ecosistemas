@@ -35,7 +35,11 @@ export function velocidadDe(pos, prev) {
   if (!prev || !pos?.coords) return null
   const dt = (pos.timestamp - prev.t) / 1000
   if (!(dt > 0)) return null
-  return distanciaM(prev, { lat: pos.coords.latitude, lng: pos.coords.longitude }) / dt
+  const d = distanciaM(prev, { lat: pos.coords.latitude, lng: pos.coords.longitude })
+  // Ruido real del GPS: si el brinco cabe en el margen de error (±accuracy) no hay avance comprobable → quieto.
+  const margen = Math.max(Number(pos.coords.accuracy) || 0, Number(prev.precision) || 0)
+  if (d <= margen) return 0
+  return d / dt
 }
 export function enMovimiento(vel, antes = false) {
   if (!Number.isFinite(vel)) return antes

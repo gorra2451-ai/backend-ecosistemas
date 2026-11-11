@@ -380,7 +380,7 @@ export function DetectorCercanos() {
       if (id !== null || document.hidden) return
       id = navigator.geolocation.watchPosition((p) => {
         const vel = velocidadDe(p, prev)
-        prev = { lat: p.coords.latitude, lng: p.coords.longitude, t: p.timestamp } // solo el último punto
+        prev = { lat: p.coords.latitude, lng: p.coords.longitude, t: p.timestamp, precision: p.coords.accuracy } // solo el último punto
         pos.current = prev
         const v = leerViaje()
         const moviendo = enMovimiento(vel, v.moviendo)
