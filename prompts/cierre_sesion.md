@@ -8,4 +8,6 @@ Vamos a cerrar la sesión. Haz esto sin pedir confirmación, y muéstrame el dif
 3. **docs/PLAN.md** — marca con [x] lo terminado.
 4. **DECISIONES.md** — agrega cualquier decisión nueva que tomamos (no edites las viejas).
 5. **PREGUNTAS.md** — agrega dudas nuevas; marca ✔ las resueltas.
-6. Dime si quedó algo sin commit y propón el mensaje de commit.
+6. Guarda con `bash scripts/guardar.sh "docs(repo): …"`, abre PR a `main` y, con los checks en verde, mergea
+   (D-025). Si quedó trabajo sin terminar en otra rama, dilo en HANDOFF ("Rama activa").
+7. Dime qué quedó en la nube o en prod que haya que limpiar (datos de prueba, semillas) y cuándo.

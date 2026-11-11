@@ -1,50 +1,44 @@
 # HANDOFF — Estado actual
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
-**Última actualización:** 2026-11-10 21:00 · Diego (con Claude Code)
-**Fase actual:** F5-T3, mid-fi desplegado en la nube (falta humo en celulares)
-**Meta:** mid-fi de ¡Aguas! el 2026-11-11 a las 12:00. La maestra manda la liga a personas distintas,
-repartidas por la ZMG → la liga va con **`?prueba=1`**: https://aguas-zmg.netlify.app/?prueba=1
-**Rama activa:** `fix/f5-t3-endurecer-seguridad-midfi` (D-024: banderas 6, throttle Realtime, cabeceras/CSP).
-Tras aprobación de Leo: `db push` (1 migración) → probar-nube → deploy.
+**Última actualización:** 2026-11-11 11:20 · Diego (con Claude Code)
+**Fase actual:** F5-T3, mid-fi ENVIADO a testers (testeo 2026-11-11 12:00)
+**Liga del testeo:** https://aguas-zmg.netlify.app/?prueba=1 (main `a708f16` desplegado en Netlify prod)
+**Rama activa:** ninguna (todo en `main`). Merge a main: Diego, por PR con checks verdes (D-025).
 
 ## Dónde quedamos
-- Nube al día: `db push` de 7 migraciones (v2 + D-022 + D-023); `probar-nube.sh` 12/12; Auth anónima OK.
-- Parámetros mid-fi en la nube (D-022, TEMPORAL): radio 40000, ventana 1440, expiración 180, 5 confirmaciones.
-- Netlify prod con el front unificado (vitest 209/209, build OK). Humo de solo lectura en Chrome sin errores.
-- La nube tenía **0 reportes** al desplegar (21:00): todo lo que aparezca antes de las 12:00 es del humo.
+- Prod con D-026…D-031: hoja arrastrable, atrás dentro de la app, vibración (Android; iOS 18+ con truco), pines por
+  tipo con aro de nivel, escala única por altura del agua (solo front), barra píldora con "+", 911 a pantalla
+  completa, rutas dentro de la app (OSRM de OSM, origen redondeado ~100 m), simulaciones en Más (modo prueba).
+- Nube: migraciones al día (incl. `banderas_midfi` = 6 y `accesibilidad_vibracion`); `probar-nube.sh` 12/12.
+- **Semilla del testeo:** 9 reportes activos con prefijo `5eed` (todos los tipos/niveles), vencen 14:07. El humo de
+  Diego ya se borró. Todo reporte que NO empiece con `5eed` es de un tester.
 
 ## Siguiente paso (en este orden)
-1. Humo con 2 celulares: liga con `?prueba=1` → reportar en uno → confirmar desde Reportes → "Cerca de ti" en el
-   otro. Probar voz con micrófono real, Safari iPhone (colores de zonas) y Realtime.
-2. Moderación en vivo (D-024): vigilar `en_revision` y `persona_en_riesgo` con `supabase db query --linked`.
-3. Antes de las 12:00: borrar los reportes del humo (`supabase db query --linked`, con aprobación de Diego).
-4. Después del testeo: **revertir D-022 y D-024** (nueva migración 1000/60/30; `0000_base` a 30; quitar bloque D-022 de
-   `0200_confirmacion` y `1800_validado_equipos`).
-5. Limpiar `web/.vite/` del repo + `.gitignore`; borrar rama `feat/f5-t3-web-voz` (ya integrada).
-6. Panel de admin desde `admin.html` (sin métricas inventadas) y los DUPLICADOS de abajo.
+1. Durante el testeo (si Diego lo pide): vigilar `en_revision` y `persona_en_riesgo` nuevos con
+   `supabase db query --linked`; restaurar/ocultar solo con OK de Diego.
+2. Al terminar el testeo: borrar semilla → `delete from auth.users where id::text like '5eed0000-%'` (cascada a
+   reportes y confirmaciones). Preguntar a Diego qué hacer con los reportes de testers.
+3. Recoger feedback del testeo (voz en iPhone: modelo + versión de iOS si no sonó).
+4. Revertir D-022 y D-024 (nueva migración: 1000/60/30 y banderas 3; `0000_base` a 30; quitar bloques de fijación
+   en `0200`, `0500`, `1800`).
+5. Alinear el nivel en el backend con D-029 (altura del agua, confirmaciones aparte) — P-35.
+6. Limpiar `web/.vite/` + `.gitignore`; borrar ramas viejas (`feat/f5-t3-web-voz` y las de hoy ya mergeadas).
 
 ## Decisiones abiertas de Diego
-- Nivel de zona sale de confirmaciones (D-021): quien reporta "Medio" ve "Bajo". Confunde.
-- Front con números fijos (5/10/15/20, `MIN_ATENUAR=60`): leerlos de `parametros` antes de bajar el 5.
-- "Mis avisos" por municipio promete zona nueva/despejada/cierres; solo entrega lluvia fuerte.
-- Municipio dice "detectado" y nunca se detecta. Botón "Escuchar" solo en móvil.
-- Después del mid-fi: tocar el mapa para elegir punto (pedido de Leo); limpiar metadatos de video para reactivarlo.
+- P-35 nivel en backend · P-36 servidor de rutas para producción · P-37 persona en riesgo (911 directo vs formulario).
+- Pedidos para después: textura de tarjetas "pasan / no pasan", rutas que esquiven inundaciones, revisar escritorio,
+  tope por identidad en `marcar_falso`, captcha (P-16), canales Realtime privados, `npm audit fix`.
+- Diego hace él: apagar registro por correo en Supabase Auth; confirmar MFA en GitHub/Supabase/Netlify/correo.
 
 ## DUPLICADOS para decidir (cuál se queda)
-- Permisos: Registro paso 3 · Avisos→Preferencias · ubicación del Mapa. Accesibilidad: Registro paso 4 · Ajustes.
-- Medio de transporte: Registro · Monitoreo vial (Avisos) · Más (Mapa).
-- Listas de cercanos: "Lo cercano" · "Reportes de otros vecinos" · "Vías cercanas" · tarjeta "cerca de ti".
-- Seguimiento de mi reporte: sondeo en Confirmación · Mis reportes / Mi reporte. 911: pantalla `riesgo` · Detalles.
-- Ayuda: pestaña "Ayuda" · "¿A quién acudo?" del Mapa. `alertas` vs "Todas las alertas". Rutas alternativas ×3.
-- Código: "hace X" ×3, distancia ×2, `hablar()` ×2, `elegirCercano` vs `reporteParaConfirmar`, `HojaEnviado` muerto.
-
-## Abiertos que cambian contrato
-- `solo_fuertes` no avisa si una zona escala. P-34: fuente oficial del 071 de CFE. Push: VAPID/Vault sin configurar.
+- Permisos: Registro · Avisos→Preferencias · Mapa. Accesibilidad: Registro paso 2 · Ajustes · panel de Leyenda.
+- Medio de transporte: Registro · Monitoreo vial · Más. Ayuda: pestaña "Ayuda" · "¿A quién acudo?".
+- Código: "hace X" ×3, distancia ×2, `elegirCercano` vs `reporteParaConfirmar`, `HojaEnviado`, `Flujo` paso 5 muerto.
 
 ## No olvidar
 - `bash scripts/sync.sh` al iniciar; git solo con `scripts/` (sin trailers de co-autor).
-- Pruebas: `supabase db reset && supabase test db`; front: `cd web && npm run build && npx vitest run`.
-- Front contra local: `VITE_SUPABASE_URL=http://127.0.0.1:55421 VITE_SUPABASE_KEY=<publishable local> npx vite`.
-- `?demo=1` = botón "Probar aviso de confirmación"; `?prueba=1` = modo prueba (`?prueba=0` lo apaga).
-- Nunca `supabase config push`. Diseño: https://claude.ai/artifact/AyPk2ZURShcyQLpP6gVKGk
+- Pruebas: `supabase db reset && supabase test db`; front: `cd web && npx vitest run && npm run build`.
+- Deploy front: `cd web && npm run build && netlify deploy --prod --dir dist --site c8abb1d6-9180-4a14-9de8-9ee8894045be --no-build`.
+- `supabase db query --linked -f archivo.sql` (un SQL que empieza con `--` como argumento falla).
+- `?prueba=1` modo prueba (`?prueba=0` lo apaga) · `?demo=1` probar aviso de confirmación. Nunca `supabase config push`.
