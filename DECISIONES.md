@@ -231,3 +231,10 @@ D-021). No se guarda nada nuevo de la persona; `aguas.prueba` vive solo en su na
 `ultima_confirmacion`; captcha en alta anónima (P-16); validar bytes de evidencias; `npm audit fix` (auth-js, baja);
 apagar registro por correo en Auth; caducidad de anónimos y `en_revision`.
 **Por qué:** que 3 personas no puedan esconder una emergencia real durante el testeo, y defensa básica del sitio.
+
+## D-025 · Diego mergea a `main` sin esperar revisión de LeoFigo74z
+**Estado:** Aceptada por Diego · 2026-11-11
+**Decisión:** la revisión de LeoFigo74z deja de ser requisito para mergear a `main`. Diego aprueba y mergea
+sus PR con `gh pr merge --merge --admin` (sigue siendo merge commit, equivalente a `--no-ff`). Reemplaza la parte
+"revisado por la otra persona" de AGENTS.md §3.12. Todo lo demás sigue igual: rama por tarea, PR, pruebas en verde.
+**Por qué:** esperar la revisión retrasaba la construcción y el despliegue del mid-fi.
