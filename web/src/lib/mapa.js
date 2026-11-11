@@ -83,6 +83,7 @@ export function transito(x) {
   return { txt: 'Sin información suficiente', cls: 'sin' }
 }
 export function categoria(x) {
+  if (x?.simulada) return 'Simulación · Inundación'
   if (x?.tipo === 'persona_en_riesgo') return 'Persona en riesgo'
   return CATEGORIA[x?.gravedad] || 'Inundación'
 }

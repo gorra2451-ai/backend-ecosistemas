@@ -15,6 +15,7 @@ import {
   NIVEL_TXT, claseNivel, VEREDICTO, MENSAJE_VIA, PASO_VEHICULO, viasCercanas, urlRutaAlterna,
 } from '../lib/ayuda.js'
 import { pushDisponible, activarPush, desactivarPush, suscripcionActual } from '../lib/ayudaPush.js'
+import { vibracionActiva, vibrar, FRASE_VOZ } from '../lib/haptica.js'
 import '../styles/ayuda.css'
 
 const leer = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d } }
@@ -619,7 +620,7 @@ const A11Y = [
   ['contraste', 'Alto contraste', 'Negro y blanco, bordes gruesos'],
   ['dalton', 'Modo daltonismo', 'Escala azul → naranja, sin rojo/verde'],
   ['voz', 'Leer en voz alta', 'Lee zonas nuevas o que suben cerca de ti y botón “Escuchar” en el mapa'],
-  ['vibra', 'Vibración en avisos', 'Vibra al confirmar y en alertas'],
+  ['vibra', 'Vibración', 'Vibra al tocar, al confirmar y en alertas (solo Android)'],
   ['motion', 'Reducir movimiento', 'Apaga todas las animaciones'],
 ]
 
@@ -635,24 +636,25 @@ export function Ajustes() {
   const { prefs, setPrefs, avisar } = useApp()
   const a11y = prefs.a11y || []
   const activo = (k) => k === 'claro' ? prefs.tema === 'claro'
-    : (k === 'voz' || k === 'vibra') ? !!prefs[k] : a11y.includes(k)
+    : k === 'voz' ? !!prefs.voz : k === 'vibra' ? vibracionActiva(prefs) : a11y.includes(k)
 
   const toggle = (k) => {
     const v = !activo(k)
     if (k === 'claro') return setPrefs({ ...prefs, tema: v ? 'claro' : 'oscuro' })
     if (k === 'voz') {
       setPrefs({ ...prefs, voz: v })
-      if (v && !hablar('Leer en voz alta activado. Así vas a escuchar el estado de tu zona.')) avisar('Tu navegador no puede leer en voz alta')
+      if (v && !hablar(FRASE_VOZ)) avisar('Tu navegador no puede leer en voz alta')
       if (!v && 'speechSynthesis' in window) window.speechSynthesis.cancel()
       return
     }
     if (k === 'vibra') {
       setPrefs({ ...prefs, vibra: v })
-      if (v && navigator.vibrate) navigator.vibrate(80)
+      guardarAccesibilidad({ vibracion: v }).catch(() => {}) // D-027: también en el perfil anónimo
+      if (v) vibrar({ vibra: true }, 80)
       return
     }
     setPrefs({ ...prefs, a11y: v ? [...a11y, k] : a11y.filter((x) => x !== k) })
-    if (k === 'dalton') guardarAccesibilidad(v).catch(() => {}) // se guarda en el perfil anónimo; si falla, queda local
+    if (k === 'dalton') guardarAccesibilidad({ daltonismo: v }).catch(() => {}) // se guarda en el perfil anónimo; si falla, queda local
   }
 
   return (

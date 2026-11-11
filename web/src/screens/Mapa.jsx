@@ -18,6 +18,9 @@ import { urlRutaAlterna, grupoMedio } from '../lib/ayuda.js'
 import { hablar } from '../lib/confirmar.js'
 import { fraseEstado, ubicacionReal } from '../lib/vozAlertas.js'
 import { useArrastreHoja } from '../lib/hoja.js'
+import { simularInundacion, quitarSimulaciones, zonasSimuladas, suscribirSimulacion, ESCENARIOS } from '../lib/simulacion.js'
+import { MODO_PRUEBA } from '../lib/prueba.js'
+import { vibrar } from '../lib/haptica.js'
 import { a11yActivo, alternarA11y } from '../lib/onboarding.js'
 import '../styles/mapa.css'
 
@@ -144,7 +147,7 @@ function PanelCapas({ onCerrar, fuenteLluvia }) {
   const alternarDalton = () => {
     const p = alternarA11y(prefs, 'dalton')
     setPrefs(p)
-    guardarAccesibilidad(a11yActivo(p, 'dalton')).catch(() => {})
+    guardarAccesibilidad({ daltonismo: a11yActivo(p, 'dalton') }).catch(() => {})
   }
   const cerrarRef = useRef(null)
   useEffect(() => {
@@ -725,6 +728,38 @@ export function Buscar() {
   )
 }
 
+// ---------- Simulaciones (modo prueba) ----------
+// Para el testeo: una inundación falsa a ~150 m para ver mapa, lista, "Tu zona", voz y vibración sin que llueva.
+// Solo en este teléfono (lib/simulacion.js): no se manda nada a la nube.
+function Simulaciones() {
+  const { ir, ubic, prefs, avisar, refrescar, setSheet } = useApp()
+  const activa = useSyncExternalStore(suscribirSimulacion, zonasSimuladas)[0]
+  const simular = (e) => {
+    simularInundacion(ubic, e.nivel)
+    refrescar(); setSheet('min'); ir(null)
+    vibrar(prefs, [120, 80, 120])
+    avisar(`Simulación: ${e.titulo.toLowerCase()} a unos 150 m. Solo la ves tú.`)
+    if (prefs.voz) hablar(`Simulación. Inundación de ${e.titulo.toLowerCase()} a unos 150 metros de ti.`)
+  }
+  const quitar = () => { quitarSimulaciones(); refrescar(); avisar('Simulación quitada') }
+  return (
+    <section className="mp-card mp-sim" aria-labelledby="mp-sim-t">
+      <h2 id="mp-sim-t">Simular una inundación</h2>
+      <p>Para la prueba: aparece una inundación falsa cerca de ti para que veas cómo te avisa la app.
+        <b> Solo la ves tú</b>; no se manda a nadie.</p>
+      <div className="mp-sim-grid">
+        {ESCENARIOS.map((e) => (
+          <button key={e.nivel} type="button" className="mp-sim-btn" aria-pressed={activa?.nivel === e.nivel} onClick={() => simular(e)}>
+            <span className={'mp-sw p-' + e.nivel} aria-hidden="true" />
+            <span><b>{e.titulo}</b><span>{e.desc}</span></span>
+          </button>
+        ))}
+      </div>
+      {activa && <button type="button" className="btn" onClick={quitar}>Quitar simulación</button>}
+    </section>
+  )
+}
+
 // ---------- Más · equipo Mapa, pantalla 15 ----------
 function Seccion({ titulo, children, abierta = false }) {
   return (
@@ -740,6 +775,7 @@ export function Mas() {
   const datos = useDatosMapa()
   return (
     <Screen titulo="Más" label="Más: leyenda, fuentes, seguridad y configuración">
+      {MODO_PRUEBA && <Simulaciones />}
       <Seccion titulo="Leyenda de símbolos" abierta><LeyendaSimbolos /></Seccion>
       <Seccion titulo="Fuentes de información"><Fuentes fuenteLluvia={datos.fuenteLluvia} /></Seccion>
       <Seccion titulo="Recomendaciones de seguridad">

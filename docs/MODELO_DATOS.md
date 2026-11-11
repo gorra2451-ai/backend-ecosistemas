@@ -111,8 +111,9 @@ D-021: `nivel = nivel_para(total_confirmaciones, hay persona_en_riesgo)`, mínim
 Sin columna `rol` (el rol admin vive en `administradores`).
 Se crea automáticamente con `auth.users`, también para sesiones anónimas. RLS permite leer
 solo el propio perfil; los clientes actualizan `accesibilidad` mediante
-`guardar_accesibilidad(prefs)` y no por escritura directa. En v1 `accesibilidad` solo admite
-`{}` o `{ "daltonismo": boolean }`; otras preferencias requieren acuerdo con Equipo Registro.
+`guardar_accesibilidad(prefs)` y no por escritura directa. `accesibilidad` admite
+`{}`, `daltonismo` y `vibracion` (booleanos, D-027); `guardar_accesibilidad` mezcla con lo guardado.
+Otras preferencias requieren acuerdo con Equipo Registro.
 
 ### entradas [C]
 | id | perfil_id | medio `medio_transporte` | creado_en |

@@ -17,7 +17,7 @@ const icono = (html, size = 32) => L.divIcon({ html, className: '', iconSize: [s
 const etiqueta = (z) => L.divIcon({
   className: '', iconSize: null, iconAnchor: [-14, 14], // sin iconSize Leaflet fija 12×12 y aplasta la caja
   html: `<div class="zone-label" style="position:static;white-space:nowrap"><span class="p-${z.nivel}" style="width:18px;height:18px;border-radius:5px;display:inline-block"></span>
-    <span><b style="font-size:14px">${TEXTO[z.nivel]}${z.alguno_no_pasan_carros ? ' · no pasan' : ''}</b><br><span style="font-size:13px;color:var(--mu)">${z.total_reportes} reporte${z.total_reportes === 1 ? '' : 's'}</span></span></div>`,
+    <span><b style="font-size:14px">${z.simulada ? 'Simulación · ' : ''}${TEXTO[z.nivel]}${z.alguno_no_pasan_carros ? ' · no pasan' : ''}</b><br><span style="font-size:13px;color:var(--mu)">${z.total_reportes} reporte${z.total_reportes === 1 ? '' : 's'}</span></span></div>`,
 })
 
 function Seguir({ ubic, centrarSeq }) {

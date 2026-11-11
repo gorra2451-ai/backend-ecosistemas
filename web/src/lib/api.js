@@ -1,6 +1,7 @@
 // Capa única de datos. Las pantallas NO llaman a supabase directo: usan estas funciones.
 // Contrato: docs/API.md. Cada función regresa { data, error } donde error es un código del contrato.
 import { supabase } from './supabase.js'
+import { conSimuladas } from './simulacion.js'
 
 const CODIGOS = [ // códigos reales de supabase/migrations (los más largos primero: se busca por substring)
   'reporte_no_autorizado', 'proveedor_push_no_permitido', 'video_deshabilitado', 'tipo_archivo_invalido', 'area_demasiado_grande',
@@ -61,7 +62,10 @@ export async function asegurarSesion() {
   return r(supabase.auth.signInAnonymously().then(({ data, error }) => ({ data: data?.session, error })))
 }
 export const registrarEntrada = (medio) => r(supabase.rpc('registrar_entrada', { medio })) // peaton|bici|auto|transporte_publico
-export const guardarAccesibilidad = (daltonismo) => r(supabase.rpc('guardar_accesibilidad', { prefs: { daltonismo: !!daltonismo } }))
+// D-027: { daltonismo?, vibracion? } (booleanos). Un booleano suelto es daltonismo (llamadas viejas). El servidor mezcla.
+export const guardarAccesibilidad = (p) => r(supabase.rpc('guardar_accesibilidad', {
+  prefs: typeof p === 'object' && p ? p : { daltonismo: !!p },
+}))
 
 // ---------- Reportar ----------
 // v2: gravedad = bloqueado | limitado | sin_riesgo (si viene, el backend deduce pasan_carros)
@@ -94,7 +98,8 @@ export const confirmarReporte = async (id, sigue) => (await asegurarSesion(), r(
 export const marcarFalso = async (id) => (await asegurarSesion(), r(supabase.rpc('marcar_falso', { p_reporte_id: id })))
 
 // ---------- Mapa ----------
-export const zonasPublicas = () => r(supabase.from('zonas_publicas').select('*'))
+// + la inundación simulada del modo prueba (solo en este teléfono · lib/simulacion.js)
+export const zonasPublicas = () => r(supabase.from('zonas_publicas').select('*')).then(conSimuladas)
 export const reportesEnArea = (b) => r(supabase.rpc('reportes_activos_en_area', b))
 export const refugiosPublicos = () => r(supabase.from('refugios_publicos').select('*'))
 export const alertasClima = () => r(supabase.from('alertas_clima_vigentes').select('*'))

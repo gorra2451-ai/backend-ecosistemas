@@ -201,6 +201,7 @@ describe('respuestas', () => {
     const ahora = 1000
     expect(permiteSenal({ vibra: true }, ahora)).toEqual({ sonido: true, vibra: true })
     expect(permiteSenal({ vibra: true, silencioHasta: 5000 }, ahora)).toEqual({ sonido: false, vibra: false })
-    expect(permiteSenal({}, ahora).vibra).toBe(false)
+    expect(permiteSenal({}, ahora).vibra).toBe(true) // D-027: la vibración viene activada
+    expect(permiteSenal({ vibra: false }, ahora).vibra).toBe(false)
   })
 })

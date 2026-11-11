@@ -94,7 +94,7 @@ function useMandar() {
     const res = await enviarConEvidencia(app, armado, archivo)
     setEnviando(false)
     if (res.error) return app.ir('error', { codigo: res.error, ...armado, archivo })
-    app.ir('paso2', { fase: 'enviado', id: armado.rep.id })
+    app.ir('paso2', { fase: 'enviado', id: armado.rep.id }, { cerrarFlujo: true }) // atrás no regresa al formulario
   }), [app])
   return { mandar, enviando }
 }

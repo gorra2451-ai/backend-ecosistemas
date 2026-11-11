@@ -489,3 +489,8 @@ lo que entrega; municipio "detectado" nunca se detecta.
 - Hoja inferior arrastrable; hoja mínima sin la fila de 3 botones; leyenda dentro de "Leyenda y filtros" con
   daltonismo arriba; accesibilidad como paso 2 del onboarding; crédito OSM compacto; interruptores con estado visible.
 - vitest 219/219, build OK. Probado en Chrome a 390 px (arrastrar arriba/abajo, daltonismo en vivo, paso 2/4).
+
+### 2026-11-11 · Gestos, vibración, voz de muestra y simulaciones (D-027)
+- Atrás/deslizar se queda dentro de la app; vibración al tocar (se apaga, se guarda en el perfil); voz de muestra;
+  simulaciones locales en Más (modo prueba). Migración `20261111151345_accesibilidad_vibracion` + pgTAP 2300.
+- pgTAP 493/493, vitest 234/234, build OK. Probado en Chrome a 390 px (atrás desde Más → mapa, simulación medio).
