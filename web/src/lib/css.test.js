@@ -17,3 +17,13 @@ describe('CSS sin reglas rotas', () => {
     })
   }
 })
+
+// Humo 2026-11-11: en el onboarding el switch decía "Activado" pero se veía apagado.
+describe('interruptores', () => {
+  it('cualquier botón role=switch encendido pinta su .switch encendido', () => {
+    const raiz = postcss.parse(readFileSync(join(DIR, 'components.css'), 'utf8'))
+    const sel = []
+    raiz.walkRules((r) => sel.push(r.selector))
+    expect(sel).toContain('[role=switch][aria-checked=true] .switch')
+  })
+})

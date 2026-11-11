@@ -37,6 +37,26 @@ function CentrarEn() {
     icon={icono('<div class="mp-sw--lugar" style="width:22px;height:22px;border-width:4px" aria-label="Lugar buscado"></div>', 22)} />
 }
 
+// Crédito de OpenStreetMap compacto: la licencia (ODbL) obliga a mostrarlo, pero no tiene que tapar el mapa.
+// Se ve como "©" y al tocarlo se abre "© OpenStreetMap" (enlace a su página de derechos).
+function Creditos() {
+  const [abierto, setAbierto] = useState(false)
+  return (
+    <div style={{ display: 'flex', justifyContent: 'flex-end', position: 'relative' }}>
+      {abierto && (
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer"
+          style={{ position: 'absolute', right: 40, top: 2, whiteSpace: 'nowrap', background: 'var(--s1)', color: 'var(--tx)',
+            border: 'var(--bw) solid var(--line)', borderRadius: 10, padding: '4px 8px', font: '600 12px var(--f-body)' }}>
+          © OpenStreetMap
+        </a>
+      )}
+      <button type="button" aria-expanded={abierto} aria-label="Créditos del mapa: OpenStreetMap" onClick={() => setAbierto((v) => !v)}
+        style={{ width: 32, height: 32, border: 'var(--bw) solid var(--line)', borderRadius: 10, background: 'var(--s1)',
+          color: 'var(--mu)', font: '700 15px var(--f-body)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>©</button>
+    </div>
+  )
+}
+
 function Controles({ ubic }) {
   const map = useMap()
   const b = { width: 48, height: 48, border: 'var(--bw) solid var(--line)', borderRadius: 14, background: 'var(--s1)',
@@ -49,6 +69,7 @@ function Controles({ ubic }) {
       <button style={b} aria-label="Alejar el mapa" onClick={() => map.zoomOut()}>−</button>
       <button style={{ ...b, color: 'var(--acc)' }} aria-label="Volver a mi ubicación"
         onClick={() => map.setView([ubic.lat, ubic.lng], 15)}>◎</button>
+      <Creditos />
     </div>
   )
 }
@@ -86,10 +107,9 @@ export default function MapView({ centrarSeq = 0 }) {
   const oscuro = prefs.tema !== 'claro'
   const tiles = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
   return (
-    <MapContainer center={[ubic.lat, ubic.lng]} zoom={15} zoomControl={false} attributionControl
+    <MapContainer center={[ubic.lat, ubic.lng]} zoom={15} zoomControl={false} attributionControl={false}
       style={{ position: 'absolute', inset: 0 }}>
-      <TileLayer url={tiles} maxZoom={19}
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
+      <TileLayer url={tiles} maxZoom={19} />
       <Seguir ubic={ubic} centrarSeq={centrarSeq} />
       <Controles ubic={ubic} />
       <CentrarEn />

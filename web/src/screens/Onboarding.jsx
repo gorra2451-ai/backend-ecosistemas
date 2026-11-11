@@ -1,6 +1,6 @@
 // MÓDULO A · Primera vez (Equipo Registro). Ronda 3: flujo, pantallas y copy del equipo; look del design system.
-// Pasos: 1/4 Bienvenida → 2/4 ¿Cómo te mueves hoy? → 3/4 Permisos → 4/4 Ajustes → Registro terminado → ir('inicio').
-// Ids: acceso = paso 1 · onb = paso 2 (o "cambiar medio" si ya entró, desde el mapa) · ubicacion y avisos = paso 3
+// Pasos (D-026): 1/4 Bienvenida → 2/4 Accesibilidad → 3/4 ¿Cómo te mueves hoy? → 4/4 Permisos → Registro terminado → ir('inicio').
+// Ids: acceso = paso 1 · onb = paso 2 (o "cambiar medio" si ya entró, desde el mapa) · ubicacion y avisos = paso 4
 // · privacidad = aviso completo (se abre con "Leer").
 import { useEffect, useState } from 'react'
 import { Screen, Btn, PorConfirmar } from '../components/ui.jsx'
@@ -152,27 +152,27 @@ function Flujo({ desde = 1 }) {
     </Onb>
   )
 
-  if (paso === 2) {
+  if (paso === 3) {
     const sel = MEDIOS.find((m) => m.id === medio)
     return (
-      <Onb label="¿Cómo te mueves hoy?, paso 2 de 4">
-        <Cabeza n={2} onAtras={() => setPaso(1)} />
+      <Onb label="¿Cómo te mueves hoy?, paso 3 de 4">
+        <Cabeza n={3} onAtras={() => setPaso(2)} />
         <h1 className="onb-h1">¿Cómo te mueves hoy?</h1>
         <p className="onb-lead">Elige el transporte de tu trayecto de hoy. No es permanente: lo cambias cuando quieras en Ajustes.</p>
         <OpcionesMedio valor={medio} onElegir={setMedioLocal} />
         {sel && <p className="onb-tip" role="status"><Icon name="alerta" size={22} /><span>{sel.tip}</span></p>}
         <div className="onb-spacer" />
-        <button type="button" className="btn btn-primary" disabled={!medio} onClick={() => setPaso(3)}>Continuar</button>
-        <button type="button" className="btn-text onb-link" onClick={() => { setMedioLocal(null); setPaso(3) }}>Omitir por ahora</button>
+        <button type="button" className="btn btn-primary" disabled={!medio} onClick={() => setPaso(4)}>Continuar</button>
+        <button type="button" className="btn-text onb-link" onClick={() => { setMedioLocal(null); setPaso(4) }}>Omitir por ahora</button>
       </Onb>
     )
   }
 
-  if (paso === 3) {
+  if (paso === 4) {
     const yn = (v) => (v === null ? 'sin elegir' : v ? 'sí' : 'no')
     return (
-      <Onb label="Permisos, paso 3 de 4">
-        <Cabeza n={3} onAtras={() => setPaso(2)} />
+      <Onb label="Permisos, paso 4 de 4">
+        <Cabeza n={4} onAtras={() => setPaso(3)} />
         <h1 className="onb-h1">Permisos que te ayudan a estar más seguro</h1>
         <p className="onb-lead">Ambos son opcionales. Puedes cambiarlos o desactivarlos más tarde.</p>
         <Permiso icon="pin" titulo="Ubicación" texto="Para mostrar zonas de riesgo cerca de ti." valor={loc}
@@ -187,14 +187,15 @@ function Flujo({ desde = 1 }) {
           <span>Nunca pedimos tu nombre, correo ni teléfono.</span>
         </div>
         <div className="onb-spacer" />
-        <button type="button" className="btn btn-primary" disabled={!!pidiendo} onClick={() => setPaso(4)}>Continuar</button>
+        <button type="button" className="btn btn-primary" disabled={!!pidiendo} onClick={() => setPaso(5)}>Continuar</button>
       </Onb>
     )
   }
 
-  if (paso === 4) return (
-    <Onb label="Ajustes de accesibilidad, paso 4 de 4">
-      <Cabeza n={4} onAtras={() => setPaso(3)} />
+  // Accesibilidad va en el paso 2 (humo 2026-11-11): quien necesita texto grande o daltonismo lo activa antes del resto.
+  if (paso === 2) return (
+    <Onb label="Ajustes de accesibilidad, paso 2 de 4">
+      <Cabeza n={2} onAtras={() => setPaso(1)} />
       <h1 className="onb-h1">Ajustes opcionales de accesibilidad</h1>
       <p className="onb-lead">Los encuentras después en Ajustes, tal como aquí.</p>
       <div className="onb-ajustes">
@@ -210,8 +211,8 @@ function Flujo({ desde = 1 }) {
         })}
       </div>
       <div className="onb-spacer" />
-      <button type="button" className="btn btn-primary" onClick={() => setPaso(5)}>Continuar</button>
-      <button type="button" className="btn-text onb-link" onClick={() => setPaso(5)}>Omitir por ahora</button>
+      <button type="button" className="btn btn-primary" onClick={() => setPaso(3)}>Continuar</button>
+      <button type="button" className="btn-text onb-link" onClick={() => setPaso(3)}>Omitir por ahora</button>
     </Onb>
   )
 
@@ -273,10 +274,10 @@ function Permiso({ icon, titulo, texto, valor, si, ocupado, onSi, onNo }) {
 
 // ---------- exports (ids de registro.jsx) ----------
 export function Acceso() { return <Flujo desde={1} /> }
-export function Ubicacion() { return <Flujo desde={3} /> }      // permisos juntos (paso 3)
-export function AvisosPermiso() { return <Flujo desde={3} /> }  // ya no es pantalla aparte: paso 3
+export function Ubicacion() { return <Flujo desde={4} /> }      // permisos juntos (paso 4)
+export function AvisosPermiso() { return <Flujo desde={4} /> }  // ya no es pantalla aparte: paso 4
 
-// onb: paso 2 en la primera vez; si ya entró (botón de modo del mapa), hoja del equipo "Medio de transporte de hoy".
+// onb: sigue desde el paso 2 en la primera vez; si ya entró (botón de modo del mapa), hoja del equipo "Medio de transporte de hoy".
 export function Medio() {
   if (!yaEntro()) return <Flujo desde={2} />
   return <CambiarMedio />
