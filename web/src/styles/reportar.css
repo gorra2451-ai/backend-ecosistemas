@@ -169,3 +169,9 @@
 .rp-aviso-voz{display:flex;flex-direction:column;gap:8px;padding:var(--sp2);border:var(--bw) solid var(--line);border-radius:16px;background:var(--s1)}
 .rp-aviso-voz p{margin:0;font:var(--t-small);color:var(--tx)}
 .rp-nota-voz{margin:0;text-align:center;font:var(--t-small);color:var(--mu)}
+/* D-030 · color por tipo de reporte (tarjetas de "¿Qué se inundó?" y listas) */
+.rp-tiles .tile--calle svg{color:var(--t-calle)} .rp-tiles .tile--casa svg{color:var(--t-casa)} .rp-tiles .tile--coche svg{color:var(--t-coche)}
+.rp-tiles .tile--calle{border-color:color-mix(in srgb,var(--t-calle) 55%,var(--line))}
+.rp-tiles .tile--casa{border-color:color-mix(in srgb,var(--t-casa) 55%,var(--line))}
+.rp-tiles .tile--coche{border-color:color-mix(in srgb,var(--t-coche) 55%,var(--line))}
+.rp-badge--calle{background:var(--t-calle);color:#fff} .rp-badge--casa{background:var(--t-casa);color:#fff} .rp-badge--coche{background:var(--t-coche);color:#04201E}

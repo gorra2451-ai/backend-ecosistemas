@@ -272,3 +272,7 @@
 .mp-z-datos .mp-det-c{display:flex;flex-direction:column;gap:14px}
 .mp-z-datos .mp-det-c h2{font:800 17px var(--f-head);margin-bottom:6px}
 .mp-z-agua{align-self:flex-start;background:var(--bg);border-radius:12px;padding:4px;margin-top:4px;display:inline-flex}
+/* D-030: muestras de color por tipo en la leyenda */
+.mp-sw--t{border-radius:50%;border:2px solid #fff;width:16px;height:16px}
+.mp-sw--calle{background:var(--t-calle)} .mp-sw--casa{background:var(--t-casa)} .mp-sw--coche{background:var(--t-coche)}
+.mp-verlista--pill{width:auto;height:52px;flex-direction:row;gap:8px;align-self:center;padding:0 18px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.4)}

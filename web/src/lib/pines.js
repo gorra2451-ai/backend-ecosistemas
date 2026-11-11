@@ -11,6 +11,7 @@ export function nivelPin(r) {
   return NIVELES.includes(r?.nivel) ? (r.nivel === 'critico' ? 'alto' : r.nivel) : 'bajo'
 }
 
+const LETRA = { bajo: 'B', medio: 'M', alto: 'A', critico: 'A' }
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 export function etiquetaPin(r) {
   const n = nivelPin(r)
@@ -21,6 +22,8 @@ export function etiquetaPin(r) {
 // svgIcono: el <svg> del tipo ya convertido a texto (MapView lo arma con Icon.jsx).
 export function htmlPin(r, svgIcono) {
   const n = nivelPin(r)
-  return `<div class="pin pin--${n}${r?.simulada ? ' pin--sim' : ''}" role="img" aria-label="${esc(etiquetaPin(r))}">`
-    + `<span class="pin-cab p-${n === 'riesgo' ? 'riesgo' : n}">${svgIcono}</span><span class="pin-pico"></span></div>`
+  const tipo = ['calle', 'casa', 'coche', 'persona_en_riesgo'].includes(r?.tipo) ? r.tipo : 'calle'
+  const chapa = n === 'riesgo' ? '' : `<span class="pin-nivel p-${n}"><b>${LETRA[n]}</b></span>`
+  return `<div class="pin pin--${n} pin--${tipo}${r?.simulada ? ' pin--sim' : ''}" role="img" aria-label="${esc(etiquetaPin(r))}">`
+    + `<span class="pin-cab">${svgIcono}${chapa}</span><span class="pin-pico"></span></div>`
 }
