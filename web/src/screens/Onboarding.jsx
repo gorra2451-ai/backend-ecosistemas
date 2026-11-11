@@ -7,6 +7,8 @@ import { Screen, Btn, PorConfirmar } from '../components/ui.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
 import { useApp } from '../lib/store.jsx'
 import { asegurarSesion, registrarEntrada, guardarAccesibilidad } from '../lib/api.js'
+import { vibrar, FRASE_VOZ } from '../lib/haptica.js'
+import { hablar } from '../lib/confirmar.js'
 import {
   MEDIOS, AJUSTES_A11Y, tituloMedio, a11yActivo, alternarA11y, resumenA11y, idCorto, yaEntro,
   conTiempo, entrarConMedio, avisoEntrada, pedirPermisoAvisos,
@@ -17,6 +19,7 @@ import '../styles/onboarding.css'
 const EXTRA = {
   moto: <><circle cx="5.5" cy="17" r="3" /><circle cx="18.5" cy="17" r="3" /><path d="M8.5 17H14l3-6h-3L12 8H9M17 11l1.5 6" /></>,
   grande: <path d="M3 19l5-12 5 12M5 15h6M15 19l3-7 3 7M16 17h4" />,
+  vibra: <><rect x="8" y="4" width="8" height="16" rx="2" /><path d="M4 9v6M20 9v6" /></>,
   dalton: <><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-1.6-1-2.6 1-1.4 2-1.4h2a4 4 0 0 0 4-4C21 6.5 17 3 12 3z" /><path d="M7.5 11h.1M10 7.5h.1M14.5 7.5h.1" /></>,
   ruta: <><circle cx="6" cy="19" r="2" /><circle cx="18" cy="5" r="2" /><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8" /></>,
 }
@@ -105,7 +108,10 @@ function Flujo({ desde = 1 }) {
   const alternar = (k) => {
     const p = alternarA11y(prefs, k)
     setPrefs(p)
-    if (k === 'dalton') guardarAccesibilidad(a11yActivo(p, 'dalton')).catch(() => {}) // igual que Módulo E; si falla, queda local
+    const on = a11yActivo(p, k)
+    if (k === 'dalton') guardarAccesibilidad({ daltonismo: on }).catch(() => {}) // igual que Módulo E; si falla, queda local
+    if (k === 'vibra') { guardarAccesibilidad({ vibracion: on }).catch(() => {}); if (on) vibrar(p, 80) }
+    if (k === 'voz') { if (on) hablar(FRASE_VOZ); else try { window.speechSynthesis?.cancel() } catch { /* nada */ } }
   }
   const reiniciar = () => {
     setMedioLocal(null); setLoc(null); setNot(null)

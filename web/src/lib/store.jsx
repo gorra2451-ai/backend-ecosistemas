@@ -1,6 +1,8 @@
 // Estado global y navegación. Sin router: una pantalla activa (`screen`) sobre el mapa,
 // igual que App.dc.html. ir('tipo') abre una pantalla; ir(null) vuelve al mapa.
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { crearHistorial } from './historial.js'
+import { esTocable, vibrar } from './haptica.js'
 import { pedirPosicion, permisoConcedido } from './ubicacion.js'
 
 // Centro por defecto si no hay permiso de ubicación: Plaza del Sol, Zapopan (ejemplo del design system).
@@ -25,7 +27,20 @@ export function AppProvider({ children }) {
   const [seleccion, setSeleccion] = useState(null)    // zona o reporte seleccionado en el mapa
   const [version, setVersion] = useState(0)           // sube para forzar recarga del mapa
 
-  const ir = useCallback((s, p = {}) => { setScreen(s); setParams(p) }, [])
+  // Deslizar para regresar / botón atrás del celular navegan dentro de la app (lib/historial.js).
+  const hist = useRef(null)
+  if (!hist.current && typeof window !== 'undefined') {
+    hist.current = crearHistorial(window.history, (s, p) => { setScreen(s); setParams(p) },
+      () => (leer('aguas.onboarded', false) ? null : 'acceso'))
+  }
+  useEffect(() => {
+    const alVolver = (e) => hist.current?.alVolver(e)
+    window.addEventListener('popstate', alVolver)
+    return () => window.removeEventListener('popstate', alVolver)
+  }, [])
+  const ir = useCallback((s, p = {}, opc = {}) => {
+    if (hist.current) hist.current.ir(s, p, opc); else { setScreen(s); setParams(p) }
+  }, [])
   const avisar = useCallback((texto) => { setToastState(texto); setTimeout(() => setToastState(null), 3200) }, [])
   const terminarOnboarding = useCallback(() => guardar('aguas.onboarded', true), [])
   const setMedio = (m) => { setMedioState(m); guardar('aguas.medio', m) }
@@ -39,6 +54,15 @@ export function AppProvider({ children }) {
     el.dataset.theme = prefs.tema === 'claro' ? 'light' : 'dark'
     el.dataset.a11y = (prefs.a11y || []).join(' ')
   }, [prefs])
+
+  // Vibración corta en cada toque de botón/enlace/interruptor (se apaga en Accesibilidad · D-027).
+  const prefsRef = useRef(prefs)
+  prefsRef.current = prefs
+  useEffect(() => {
+    const alTocar = (e) => { if (esTocable(e.target)) vibrar(prefsRef.current, 10) }
+    document.addEventListener('click', alTocar, true)
+    return () => document.removeEventListener('click', alTocar, true)
+  }, [])
 
   const pedirUbicacion = useCallback(() => pedirPosicion().then((u) => { if (u) setUbic(u); return u }), [])
   useEffect(() => { permisoConcedido().then((si) => { if (si) pedirUbicacion() }) }, [pedirUbicacion])

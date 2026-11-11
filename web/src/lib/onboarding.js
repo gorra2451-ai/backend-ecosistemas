@@ -19,19 +19,21 @@ export const AJUSTES_A11Y = [
   { k: 'grande', titulo: 'Texto grande', desc: 'Letras más grandes en toda la app.' },
   { k: 'voz', titulo: 'Modo voz', desc: 'La app lee en voz alta las alertas.' },
   { k: 'dalton', titulo: 'Modo para daltonismo', desc: 'Cambia los colores del mapa para que se distingan mejor.' },
+  { k: 'vibra', titulo: 'Vibración', desc: 'El teléfono vibra un poco al tocar (solo Android).' },
 ]
-export const a11yActivo = (prefs, k) => (k === 'voz' ? !!prefs?.voz : (prefs?.a11y || []).includes(k))
+export const a11yActivo = (prefs, k) => (k === 'voz' ? !!prefs?.voz : k === 'vibra' ? prefs?.vibra !== false : (prefs?.a11y || []).includes(k))
 export function alternarA11y(prefs, k) {
   const p = prefs || {}
   const v = !a11yActivo(p, k)
   if (k === 'voz') return { ...p, voz: v }
+  if (k === 'vibra') return { ...p, vibra: v }
   const a = p.a11y || []
   return { ...p, a11y: v ? [...a, k] : a.filter((x) => x !== k) }
 }
 // "texto grande, modo voz" o "ninguna activada" (resumen final del equipo)
 export function resumenA11y(prefs) {
   const n = { grande: 'texto grande', voz: 'modo voz', dalton: 'daltonismo' }
-  return AJUSTES_A11Y.filter((a) => a11yActivo(prefs, a.k)).map((a) => n[a.k]).join(', ') || 'ninguna activada'
+  return AJUSTES_A11Y.filter((a) => n[a.k] && a11yActivo(prefs, a.k)).map((a) => n[a.k]).join(', ') || 'ninguna activada'
 }
 
 // "#A7F3B2": 6 primeros caracteres del id de la sesión anónima, en mayúsculas. null si no hay sesión.

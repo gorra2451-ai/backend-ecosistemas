@@ -257,3 +257,19 @@ sus PR con `gh pr merge --merge --admin` (sigue siendo merge commit, equivalente
   con el interruptor apagado).
 **Pendiente:** "recorrido" (tutorial) del equipo: falta el material y su aprobación. Voz: falta saber qué falló.
 **Por qué:** feedback de Diego tras probar en su celular: demasiadas cosas encima del mapa y la hoja no bajaba.
+
+## D-027 · Gestos, vibración, voz de muestra y simulaciones (humo en celular, 2026-11-11)
+**Estado:** Aceptada por Diego · 2026-11-11
+**Decisión:**
+- **Atrás dentro de la app** (`lib/historial.js`): cada pantalla es una entrada del historial del navegador, así que
+  deslizar para regresar (iPhone) y el atrás de Android regresan a la pantalla anterior / al mapa en vez de salir de
+  la app. "Reporte enviado" cierra el flujo: atrás va al mapa, nunca al formulario (evita reportes dobles).
+- **Vibración al tocar** botones, enlaces e interruptores (10 ms), activada por omisión; se apaga en Accesibilidad y en
+  el paso 2 del registro. Se guarda en el perfil anónimo: `accesibilidad.vibracion` (migración
+  `accesibilidad_vibracion`; `guardar_accesibilidad` ahora mezcla). Safari de iPhone no permite vibrar desde la web.
+- **Voz de muestra:** al activar "leer en voz alta" la app dice que se activó y así suena la voz.
+- **Simulaciones (modo prueba):** en Más, "Simular una inundación" (bajo/medio/alto/crítico) pone una zona falsa a
+  ~150 m. Solo en ese teléfono (`lib/simulacion.js`), marcada "Simulación", nada va a la nube; se borra al recargar.
+**Pendiente:** persona en riesgo antes del 911 y niveles de agua subjetivos por estatura (revisar con el equipo);
+textura de las tarjetas "pasan / no pasan"; tarjetas desalineadas (falta saber cuáles).
+**Por qué:** feedback de Diego tras probar en su celular.

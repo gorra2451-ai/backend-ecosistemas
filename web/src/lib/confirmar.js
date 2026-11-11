@@ -242,7 +242,7 @@ export function permiteSenal(prefs = {}, ahora = Date.now()) {
   const h = prefs.silencioHasta
   const t = typeof h === 'number' ? h : Date.parse(h)
   const silenciado = Number.isFinite(t) && t > ahora
-  return { sonido: !silenciado, vibra: !silenciado && !!prefs.vibra }
+  return { sonido: !silenciado, vibra: !silenciado && prefs.vibra !== false } // D-027: activada salvo que se apague
 }
 export function senal(prefs) {
   const p = permiteSenal(prefs)

@@ -23,7 +23,7 @@ Nunca uses la llave `secret`/`service_role` en el front.
 ```js
 const { data } = await supabase.auth.signInAnonymously()
 await supabase.rpc('registrar_entrada', { medio: 'auto' })        // peaton|bici|moto|auto|transporte_publico ("Omitir" = no llamar)
-await supabase.rpc('guardar_accesibilidad', { prefs: { daltonismo: true } })
+await supabase.rpc('guardar_accesibilidad', { prefs: { daltonismo: true } })  // D-027: también { vibracion: false }; se MEZCLA con lo guardado
 ```
 Auth crea el perfil automáticamente al abrir la sesión. Cada llamada a `registrar_entrada`
 guarda una visita nueva; ambas RPC devuelven `null` al completarse. Un perfil puede registrar hasta `max_entradas_por_hora` visitas por hora (20, D-017); el exceso devuelve `limite_entradas`. Para `prefs`, v1 acepta
