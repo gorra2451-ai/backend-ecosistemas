@@ -205,3 +205,29 @@ describe('respuestas', () => {
     expect(permiteSenal({ vibra: false }, ahora).vibra).toBe(false)
   })
 })
+
+import { elegirVoz } from './confirmar.js'
+const v = (name, lang) => ({ name, lang })
+describe('elegirVoz', () => {
+  // Lista real de macOS/iOS: las voces "novedad" (Eddy, Flo, Grandma…) salen antes que Paulina y suenan con acento extranjero.
+  const apple = [
+    v('Eddy (Español (México))', 'es-MX'), v('Eddy (Portugués (Brasil))', 'pt-BR'), v('Flo (Español (México))', 'es-MX'),
+    v('Grandma (Español (México))', 'es-MX'), v('Mónica', 'es-ES'), v('Paulina', 'es-MX'), v('Rocko (Español (México))', 'es-MX'),
+  ]
+  it('en Apple elige Paulina, no Eddy', () => { expect(elegirVoz(apple).name).toBe('Paulina') })
+  it('en Windows prefiere la voz mexicana de Microsoft', () => {
+    expect(elegirVoz([v('Microsoft Helena - Spanish (Spain)', 'es-ES'), v('Microsoft Sabina - Spanish (Mexico)', 'es-MX')]).name)
+      .toMatch(/Sabina/)
+  })
+  it('en Chrome/Android usa la voz de Google en español', () => {
+    expect(elegirVoz([v('Google português do Brasil', 'pt-BR'), v('Google español de Estados Unidos', 'es-US')]).name)
+      .toBe('Google español de Estados Unidos')
+  })
+  it('nunca elige portugués ni voces novedad si hay otra en español', () => {
+    expect(elegirVoz([v('Eddy (Español (México))', 'es-MX'), v('Luciana', 'pt-BR'), v('Mónica', 'es-ES')]).name).toBe('Mónica')
+  })
+  it('sin voces en español devuelve null (el navegador usa lang es-MX)', () => {
+    expect(elegirVoz([v('Luciana', 'pt-BR'), v('Samantha', 'en-US')])).toBeNull()
+    expect(elegirVoz([])).toBeNull()
+  })
+})
