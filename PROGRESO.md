@@ -2,6 +2,30 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-10 (seguridad) · Diego · Claude Code + auditoría Claude Fable 5.2
+**Hecho**
+- E2E de API en local, 27/27 (reportar → 5 "sí" → activo → Realtime → zona; privacidad; evidencias; derivación).
+- Auditoría independiente (solo lectura; ataques reales solo en local): sin críticos. RLS, grants, 46 funciones con
+  `search_path=''`, Storage, Edge Functions y front, sin hallazgos. Riesgos: 3 sesiones tumbaban cualquier reporte
+  (A1), persona en riesgo con 1 sesión (A2, ya aceptado en P-16), Realtime público inyectable (M2), sin cabeceras (M3).
+- D-024: `banderas_para_revision` 3 → 6 (migración + `2200_banderas_midfi`; 0200 y 0500 fijan 3 en su transacción);
+  `agruparRafaga` en el mapa (máx. 1 recarga/3 s, `rafaga.test.js`); cabeceras + CSP en `netlify.toml`, probadas en
+  un deploy de prueba (mapa, fuentes, Nominatim, Realtime, sin violaciones; `example.com` bloqueado).
+- pgTAP 486/486 · vitest 214/214 · build OK. Historial de git y bundle sin secretos. Nube: 0 administradores.
+**Pendiente:** ver D-024 (tope por identidad en marcar_falso, captcha, canales privados, apagar registro por correo).
+
+## 2026-11-10 (deploy del mid-fi) · Diego · Claude Code
+**Hecho**
+- LeoFigo74z aprobó el PR #14 en `862e43c`; auto-merge → `main` en `7374f02`.
+- `supabase db push` desde main: 7 migraciones (v2 `20261110000000..000300`, D-022 `192439`, D-023 `195638` y `195640`).
+  Nube con `radio_cercanos_max_m` 40000, `ventana_activacion_min` 1440, `minutos_expiracion` 180, 5 confirmaciones.
+- `probar-nube.sh` 12/12. Registro anónimo en la nube OK (`is_anonymous: true`) y `reportes_cercanos` responde 200.
+- Front: vitest 209/209, build OK → Netlify prod (deploy `6af3d80a59211a95f0f981fc`). Humo de solo lectura en Chrome
+  con `?prueba=1`: registro completo, mapa, "Cerca de ti" con aviso de modo prueba, sin errores de consola.
+  No se crearon reportes en la nube a propósito (con la ventana de 24 h los testers los verían y confirmarían).
+**Pendiente:** humo en 2 celulares (reportar/confirmar, voz con micrófono real, Safari iPhone, Realtime) y luego
+borrar lo creado en el humo antes de las 12:00.
+
 ## 2026-11-10 (2.ª revisión de Leo) · Diego · Claude Code
 **Hecho**
 - Voz sin GPS real: no hay avisos automáticos y "Escuchar" pide la ubicación (habla dentro del toque para Safari iOS);

@@ -4,6 +4,9 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(16);
+-- D-024: el mid-fi sube banderas_para_revision a 6 por migración; esta prueba verifica la LÓGICA con el
+-- valor normal (3), fijado dentro de su transacción (se revierte al final).
+update public.parametros set valor = 3 where clave = 'banderas_para_revision';
 
 delete from public.reportes;
 delete from public.administradores;

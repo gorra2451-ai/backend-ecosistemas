@@ -7,6 +7,9 @@ select plan(37);
 update public.parametros set valor = 1000 where clave = 'radio_cercanos_max_m';
 update public.parametros set valor = 60   where clave = 'ventana_activacion_min';
 update public.parametros set valor = 30   where clave = 'minutos_expiracion';
+-- D-024: el mid-fi sube banderas_para_revision a 6 por migración; esta prueba verifica la LÓGICA con el
+-- valor normal (3), fijado dentro de su transacción (se revierte al final).
+update public.parametros set valor = 3 where clave = 'banderas_para_revision';
 
 -- Aislar de seed.sql: se borra dentro de la transacción y el rollback lo restaura.
 delete from public.reportes;

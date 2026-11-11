@@ -216,3 +216,25 @@ D-021). No se guarda nada nuevo de la persona; `aguas.prueba` vive solo en su na
   se conserva (sin GPS es la única forma de ubicar un reporte), pero solo al presionar "Buscar", sin autocompletar
   (reglas de uso de Nominatim). Tocar el mapa para elegir el punto queda para después del mid-fi.
 **Por qué:** privacidad (AGENTS.md §3.8) y que una zona no se publique fuera del plazo que dice la regla.
+
+## D-024 · Endurecimiento de seguridad para el mid-fi (auditoría 2026-11-10)
+**Estado:** Aceptada por Diego · 2026-11-10 · tras auditoría independiente (Claude Fable 5.2, solo lectura)
+**Decisión:**
+- **Banderas 3 → 6 (TEMPORAL):** con 3 marcas de falso, 3 sesiones anónimas mandaban cualquier reporte (incluida
+  `persona_en_riesgo`) a `en_revision`, y la nube no tiene administradores. Publicar exige 5 "sí" + autor, así que
+  `banderas_para_revision` = 6. Se revierte con D-022 cuando `marcar_falso` tenga tope por identidad.
+- **Realtime:** los canales `reportes`/`zonas` son públicos; el mapa agrupa eventos (máx. 1 recarga cada 3 s,
+  `agruparRafaga`). Canales privados con RLS en `realtime.messages`: después del mid-fi.
+- **Cabeceras** en `netlify.toml`: CSP, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`.
+- **Moderación en vivo** durante el testeo con `supabase db query --linked` (restaurar/ocultar con OK de Diego).
+**Pendiente (no esta noche):** tope por identidad en `marcar_falso` y votos "no"; "sí" repetido no debe mover
+`ultima_confirmacion`; captcha en alta anónima (P-16); validar bytes de evidencias; `npm audit fix` (auth-js, baja);
+apagar registro por correo en Auth; caducidad de anónimos y `en_revision`.
+**Por qué:** que 3 personas no puedan esconder una emergencia real durante el testeo, y defensa básica del sitio.
+
+## D-025 · Diego mergea a `main` sin esperar revisión de LeoFigo74z
+**Estado:** Aceptada por Diego · 2026-11-11
+**Decisión:** la revisión de LeoFigo74z deja de ser requisito para mergear a `main`. Diego aprueba y mergea
+sus PR con `gh pr merge --merge --admin` (sigue siendo merge commit, equivalente a `--no-ff`). Reemplaza la parte
+"revisado por la otra persona" de AGENTS.md §3.12. Todo lo demás sigue igual: rama por tarea, PR, pruebas en verde.
+**Por qué:** esperar la revisión retrasaba la construcción y el despliegue del mid-fi.

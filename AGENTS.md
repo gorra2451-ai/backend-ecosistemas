@@ -40,7 +40,7 @@ No leas todo el repo "por si acaso": gasta contexto. Lee lo que la tarea pide.
 11. **Commits pequeños** en español, formato `tipo(modulo): qué cambió`
     (tipos: feat, fix, docs, test, refactor, chore). Sin trailers de co-autor
     (Vercel Hobby bloquea deploys con un segundo colaborador).
-12. **Merge a `main` solo por PR** revisado por la otra persona, con `--no-ff`.
+12. **Merge a `main` solo por PR**, con `--no-ff`. Desde D-025 Diego puede mergear sin revisión de LeoFigo74z (`gh pr merge --merge --admin`).
 13. **LeoFigo74z trabaja en modo solo local (D-015):** construye y prueba en su compu, no hace
     push sin autorización de Diego (`git config arnes.soloLocal true` lo bloquea). Al terminar
     cada tarea de `docs/PLAN.md` se detiene y le manda a Diego un resumen; las dudas van a Diego.

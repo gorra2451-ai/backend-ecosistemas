@@ -52,7 +52,7 @@ Valores iniciales (**5 y 30 salieron de clase; el resto son propuestas** a ajust
 | `ventana_activacion_min` | 60 (**1440 temporal mid-fi, D-022**) | minutos para juntar las confirmaciones; si no, `pendiente` → `resuelto` |
 | `minutos_expiracion` | 30 (**180 temporal mid-fi, D-022**) | minutos sin "sí" para que un `activo` pase a `resuelto` |
 | `votos_no_para_resolver` | 3 | votos "no" (desde el último "sí") que lo resuelven |
-| `banderas_para_revision` | 3 | marcas de falso que lo mandan a `en_revision` |
+| `banderas_para_revision` | 3 (6 TEMPORAL mid-fi, D-024) | marcas de falso que lo mandan a `en_revision` |
 | `max_reportes_por_hora` | 5 | límite por usuario |
 | `tamano_celda_m` | 300 | lado de la celda de zonas de calor |
 | `nivel_bajo_min` / `nivel_medio_min` / `nivel_alto_min` / `nivel_critico_min` | 5 / 10 / 15 / 20 | confirmaciones "sí" para cada nivel (D-021) |
