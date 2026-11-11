@@ -742,7 +742,9 @@ export function ColaReportes() {
     }
     procesar()
     window.addEventListener('online', procesar)
-    return () => window.removeEventListener('online', procesar)
+    // Señal intermitente (manejando): el evento `online` no llega porque el navegador nunca se sintió "sin red".
+    const cada = setInterval(procesar, 30000)
+    return () => { window.removeEventListener('online', procesar); clearInterval(cada) }
   }, [])
   return null
 }
