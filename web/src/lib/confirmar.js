@@ -261,9 +261,15 @@ export function senal(prefs) {
 export function hablar(texto, cb = () => {}) {
   try {
     if (!('speechSynthesis' in window)) { cb(); return }
+    const s = window.speechSynthesis
     const u = new SpeechSynthesisUtterance(texto)
     u.lang = 'es-MX'; u.onend = () => cb(); u.onerror = () => cb()
-    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u)
+    const voz = s.getVoices?.().find((v) => /^es[-_]MX/i.test(v.lang)) || s.getVoices?.().find((v) => /^es/i.test(v.lang))
+    if (voz) u.voice = voz
+    // Safari iOS se queda callado si se llama cancel() y speak() seguidos sin que haya algo sonando.
+    if (s.speaking || s.pending) s.cancel()
+    s.resume?.()
+    s.speak(u)
   } catch { cb() }
 }
 

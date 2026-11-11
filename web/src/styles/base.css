@@ -63,15 +63,32 @@ button:disabled{cursor:not-allowed}
 :root:not([data-theme=light]) .leaflet-tile-pane,[data-a11y~=contraste] .leaflet-tile-pane{filter:invert(1) hue-rotate(185deg) brightness(.85) contrast(.9) saturate(.6)}
 
 /* Barra inferior móvil (Inicio · Mapa · Reportes) */
-.tabbar{display:flex;flex:none;background:var(--s1);border-top:var(--bw) solid var(--line);padding:4px 8px calc(4px + env(safe-area-inset-bottom));z-index:600}
-.tab{flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  background:transparent;border:0;color:var(--mu);font:700 13px var(--f-body)}
-.tab.on{color:var(--acc)}
-/* Pin de reporte en la calle (D-028): cabeza redonda con el patrón del nivel + ícono del tipo, y pico al punto. */
-.pin{width:44px;height:54px;position:relative;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
-.pin-cab{width:44px;height:44px;border-radius:50%;border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
-.pin-cab>svg{width:30px;height:30px;padding:4px;border-radius:50%;background:var(--s1);color:var(--tx)}
-.pin-pico{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid var(--bg);margin-top:-3px}
+.tabbar{display:flex;flex:none;background:var(--bg);padding:6px 12px calc(8px + env(safe-area-inset-bottom));z-index:600;position:relative}
+/* Píldora oscura con 5 lugares; el central es el botón "+" que sobresale (D-030) */
+.tabbar-pill{position:relative;flex:1;display:grid;grid-template-columns:repeat(5,1fr);align-items:center;height:64px;
+  background:#05080F;border:1px solid #1C2A40;border-radius:24px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.tab{position:relative;z-index:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  border:0;background:transparent;color:#8EA0BA;font:700 11px var(--f-body);transition:color .25s}
+.tab.on{color:#04201E}
+.tab-gota{position:absolute;z-index:0;top:6px;left:calc(var(--i) * 20% + 10% - 26px);width:52px;height:52px;border-radius:18px;
+  background:var(--acc);box-shadow:0 0 18px rgba(46,230,214,.45);
+  transition:left .45s cubic-bezier(.68,-0.45,.27,1.45);animation:gota .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes gota{0%{transform:scale(.6,1.15);border-radius:50%}45%{transform:scale(1.25,.8);border-radius:40%}100%{transform:scale(1,1);border-radius:18px}}
+.tab--centro{margin-top:-34px}
+.tab-mas{width:62px;height:62px;border-radius:50%;background:var(--acc);color:var(--accTx);display:flex;align-items:center;justify-content:center;
+  border:6px solid var(--bg);box-shadow:0 6px 18px rgba(46,230,214,.4);transition:transform .2s}
+.tab--centro:active .tab-mas{transform:scale(.92)}
+@media (prefers-reduced-motion:reduce){.tab-gota{transition:none;animation:none}}
+[data-a11y~=motion] .tab-gota{transition:none;animation:none}
+/* Pin de reporte en la calle (D-028, D-030): cabeza con el color del TIPO + ícono blanco; chapita con el nivel
+   (patrón + letra B/M/A) para no depender del color. Persona en riesgo: rojo sólido que pulsa. */
+.pin{width:46px;height:56px;position:relative;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.pin-cab{width:44px;height:44px;border-radius:50%;border:3px solid #fff;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;color:#fff}
+.pin-cab>svg{width:26px;height:26px}
+.pin--calle .pin-cab{background:var(--t-calle)} .pin--casa .pin-cab{background:var(--t-casa)}
+.pin--coche .pin-cab{background:var(--t-coche);color:#04201E}
 .pin--riesgo .pin-cab{background:var(--risk);animation:pulseb 1.4s infinite}
-.pin--riesgo .pin-cab>svg{background:#fff;color:var(--risk)}
-.pin--sim .pin-cab{border-style:dashed;border-color:var(--acc)}
+.pin-nivel{position:absolute;right:-8px;bottom:-6px;width:22px;height:22px;border-radius:7px;border:2px solid #fff;display:flex;align-items:center;justify-content:center}
+.pin-nivel b{font:800 11px/1 var(--f-body);color:#0B1220;background:rgba(255,255,255,.9);border-radius:4px;padding:1px 3px}
+.pin-pico{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid #fff;margin-top:-3px}
+.pin--sim .pin-cab{border-style:dashed}

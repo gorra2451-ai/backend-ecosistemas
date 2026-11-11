@@ -251,7 +251,11 @@ export function Tipo() {
   const { ir, ubic, pedirUbicacion } = useApp()
   // Se pide la ubicación desde ya para que en Detalles esté lista.
   useEffect(() => { if (!ubic.real) pedirUbicacion().catch(() => {}) }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  const elegir = (tipo, gravedad = null) => ir('paso2', gravedad ? { tipo, gravedad } : { tipo })
+  // Persona en riesgo: directo a la pantalla completa "Llama al 911" (ronda 1, a pedido de Diego 2026-11-11);
+  // el aviso se pone en el mapa desde ahí con tu ubicación (sin GPS real no se manda).
+  const elegir = (tipo, gravedad = null) => (tipo === 'persona_en_riesgo'
+    ? ir('riesgo', { armado: ubic.real ? armarReporte({ tipo, ubic }) : null }, { cerrarFlujo: true })
+    : ir('paso2', gravedad ? { tipo, gravedad } : { tipo }))
   const voz = useVozTipo(elegir)
   return (
     <Screen onBack={false} label="Reportar inundación · paso 1 de 4 · Tipo">
@@ -260,7 +264,7 @@ export function Tipo() {
       <h1 className="rp-h1">¿Qué se inundó?</h1>
       <div className="rp-tiles">
         {TIPOS_REPORTE.map((k) => (
-          <button key={k} className={'tile' + (k === 'persona_en_riesgo' ? ' tile--risk' : '')} onClick={() => { voz.parar(); elegir(k) }}>
+          <button key={k} className={'tile tile--' + k + (k === 'persona_en_riesgo' ? ' tile--risk' : '')} onClick={() => { voz.parar(); elegir(k) }}>
             <Icon name={ICONO_TARJETA[k]} size={54} stroke={1.8} />{TIPO_LABEL[k]}
           </button>
         ))}
@@ -550,7 +554,7 @@ export function MisReportes() {
             return (
               <li key={r.id}>
                 <button className="rp-item" onClick={() => ir('mireporte', { id: r.id })}>
-                  <span className="rp-badge"><Icon name={iconoTipo(r.tipo)} size={26} /></span>
+                  <span className={"rp-badge rp-badge--" + r.tipo}><Icon name={iconoTipo(r.tipo)} size={26} /></span>
                   <span className="txt">
                     <b>Tu reporte · {f.titulo}</b>
                     {r.direccion && <span className="lugar">{r.direccion}</span>}
@@ -580,7 +584,7 @@ export function MisReportes() {
             return (
               <li key={x.id}>
                 <button className="rp-item" onClick={() => confirmar(x)} aria-label={`${f.titulo}, ${f.lugar}. Confirmar si sigue`}>
-                  <span className={'rp-badge' + (x.tipo === 'persona_en_riesgo' ? ' riesgo' : '')}><Icon name={iconoTipo(x.tipo)} size={26} /></span>
+                  <span className={'rp-badge rp-badge--' + x.tipo + (x.tipo === 'persona_en_riesgo' ? ' riesgo' : '')}><Icon name={iconoTipo(x.tipo)} size={26} /></span>
                   <span className="txt">
                     <b>{f.titulo}</b>
                     {f.lugar && <span className="lugar">{f.lugar}</span>}

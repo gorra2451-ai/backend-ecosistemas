@@ -302,3 +302,17 @@ textura de las tarjetas "pasan / no pasan"; tarjetas desalineadas (falta saber c
 - **Barra superior compacta:** modo de transporte y Escuchar solo con ícono (con aria-label).
 - **Detalle de alerta:** "¿Qué debes hacer?" y acciones arriba, con el dibujo del agua; datos completos plegados.
 - **Onboarding sin "Registro terminado":** "Entrar a la app" desde el paso 4.
+
+## D-030 · Color por tipo, barra inferior tipo píldora, 911 a pantalla completa y voz en iPhone (2026-11-11)
+**Estado:** Aceptada por Diego · 2026-11-11 (con referencias de imagen para la barra)
+**Decisión:**
+- **Color por tipo de reporte** (`--t-calle` azul, `--t-casa` morado, `--t-coche` verde, persona en riesgo rojo):
+  cabeza del pin, tarjetas de "¿Qué se inundó?" y listas. El nivel va en una chapita del pin (patrón + B/M/A).
+  `--rm` (medio) pasa a naranja puro `#FF9F1C`: el anterior se leía rojo sin zoom.
+- **Barra inferior:** píldora oscura con Mapa · Reportes · [+ Reportar] · Ayuda · Más y una "gota" que se desliza
+  con efecto líquido a la pestaña activa (sin animación con "reducir movimiento"). "Más" sale de la barra superior y
+  el botón grande "Reportar" sale de la hoja (lo reemplaza el "+").
+- **Persona en riesgo:** al tocar la tarjeta abre directo la pantalla roja completa "Llama al 911" (como en la ronda
+  1) y desde ahí pone el aviso en el mapa con tu ubicación. Reemplaza el aviso dentro del formulario de la ronda 3.
+- **Voz:** ya no se llama `cancel()` antes de cada frase si no hay nada sonando (Safari iOS se quedaba callado) y se
+  elige una voz en español si existe. Ajustes usa la misma función.

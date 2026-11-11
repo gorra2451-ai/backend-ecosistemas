@@ -14,6 +14,8 @@ describe('pines de reporte en la calle', () => {
     const h = htmlPin({ tipo: 'casa', gravedad: 'limitado' }, '<svg id="i"></svg>')
     expect(h).toContain('<svg id="i"></svg>')
     expect(h).toContain('pin--medio')
+    expect(h).toContain('pin--casa') // D-030: color por tipo
+    expect(h).toContain('<b>M</b>') // nivel en la chapita
     expect(h).not.toContain('pin--sim')
     expect(htmlPin({ tipo: 'calle', simulada: true }, '')).toContain('pin--sim')
   })

@@ -9,9 +9,11 @@
   --map:#0F1B2D; --grid:#16243A; --road:#2D3F5C; --roadC:#0A1322; --park:#173049; --lab:#A9B8CE;
   /* escala de riesgo (nunca decorativa) */
   --rb:#F5B83D;  /* Bajo  · puntos */
-  --rm:#FF7A59;  /* Medio · líneas horizontales */
+  --rm:#FF9F1C;  /* Medio · líneas horizontales · naranja puro (D-030: el anterior se leía rojo de lejos) */
   --ra:#FF4D5E;  /* Alto  · diagonales */
   --risk:#C81E2E;/* Persona en riesgo · sólido, texto blanco (5.7:1) */
+  /* color por TIPO de reporte (D-030): pin, tarjeta y lista. El nivel va aparte (patrón + letra). */
+  --t-calle:#4C8DFF; --t-casa:#B57BFF; --t-coche:#3DD68C; --t-riesgo:var(--risk);
   --risk-tx-on-white:#8A1420; /* texto del botón blanco “Llamar al 911” */
   --resuelto:var(--mu);
   --bw:1px;      /* grosor de borde; 2px en alto contraste */
@@ -53,6 +55,7 @@
   --amber:#9A6416; --amberTx:#FFFFFF;
   --map:#E6ECF3; --grid:#D8E0EA; --road:#FFFFFF; --roadC:#C3CFDD; --park:#CFE3D6; --lab:#3A4B63;
   --ra:#F0435A; /* rb, rm, risk iguales */
+  --t-calle:#1F5FD1; --t-casa:#7A3FD1; --t-coche:#13854D;
 }
 [data-a11y~=dalton]{ --rb:#9AD0F5; --rm:#3A8FD9; --ra:#E66100; --risk:#B34700; --amber:#9AD0F5; }
 [data-theme=light][data-a11y~=dalton]{ --amber:#1F5F99; --amberTx:#FFFFFF; }

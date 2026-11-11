@@ -16,6 +16,7 @@ import {
 } from '../lib/ayuda.js'
 import { pushDisponible, activarPush, desactivarPush, suscripcionActual } from '../lib/ayudaPush.js'
 import { vibracionActiva, vibrar, FRASE_VOZ } from '../lib/haptica.js'
+import { hablar as hablarVoz } from '../lib/confirmar.js'
 import '../styles/ayuda.css'
 
 const leer = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d } }
@@ -624,11 +625,10 @@ const A11Y = [
   ['motion', 'Reducir movimiento', 'Apaga todas las animaciones'],
 ]
 
+// Misma voz que el resto de la app (lib/confirmar.js: arregla el silencio de Safari iOS).
 function hablar(texto) {
   if (!('speechSynthesis' in window)) return false
-  const u = new SpeechSynthesisUtterance(texto)
-  u.lang = 'es-MX'
-  window.speechSynthesis.cancel(); window.speechSynthesis.speak(u)
+  hablarVoz(texto)
   return true
 }
 

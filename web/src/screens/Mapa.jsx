@@ -116,9 +116,12 @@ export function LeyendaSimbolos() {
   )
   return (
     <ul className="mp-capas-sim">
-      {fila('mp-sw p-bajo', 'Bajo · puntos', 'El agua no sube de la banqueta')}
-      {fila('mp-sw p-medio', 'Medio · rayas', 'Llega a media llanta')}
-      {fila('mp-sw p-alto', 'Alto · diagonales', 'Cubre la llanta: no pasan carros')}
+      {fila('mp-sw mp-sw--t mp-sw--calle', 'Calle inundada', 'Pin azul')}
+      {fila('mp-sw mp-sw--t mp-sw--casa', 'Casa inundada', 'Pin morado')}
+      {fila('mp-sw mp-sw--t mp-sw--coche', 'Coche atrapado', 'Pin verde')}
+      {fila('mp-sw p-bajo', 'Bajo · puntos · B', 'El agua no sube de la banqueta')}
+      {fila('mp-sw p-medio', 'Medio · rayas · M', 'Llega a media llanta')}
+      {fila('mp-sw p-alto', 'Alto · diagonales · A', 'Cubre la llanta: no pasan carros')}
       {fila('mp-sw--risk', 'Persona en riesgo', 'Alguien necesita ayuda · llama al 911')}
       {fila('mp-sw--ref', 'Refugio', 'Lugar para resguardarte')}
       {fila('mp-sw--pend', 'En verificación', 'Tu reporte, aún sin confirmar')}
@@ -294,9 +297,7 @@ export function TopBar() {
           <button type="button" className="mp-search" onClick={() => ir('buscar')}>
             <IcoLupa /><span>Buscar dirección, colonia o lugar</span>
           </button>
-          <button type="button" className="mp-mas" onClick={() => ir('mas')} aria-label="Más: leyenda, fuentes, seguridad y configuración">
-            <IcoMenu /><span>Más</span>
-          </button>
+          {/* "Más" vive ahora en la barra de abajo (D-030) */}
           {prefs.voz && (
             <button type="button" className="mp-mas" disabled={datos.cargando} aria-label="Escuchar el estado de tu zona"
               onClick={escuchar}>
@@ -399,10 +400,9 @@ export function Hoja() {
         <button type="button" className="mp-handle mp-handle--solo mp-handle--full" aria-label="Mostrar alertas cercanas" onClick={() => setSheet('min')}>
           <span className="sheet-handle" />
         </button>
-        <div className="mp-full-row">
-          <button type="button" className="mp-verlista" onClick={() => setSheet('mid')}><Icon name="lista" size={22} />{n ? `Alertas · ${n}` : 'Alertas'}</button>
-          <BtnReportar onClick={() => ir('tipo')} />
-        </div>
+        <button type="button" className="mp-verlista mp-verlista--pill" onClick={() => setSheet('mid')}>
+          <Icon name="lista" size={22} />{n ? `Ver alertas cercanas · ${n}` : 'Ver alertas cercanas'}
+        </button>
       </div>
     )
   }
@@ -422,7 +422,6 @@ export function Hoja() {
           </div>
         </div>
         <ListaCercana datos={datos} onCalmaAvisos={() => ir('alertas')} />
-        <BtnReportar onClick={() => ir('tipo')} />
       </section>
     )
   }
@@ -440,7 +439,7 @@ export function Hoja() {
         </button>
       </div>
       {datos.items[0] && <TarjetaCercana it={datos.items[0]} onClick={() => abrirItem(ir, datos.items[0])} />}
-      <BtnReportar onClick={() => ir('tipo')} />
+      {/* Reportar = botón "+" de la barra de abajo (D-030) */}
     </section>
   )
 }

@@ -503,3 +503,7 @@ lo que entrega; municipio "detectado" nunca se detecta.
 ### 2026-11-11 · Auditoría UX (D-029)
 - Escala única por altura del agua; distancia real en "Tu zona"; persona en riesgo sin nivel; barra superior compacta;
   detalle con acciones arriba y datos plegados; onboarding sin pantalla final. vitest 244/244, build OK.
+
+### 2026-11-11 · Color por tipo, barra píldora, 911 completo y voz iOS (D-030)
+- Pines y tarjetas con color por tipo + chapita de nivel; naranja de "medio" más claro; barra inferior con "+" y gota
+  líquida; persona en riesgo → pantalla 911 completa; arreglo de voz en Safari iOS. vitest 244/244, build OK.
