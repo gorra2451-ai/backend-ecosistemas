@@ -1,35 +1,26 @@
 # HANDOFF — Estado actual
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
-**Última actualización:** 2026-11-10 noche · Diego (con Claude Code)
-**Fase actual:** F5-T3, integración del front unificado y backend v2 para el mid-fi (local listo, falta la nube)
+**Última actualización:** 2026-11-10 21:00 · Diego (con Claude Code)
+**Fase actual:** F5-T3, mid-fi desplegado en la nube (falta humo en celulares)
 **Meta:** mid-fi de ¡Aguas! el 2026-11-11 a las 12:00. La maestra manda la liga a personas distintas,
 repartidas por la ZMG → la liga va con **`?prueba=1`**: https://aguas-zmg.netlify.app/?prueba=1
-**Rama activa:** `feat/f5-t3-front-midfi-web` → PR #14 (front + v2 + D-022 + D-023 + voz). Leo pidió cambios; ya
-están hechos → falta su nueva aprobación. Auth anónima en la nube: **activa** (verificado). `feat/f5-t3-web-voz` ya está
-integrada en el PR #14 (se puede borrar).
+**Rama activa:** ninguna de código. PR #14 aprobado por Leo y mergeado (`7374f02`).
 
 ## Dónde quedamos
-- Recorrido local completo en Chrome (escritorio + móvil 390 px, claro/oscuro/contraste): registro → reportar →
-  5 confirmaciones → zona activa en el mapa por Realtime. ~20 bugs corregidos (ver PROGRESO 2026-11-10 noche).
-- Modo prueba `?prueba=1` (D-022): "Cerca de ti" lista toda la ZMG y se confirma sin estar cerca.
-- Migración TEMPORAL `20261110192439_parametros_midfi` (D-022): radio 40000, ventana 1440, expiración 180;
-  `confirmaciones_para_publicar` sigue en 5. Local: `supabase test db` 465/465 · vitest 143/143 · build OK.
-- Revisión de Leo atendida (D-023): sin GPS del dispositivo a Nominatim (buscar solo con botón), sin video (bucket
-  solo imágenes), plazo de confirmación validado bajo bloqueo. Voz: "Modo voz" lee zonas ≤ 400 m + "Escuchar";
-  "Reportar con voz" llena tipo y gravedad (envío manual). Probado con reconocedor simulado, falta micrófono real.
-- Local: pgTAP 481/481 · vitest 194/194 · build OK. **Nada está en la nube todavía** (Netlify con ronda 1).
+- Nube al día: `db push` de 7 migraciones (v2 + D-022 + D-023); `probar-nube.sh` 12/12; Auth anónima OK.
+- Parámetros mid-fi en la nube (D-022, TEMPORAL): radio 40000, ventana 1440, expiración 180, 5 confirmaciones.
+- Netlify prod con el front unificado (vitest 209/209, build OK). Humo de solo lectura en Chrome sin errores.
+- La nube tenía **0 reportes** al desplegar (21:00): todo lo que aparezca antes de las 12:00 es del humo.
 
 ## Siguiente paso (en este orden)
-1. LeoFigo74z aprueba PR #14 desde SU cuenta (prompt que le mandó Diego).
-2. `gh pr merge 14 --merge` → `git checkout main && git pull` → `supabase db push` (5 migraciones)
-   → `bash scripts/probar-nube.sh`.
-4. `cd web && npm run build && netlify deploy --prod --dir dist --site c8abb1d6-9180-4a14-9de8-9ee8894045be --no-build`.
-5. Humo en la nube con 2 celulares: liga con `?prueba=1` → reportar en uno → confirmar desde Reportes → "Cerca de ti"
-   en el otro. Probar Safari iPhone (colores de zonas) y Realtime.
-6. Después del testeo: **revertir D-022** (nueva migración 1000/60/30; `0000_base` a 30; quitar bloque D-022 de
+1. Humo con 2 celulares: liga con `?prueba=1` → reportar en uno → confirmar desde Reportes → "Cerca de ti" en el
+   otro. Probar voz con micrófono real, Safari iPhone (colores de zonas) y Realtime.
+2. Antes de las 12:00: borrar los reportes del humo (`supabase db query --linked`, con aprobación de Diego).
+3. Después del testeo: **revertir D-022** (nueva migración 1000/60/30; `0000_base` a 30; quitar bloque D-022 de
    `0200_confirmacion` y `1800_validado_equipos`).
-7. Panel de admin desde `admin.html` (sin métricas inventadas) y los DUPLICADOS de abajo.
+4. Limpiar `web/.vite/` del repo + `.gitignore`; borrar rama `feat/f5-t3-web-voz` (ya integrada).
+5. Panel de admin desde `admin.html` (sin métricas inventadas) y los DUPLICADOS de abajo.
 
 ## Decisiones abiertas de Diego
 - Nivel de zona sale de confirmaciones (D-021): quien reporta "Medio" ve "Bajo". Confunde.

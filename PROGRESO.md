@@ -2,6 +2,18 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-10 (deploy del mid-fi) · Diego · Claude Code
+**Hecho**
+- LeoFigo74z aprobó el PR #14 en `862e43c`; auto-merge → `main` en `7374f02`.
+- `supabase db push` desde main: 7 migraciones (v2 `20261110000000..000300`, D-022 `192439`, D-023 `195638` y `195640`).
+  Nube con `radio_cercanos_max_m` 40000, `ventana_activacion_min` 1440, `minutos_expiracion` 180, 5 confirmaciones.
+- `probar-nube.sh` 12/12. Registro anónimo en la nube OK (`is_anonymous: true`) y `reportes_cercanos` responde 200.
+- Front: vitest 209/209, build OK → Netlify prod (deploy `6af3d80a59211a95f0f981fc`). Humo de solo lectura en Chrome
+  con `?prueba=1`: registro completo, mapa, "Cerca de ti" con aviso de modo prueba, sin errores de consola.
+  No se crearon reportes en la nube a propósito (con la ventana de 24 h los testers los verían y confirmarían).
+**Pendiente:** humo en 2 celulares (reportar/confirmar, voz con micrófono real, Safari iPhone, Realtime) y luego
+borrar lo creado en el humo antes de las 12:00.
+
 ## 2026-11-10 (2.ª revisión de Leo) · Diego · Claude Code
 **Hecho**
 - Voz sin GPS real: no hay avisos automáticos y "Escuchar" pide la ubicación (habla dentro del toque para Safari iOS);
