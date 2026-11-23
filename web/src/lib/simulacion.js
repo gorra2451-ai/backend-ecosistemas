@@ -9,6 +9,7 @@ export const suscribirSimulacion = (f) => { subs.add(f); return () => subs.delet
 export const zonasSimuladas = () => estado.zonas
 export const reportesSimulados = () => estado.reportes
 export const leerSimulacion = () => estado
+export const haySimulacion = () => estado.reportes.length > 0 || estado.zonas.length > 0
 
 export const ESCENARIOS = [
   { nivel: 'bajo', titulo: 'Riesgo bajo', desc: 'El agua no pasa de la banqueta' },

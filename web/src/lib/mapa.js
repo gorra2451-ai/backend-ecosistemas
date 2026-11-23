@@ -82,36 +82,60 @@ export function transito(x) {
   }
   return { txt: 'Sin información suficiente', cls: 'sin' }
 }
+// Sin el prefijo de simulación: las tarjetas muestran "SIMULACIÓN" como etiqueta aparte, arriba del título.
+export const categoriaBase = (x) => (x?.tipo === 'persona_en_riesgo' ? 'Persona en riesgo' : CATEGORIA[x?.gravedad] || 'Inundación')
 export function categoria(x) {
-  const base = x?.tipo === 'persona_en_riesgo' ? 'Persona en riesgo' : CATEGORIA[x?.gravedad] || 'Inundación'
-  return (x?.simulada ? 'Simulación · ' : '') + base
+  return (x?.simulada ? 'Simulación · ' : '') + categoriaBase(x)
 }
 const plural = (n, s) => `${n} ${s}${n === 1 ? '' : 's'}`
 
-// Texto de cada fila de "Alertas": { t, lugar, lvl, nivel, cls, transito, m }
+// Estado de verificación, aparte del nivel de riesgo (testeo: "Sin confirmar" se leyó como "menos riesgo").
+// Las zonas públicas ya están confirmadas por la gente; un reporte 'pendiente' todavía no.
+export const VERIF_OK = { txt: 'Confirmado', cls: 'ok' }
+export const VERIF_SIN = { txt: 'Sin confirmar · aún nadie lo confirma', cls: 'sin' }
+export const verificacion = (x) => (x?.estado === 'pendiente' ? VERIF_SIN : VERIF_OK)
+
+// Texto de cada fila de "Alertas": { t, lugar, lvl, nivel, cls, transito, m, verif, tipo, sim }
 export function filaCercana(item, ahora = Date.now(), desde = 'de ti') {
   const lugar = `A ${formatoDist(item.dist)} ${desde}`
   if (item.clase === 'riesgo') {
     const r = item.dato
     const act = hace(r.ultima_confirmacion || r.creado_en, ahora)
     return { t: 'Persona en riesgo', lugar, lvl: 'Riesgo', nivel: 'Persona en riesgo', cls: 'c-risk', transito: null,
-      m: act ? 'Actualizado ' + act : '' }
+      m: act ? 'Actualizado ' + act : '', verif: verificacion(r), tipo: 'persona_en_riesgo', sim: !!r.simulada }
   }
   const z = item.dato
   const act = hace(z.actualizado_en, ahora)
   return {
-    t: categoria(z), lugar, lvl: textoNivel(z.nivel), nivel: 'Riesgo ' + textoNivel(z.nivel).toLowerCase(), cls: 'p-' + z.nivel,
-    transito: transito(z),
+    t: categoriaBase(z), lugar, lvl: textoNivel(z.nivel), nivel: 'Riesgo ' + textoNivel(z.nivel).toLowerCase(), cls: 'p-' + z.nivel,
+    transito: transito(z), verif: verificacion(z), tipo: z.tipo || null, sim: !!z.simulada,
     m: [act && 'Actualizado ' + act, plural(z.total_reportes ?? 0, 'reporte')].filter(Boolean).join(' · '),
   }
 }
 
+// 14:05 (24 h, hora local). '' si no hay fecha.
+export function textoHora(t) {
+  const d = t == null ? null : new Date(t)
+  if (!d || !Number.isFinite(d.getTime())) return ''
+  const dos = (n) => String(n).padStart(2, '0')
+  return `${dos(d.getHours())}:${dos(d.getMinutes())}`
+}
+
 // Frase de estado de la barra superior / tarjeta del sidebar.
+// Testeo (9 de 10): "Tu zona: sin reportes" se leyó como "zona segura". Ahora nombra la zona, dice que sin
+// reportes no es sin riesgo y da la hora de los datos (nada de "revisado justo ahora" ni "tiempo real").
+// Sin GPS real (ubic.real === false) habla del punto de ejemplo, no de "tu zona".
+export const AVISO_SIN_REPORTES = 'Sin reportes no significa sin riesgo'
 export function estadoZona({ zonas = [], ubic, municipio, revisado, ahora = Date.now() }) {
+  const ejemplo = ubic?.real === false
+  const donde = ejemplo ? 'Punto de ejemplo · no es tu ubicación' : (municipio || '')
+  const hora = revisado ? `Reportes actualizados a las ${textoHora(revisado)}` : ''
   const cerca = zonas.map((z) => ({ z, d: distanciaM(ubic, z) })).filter((x) => x.d <= RADIO_TU_ZONA_M)
   cerca.sort((a, b) => a.d - b.d)
   if (!cerca.length) {
-    return { calma: true, frase: 'Tu zona: sin reportes', sub: [municipio, revisado && 'revisado ' + hace(revisado, ahora)].filter(Boolean).join(' · '), zona: null }
+    const frase = ejemplo ? 'Sin reportes registrados cerca del punto de ejemplo'
+      : municipio ? `Sin reportes registrados en ${municipio}` : 'Sin reportes registrados cerca de ti'
+    return { calma: true, frase, aviso: AVISO_SIN_REPORTES, sub: hora, hora, donde, ejemplo, zona: null }
   }
   const n = cerca.length
   const peor = cerca.find((x) => esGrave(x.z)) || cerca.find((x) => x.z.alguno_no_pasan_carros)
@@ -120,7 +144,7 @@ export function estadoZona({ zonas = [], ubic, municipio, revisado, ahora = Date
     ? `No cruces: zona ${textoNivel(esGrave(peor.z) ? peor.z.nivel : 'alto')} a ${formatoDist(peor.d)}`
     : [municipio, masReciente && 'actualizado ' + hace(masReciente, ahora)].filter(Boolean).join(' · ')
   return {
-    calma: false,
+    calma: false, hora, donde, ejemplo,
     // Distancia REAL a la más cercana (antes decía siempre "a 300 m", el radio de tu zona).
     frase: n === 1 ? `1 calle inundada a ${formatoDist(cerca[0].d)}` : `${n} calles inundadas · la más cerca a ${formatoDist(cerca[0].d)}`,
     sub, zona: (peor || cerca[0]).z,
@@ -168,12 +192,18 @@ export function cambiarCapa(clave, valor) {
 export function restablecerCapas() { capas = { ...CAPAS_INICIALES }; avisarCapas() }
 export function suscribirCapas(f) { oyentes.add(f); return () => oyentes.delete(f) }
 export const capasModificadas = (c = capas) => Object.keys(CAPAS_INICIALES).some((k) => c[k] !== CAPAS_INICIALES[k])
+// Indicador fijo sobre el mapa (testeo: nadie notaba que había filtros puestos).
+export const filtrosActivos = (c = capas) => Object.keys(CAPAS_INICIALES).filter((k) => c[k] !== CAPAS_INICIALES[k]).length
+export const textoFiltros = (n) => (n > 0 ? `Filtros: ${n} ${n === 1 ? 'activo' : 'activos'}` : '')
 
-// Aplica las capas a los datos del mapa. Zonas por nivel; reportes: solo afecta a "persona en riesgo".
+// Nivel de agua de un pin (mismo criterio que lib/pines.js: primero la gravedad reportada; crítico → alto).
+const nivelDeReporte = (r) => nivelAgua(r) || (nivelV2(r) === 'critico' ? 'alto' : nivelV2(r))
+
+// Aplica las capas a los datos del mapa. Zonas y pines por nivel; persona en riesgo tiene su propia capa.
 export function filtrarCapas({ zonas = [], reportes = [], refugios = [], misReportes = [] }, c = capas) {
   return {
     zonas: zonas.filter((z) => c[z.nivel] !== false),
-    reportes: reportes.filter((r) => r.tipo !== 'persona_en_riesgo' || c.riesgo),
+    reportes: reportes.filter((r) => (r.tipo === 'persona_en_riesgo' ? c.riesgo : c[nivelDeReporte(r)] !== false)),
     refugios: c.refugios ? refugios : [],
     misReportes: c.misReportes ? misReportes : [],
   }
@@ -233,12 +263,52 @@ const RANGO_AGUA = ['bajo', 'medio', 'alto']
 export const nivelAgua = (r) => NIVEL_DE_GRAVEDAD[r?.gravedad] || null
 export function zonasConNivelAgua(zonas = [], reportes = [], radio = 220) {
   return zonas.map((z) => {
-    const peor = reportes
-      .filter((r) => r.tipo !== 'persona_en_riesgo' && distanciaM(z, r) <= radio)
-      .map(nivelAgua).filter(Boolean)
-      .sort((a, b) => RANGO_AGUA.indexOf(b) - RANGO_AGUA.indexOf(a))[0]
+    const peorRep = reportes
+      .filter((r) => r.tipo !== 'persona_en_riesgo' && distanciaM(z, r) <= radio && nivelAgua(r))
+      .sort((a, b) => RANGO_AGUA.indexOf(nivelAgua(b)) - RANGO_AGUA.indexOf(nivelAgua(a)))[0]
+    const peor = peorRep ? nivelAgua(peorRep) : null
     const porConfirmacion = nivelV2(z)
     const respaldo = z.alguno_no_pasan_carros ? 'alto' : porConfirmacion === 'critico' ? 'alto' : porConfirmacion
-    return { ...z, nivel_confirmacion: porConfirmacion, nivel: peor || respaldo }
+    // tipo: el del reporte que define el nivel, para usar el mismo ícono que el pin del mapa (null si no se sabe).
+    return { ...z, nivel_confirmacion: porConfirmacion, nivel: peor || respaldo, tipo: z.tipo || peorRep?.tipo || null }
   })
 }
+
+// ---------- Cómo me muevo hoy (testeo: 4 de 10 no encontraron el selector) ----------
+const MEDIO_CORTO = { peaton: 'A pie', moto: 'En moto', bici: 'En bici', auto: 'En auto', transporte_publico: 'En bus' }
+const MEDIO_AVISO = { peaton: 'ir a pie', moto: 'moto', bici: 'bici', auto: 'auto', transporte_publico: 'transporte público' }
+export const etiquetaMedio = (m) => MEDIO_CORTO[m] || MEDIO_CORTO.peaton
+export const avisoMedio = (m) => `Alertas adaptadas para ${MEDIO_AVISO[m] || MEDIO_AVISO.peaton}`
+
+// ---------- Centrar un pin en la parte VISIBLE del mapa (no debajo de la hoja ni del panel) ----------
+// tam = {w,h} del mapa; tapado = px cubiertos {top,bottom,left,right}. Devuelve cuánto se corre el centro
+// visible respecto al centro del mapa. Si lo tapado no deja espacio, no corre nada.
+export function centroVisible(tam, tapado = {}) {
+  const { top = 0, bottom = 0, left = 0, right = 0 } = tapado
+  const libreW = tam.w - left - right
+  const libreH = tam.h - top - bottom
+  const dx = libreW > 40 ? left + libreW / 2 - tam.w / 2 : 0
+  const dy = libreH > 40 ? top + libreH / 2 - tam.h / 2 : 0
+  return { dx: Math.round(dx) || 0, dy: Math.round(dy) || 0 }
+}
+
+// Store: pedir que el mapa enfoque un punto (alerta elegida). { lat, lng, seq } | null. Lo lee MapView.
+let enfoque = null
+let seqEnfoque = 0
+const oyentesEnfoque = new Set()
+export const leerEnfoque = () => enfoque
+export function enfocarEn(p) {
+  enfoque = p && Number.isFinite(p.lat) && Number.isFinite(p.lng) ? { lat: p.lat, lng: p.lng, seq: ++seqEnfoque } : null
+  oyentesEnfoque.forEach((f) => f())
+}
+export function suscribirEnfoque(f) { oyentesEnfoque.add(f); return () => oyentesEnfoque.delete(f) }
+
+// Store: panel "Leyenda del mapa" / "Filtrar reportes". 'leyenda' | 'filtros' | null.
+let panel = null
+const oyentesPanel = new Set()
+export const leerPanel = () => panel
+export function abrirPanel(p) {
+  panel = p == null ? null : p === 'filtros' ? 'filtros' : 'leyenda'
+  oyentesPanel.forEach((f) => f())
+}
+export function suscribirPanel(f) { oyentesPanel.add(f); return () => oyentesPanel.delete(f) }

@@ -48,5 +48,5 @@ const enPalabras = (s) => s.replace(/(\d) km\b/g, '$1 kilómetros').replace(/(\d
 export function fraseEstado({ zonas = [], ubic, municipio, revisado, ahora } = {}) {
   if (!ubicacionReal(ubic)) return FRASE_SIN_UBICACION
   const e = estadoZona({ zonas: zonas.map((z) => ({ ...z, nivel: nivelV2(z) })), ubic, municipio, revisado, ahora })
-  return [e.frase, e.sub].filter(Boolean).map((p) => enPalabras(p) + '.').join(' ')
+  return [e.frase, e.aviso, e.sub].filter(Boolean).map((p) => enPalabras(p) + '.').join(' ')
 }
