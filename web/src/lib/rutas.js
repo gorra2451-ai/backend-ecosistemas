@@ -60,10 +60,37 @@ export async function buscarRutas(medio, origen, destino, reportes, f = fetch) {
   } catch { return { data: null, error: 'sin_red' } }
 }
 
-// Ruta mostrada en el mapa (store pequeño, como centrarEn).
+// ---------- Estado ÚNICO de rutas (store pequeño, como centrarEn) ----------
+// Testeo: el panel decía "1 min · 0.2 km" y el mapa "11 min · 8.1 km". Causa: el panel y el mapa tenían
+// copias distintas (el mapa guardaba la ruta vieja al cambiar de destino y una respuesta tardía de OSRM
+// podía pisar la del destino nuevo). Ahora panel y mapa leen ESTE objeto; cambiar de destino lo borra.
+// { seq, clave, destino, origen, medio, estado: 'buscando'|'listo'|'error', lista, elegida, enMapa }
 let actual = null
+let seq = 0
 const subs = new Set()
-export const leerRuta = () => actual
+const fijar = (e) => { actual = e; subs.forEach((fn) => fn()) }
+export const leerRutas = () => actual
 export const suscribirRuta = (fn) => { subs.add(fn); return () => subs.delete(fn) }
-export const mostrarRuta = (r) => { actual = r; subs.forEach((fn) => fn()) }
+export const claveDestino = (d) => (d && Number.isFinite(+d.lat) && Number.isFinite(+d.lng) ? `${(+d.lat).toFixed(5)},${(+d.lng).toFixed(5)}` : '')
+// Las rutas solo valen para el destino con el que se calcularon.
+export const rutasPara = (e, destino) => (e && e.clave && e.clave === claveDestino(destino) ? e : null)
+export const rutaActiva = (e = actual) => (e?.estado === 'listo' ? e.lista[e.elegida] || null : null)
+// Si el punto de salida se movió (llegó el GPS real) la ruta ya no es la misma: recalcular.
+export const debeRecalcular = (e, origen, umbralM = 150) =>
+  !!(e && e.estado === 'listo' && origen && distanciaM(e.origen, redondearOrigen(origen)) > umbralM)
+
+export async function pedirRutas({ medio, origen, destino, reportes = [] }, f = fetch) {
+  const n = ++seq
+  fijar({ seq: n, clave: claveDestino(destino), destino, origen: redondearOrigen(origen), medio,
+    estado: 'buscando', lista: [], elegida: 0, enMapa: false })
+  const r = await buscarRutas(medio, origen, destino, reportes, f)
+  if (actual?.seq !== n) return null // llegó tarde: ya se pidió otra ruta o se cambió de destino
+  fijar({ ...actual, estado: r.error ? 'error' : 'listo', lista: r.data || [] })
+  return actual
+}
+export const elegirRuta = (i) => { if (actual?.lista[i]) fijar({ ...actual, elegida: i }) }
+export const verRutaEnMapa = (i = actual?.elegida ?? 0) => { if (actual?.lista[i]) fijar({ ...actual, elegida: i, enMapa: true }) }
+export const quitarRuta = () => { seq++; fijar(null) }
+// Al elegir otro destino: lo calculado para el anterior se borra (panel y mapa a la vez).
+export const olvidarSiOtroDestino = (destino) => { if (actual && !rutasPara(actual, destino)) quitarRuta() }
 export { distanciaM }
