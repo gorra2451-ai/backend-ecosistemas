@@ -10,7 +10,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useApp } from '../lib/store.jsx'
 import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor } from '../lib/api.js'
-import { leerCapas, suscribirCapas, filtrarCapas, zonasConNivelAgua, leerCentro, suscribirCentro } from '../lib/mapa.js'
+import { leerCapas, suscribirCapas, filtrarCapas, zonasConNivelAgua, leerCentro, suscribirCentro, leerEnfoque, suscribirEnfoque, enfocarEn, centroVisible } from '../lib/mapa.js'
 import { agruparRafaga } from '../lib/rafaga.js'
 
 const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)', critico: 'var(--risk)' }
@@ -86,18 +86,58 @@ function RutaEnMapa() {
   )
 }
 
+// Pin elegido (alerta): se centra en la parte del mapa que NO tapan la barra de arriba, la hoja ni el panel
+// de escritorio (testeo: la tarjeta tapaba el pin). Mide lo que cubre al momento de enfocar.
+function Enfocar() {
+  const map = useMap()
+  const e = useSyncExternalStore(suscribirEnfoque, leerEnfoque)
+  useEffect(() => {
+    if (!e) return
+    const t = setTimeout(() => {
+      const cont = map.getContainer().getBoundingClientRect()
+      const alto = (sel) => { const el = document.querySelector(sel); return el ? el.getBoundingClientRect() : null }
+      const arriba = alto('.map-top .mp-top')
+      const hoja = alto('.map-sheet')
+      const panel = window.innerWidth >= 1024 ? alto('.map-area > .screen') : null
+      const tapado = {
+        top: arriba ? Math.max(0, arriba.bottom - cont.top) : 0,
+        bottom: hoja ? Math.max(0, cont.bottom - hoja.top) : 0,
+        right: panel ? Math.max(0, cont.right - panel.left) : 0,
+      }
+      const { dx, dy } = centroVisible({ w: cont.width, h: cont.height }, tapado)
+      const z = Math.max(map.getZoom(), 16)
+      const p = map.project([e.lat, e.lng], z).subtract([dx, dy])
+      map.setView(map.unproject(p, z), z)
+    }, 80) // tras cerrar la pantalla / abrir el panel, para medir lo que de verdad tapa
+    return () => clearTimeout(t)
+  }, [e?.seq]) // eslint-disable-line
+  return null
+}
+
+const IcoDiana = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" fill="currentColor" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+  </svg>
+)
+
 function Controles({ ubic }) {
   const map = useMap()
+  const { avisar } = useApp()
   const b = { width: 48, height: 48, border: 'var(--bw) solid var(--line)', borderRadius: 14, background: 'var(--s1)',
     color: 'var(--tx)', fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }
   const ref = (el) => { if (el) { L.DomEvent.disableClickPropagation(el); L.DomEvent.disableScrollPropagation(el) } }
+  // Testeo: 8 de 10 no entendieron "◎" (lo vieron como un ojo). Diana + texto visible. Sin permiso no se va a un
+  // punto que la persona no reconoce: se le pide activar la ubicación.
+  const recentrar = () => {
+    if (!ubic.real) { avisar('Activa tu ubicación para volver a donde estás'); return }
+    map.setView([ubic.lat, ubic.lng], Math.max(map.getZoom(), 15))
+  }
   return (
     <div ref={ref}
-      style={{ position: 'absolute', right: 12, top: '40%', zIndex: 455, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      style={{ position: 'absolute', right: 12, top: '40%', zIndex: 455, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
       <button style={b} aria-label="Acercar el mapa" onClick={() => map.zoomIn()}>+</button>
       <button style={b} aria-label="Alejar el mapa" onClick={() => map.zoomOut()}>−</button>
-      <button style={{ ...b, color: 'var(--acc)' }} aria-label="Volver a mi ubicación"
-        onClick={() => map.setView([ubic.lat, ubic.lng], 15)}>◎</button>
+      <button className="mp-miubic" onClick={recentrar}><IcoDiana /><span>Mi ubicación</span></button>
       <Creditos />
     </div>
   )
@@ -141,13 +181,15 @@ export default function MapView({ centrarSeq = 0 }) {
       <Seguir ubic={ubic} centrarSeq={centrarSeq} />
       <Controles ubic={ubic} />
       <CentrarEn />
+      <Enfocar />
       <RutaEnMapa />
 
       {/* D-031: sin halos de zona; cada reporte se marca en su calle */}
       {/* Cada reporte en su calle: ícono del tipo + color/patrón del nivel. Al tocarlo, todos sus datos. */}
       {ver.reportes.map((r) => (
         <Marker key={r.id} position={[r.lat, r.lng]} zIndexOffset={r.tipo === 'persona_en_riesgo' ? 1000 : 500}
-          icon={pin(r)} eventHandlers={{ click: () => ir('zona', { reporte: r }) }} />
+          title={r.simulada ? 'Simulación: solo la ves tú' : undefined}
+          icon={pin(r)} eventHandlers={{ click: () => { enfocarEn(r); ir('zona', { reporte: r }) } }} />
       ))}
 
       {ver.misReportes.filter((m) => !activosIds.has(m.id) && Date.now() - m.creado < 3 * 3600e3).map((m) => (
@@ -162,7 +204,12 @@ export default function MapView({ centrarSeq = 0 }) {
 
       <Circle center={[ubic.lat, ubic.lng]} radius={300}
         pathOptions={{ color: 'var(--acc)', weight: 2, dashArray: '6 6', fillOpacity: 0.04 }} />
-      <Marker position={[ubic.lat, ubic.lng]} icon={icono('<div class="mk-you" aria-label="Tú"></div>', 24)} />
+      {/* Sin permiso de ubicación no es "Tú": es un punto de ejemplo (testeo) */}
+      {ubic.real === false
+        ? <Marker position={[ubic.lat, ubic.lng]} title="Punto de ejemplo: no es tu ubicación"
+            icon={L.divIcon({ html: '<div class="mk-ejemplo" role="img" aria-label="Punto de ejemplo, no es tu ubicación"><span></span><b>Punto de ejemplo</b></div>',
+              className: '', iconSize: [24, 24], iconAnchor: [12, 12] })} />
+        : <Marker position={[ubic.lat, ubic.lng]} icon={icono('<div class="mk-you" role="img" aria-label="Tú"></div>', 24)} />}
     </MapContainer>
   )
 }
