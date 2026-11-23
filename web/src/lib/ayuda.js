@@ -35,12 +35,34 @@ export function normalizarCaso(c) {
   return CASOS[k] ? k : 'otro'
 }
 
-// "Qué decir al llamar" (texto del equipo).
-export function mensajeLlamada({ say, lugar, personas = 1 }) {
+// "Qué decir al llamar" (texto del equipo + testeo de usabilidad: en 5 de 9 parejas el mensaje reenviado llegó mal).
+// La cifra va al inicio, heridas separadas del total ("Hay 1 persona herida. En total somos 2.") y sin repetir:
+// en "Persona herida" la frase del caso no se agrega porque ya la dice la cifra.
+export function mensajeLlamada({ caso, say, lugar, referencia, personas = 1, heridas = 0 }) {
+  const h = Math.max(0, heridas | 0)
+  const n = Math.max(1, personas | 0, h)
   const frase = say ? say[0].toUpperCase() + say.slice(1) : 'Necesito ayuda'
-  const n = Math.max(1, personas | 0)
-  return [lugar ? `Estoy en ${lugar}.` : null, `${frase}.`, `Somos ${n} ${n === 1 ? 'persona' : 'personas'}.`].filter(Boolean).join(' ')
+  const ref = String(referencia || '').trim()
+  const partes = []
+  if (h > 0) partes.push(`Hay ${h} ${h === 1 ? 'persona herida' : 'personas heridas'}.`, `En total somos ${n}.`)
+  if (h === 0 || caso !== 'persona_herida') partes.push(`${frase}.`)
+  if (h === 0) partes.push(`Somos ${n} ${n === 1 ? 'persona' : 'personas'}.`)
+  if (lugar) partes.push(`Estamos en ${lugar}${ref ? `, ${ref}` : ''}.`)
+  else if (ref) partes.push(`Referencia: ${ref}.`)
+  return partes.join(' ')
 }
+
+// El municipio NO se detecta por GPS (store.jsx arranca en Zapopan): solo decimos "detectado" si de verdad lo fue.
+export function etiquetaMunicipio({ elegido, detectado } = {}) {
+  if (elegido) return 'Municipio que elegiste'
+  if (detectado) return 'Municipio detectado'
+  return 'Municipio de ejemplo: elige el tuyo'
+}
+
+// Lo urgente (persona herida → 911) va arriba y separado de lo no urgente.
+export const CASOS_URGENTES = ['persona_herida']
+export const CASOS_NO_URGENTES = CASOS_EQUIPO.filter((c) => !CASOS_URGENTES.includes(c))
+
 export const urlUbicacion = (lat, lng) => `https://www.google.com/maps?q=${(+lat).toFixed(5)},${(+lng).toFixed(5)}`
 export const mensajeUbicacion = (texto, lat, lng) => `${texto} Mi ubicación: ${urlUbicacion(lat, lng)}`
 
@@ -204,3 +226,104 @@ export function viasCercanas({ zonas = [], reportes = [], ubic, radio = 3000, ma
 const MODO_MAPS = { manejo: 'driving', camino: 'walking', camion: 'transit' }
 export const urlRutaAlterna = (ubic, grupo) =>
   `https://www.google.com/maps/dir/?api=1&origin=${ubic.lat},${ubic.lng}&travelmode=${MODO_MAPS[grupo] || 'driving'}`
+
+// ---------------------------------------------------------------- Testeo de usabilidad (carril C)
+const dos = (x) => String(x).padStart(2, '0')
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+const hora24 = (d) => `${d.getHours()}:${dos(d.getMinutes())}`
+const DIA_MS = 24 * 60 * 60 * 1000
+
+// "hoy 16:40" · "ayer 9:05" · "12 nov 16:40" (hora local, 24 h). null si no hay fecha válida.
+export function fechaCorta(t, ahora = Date.now()) {
+  const ms = typeof t === 'number' ? t : t ? Date.parse(t) : NaN
+  if (Number.isNaN(ms)) return null
+  const d = new Date(ms)
+  const hoy = new Date(ahora); hoy.setHours(0, 0, 0, 0)
+  if (ms >= hoy.getTime() && ms < hoy.getTime() + DIA_MS) return `hoy ${hora24(d)}`
+  if (ms >= hoy.getTime() - DIA_MS && ms < hoy.getTime()) return `ayer ${hora24(d)}`
+  return `${d.getDate()} ${MESES[d.getMonth()]} ${hora24(d)}`
+}
+
+// Encabezado de la información guardada en el celular (5 de 10 la tomaron como actual).
+export function encabezadoGuardado(guardadoEn, ahora = Date.now()) {
+  const f = fechaCorta(guardadoEn, ahora)
+  return `${f ? `Información de ${f}` : 'Información guardada antes (no sabemos cuándo)'}: puede haber cambiado · confirma antes de ir`
+}
+
+// Cache de refugios: antes era un arreglo; ahora { lista, guardadoEn } para poder decir de cuándo es.
+export function leerCacheRefugios(v) {
+  if (Array.isArray(v)) return { lista: v, guardadoEn: null }
+  if (v && Array.isArray(v.lista)) return { lista: v.lista, guardadoEn: v.guardadoEn ?? null }
+  return { lista: null, guardadoEn: null }
+}
+
+// Estado del refugio. Hoy `refugios_publicos` no trae si está abierto: sin ese dato decimos que no sabemos.
+// `verificado_en` es cuándo se confirmaron los DATOS del refugio, no que esté abierto.
+const ESTADO_REF = { abierto: 'Abierto', cerrado: 'Cerrado', lleno: 'Lleno' }
+export function estadoRefugio(r, ahora = Date.now()) {
+  if (ESTADO_REF[r?.estado]) {
+    const hace = textoHace(r.estado_en, ahora)
+    return { clave: r.estado, texto: `${ESTADO_REF[r.estado]}${hace ? ` · confirmado ${hace}` : ''}`, detalle: null }
+  }
+  const f = fechaCorta(r?.verificado_en, ahora)
+  return { clave: 'desconocido', texto: 'No sabemos si está abierto', detalle: f ? `Datos del refugio confirmados ${f}` : null }
+}
+
+// Accesibilidad: tres estados fijos. Sin dato → "pregunta antes de ir" (6 de 10 asumían accesible).
+export function accesibilidadRefugio(r) {
+  if (r?.accesible === true) return { clave: 'si', texto: 'Accesible' }
+  if (r?.accesible === false) return { clave: 'no', texto: 'No accesible' }
+  return { clave: 'sin_info', texto: 'Sin información: pregunta antes de ir' }
+}
+
+// Teléfono del refugio solo si viene en los datos (nunca inventado).
+export function telRefugio(r) {
+  const t = String(r?.telefono ?? '').trim()
+  return t ? { texto: t, href: `tel:${t.replace(/[^\d+]/g, '')}` } : null
+}
+
+// Lista vacía: no afirmar que no hay refugios. Sin contacto verificado de Protección Civil en los datos,
+// no damos teléfono ni enlace: solo la otra vía genérica.
+export const textoSinRefugios = () => ({
+  titulo: 'La app no tiene refugios confirmados aquí',
+  cuerpo: 'Eso no quiere decir que no existan. Solo mostramos refugios con fuente oficial.',
+  otraVia: 'Consulta en el sitio de tu municipio',
+})
+
+// Pantalla de Avisos sin alertas de clima (6 de 10 lo leyeron como "calles sin problema").
+export function textoAvisosSinClima(callesConAgua) {
+  const n = callesConAgua | 0
+  if (n > 0) {
+    return {
+      titulo: `Sin alertas de clima ahora, pero hay ${n} ${n === 1 ? 'calle' : 'calles'} con agua cerca`,
+      cuerpo: 'Esto es solo del clima. Las calles con agua están en el mapa.',
+    }
+  }
+  return { titulo: 'Sin alertas de clima ahora', cuerpo: 'Esto es solo del clima. Para ver si hay agua en las calles, revisa el mapa.' }
+}
+
+// Resumen de avisos con dos estados separados: lo que elegiste vs. si de verdad llegan al celular.
+// permiso: 'granted' | 'denied' | 'default' | 'no_disponible'.
+export function resumenAvisos({ munis, on, permiso, municipioPush } = {}) {
+  const elegidas = MUNICIPIOS_ZMG.filter((m) => munis?.[m])
+  let celular
+  if (on) celular = `activos${municipioPush ? ` (${municipioPush})` : ''}`
+  else if (permiso === 'denied') celular = 'sin permiso'
+  else if (permiso === 'no_disponible') celular = 'no disponibles en este navegador'
+  else celular = 'apagados'
+  return {
+    zonas: `Zonas elegidas: ${elegidas.length ? elegidas.join(', ') : 'ninguna'}`,
+    celular: `Avisos en tu celular: ${celular}`,
+    alerta: on ? null : 'No recibirás avisos con la app cerrada',
+  }
+}
+
+// Silencio. Regla actual del backend (migración 20261110000300_preferencias_push): mientras
+// `silenciado_hasta` está vigente no se encola ni se entrega NINGÚN aviso, tampoco los de nivel alto.
+export function textoSilencio(hasta) {
+  const d = new Date(hasta)
+  return {
+    hasta: `Silenciado hasta ${d.getHours() === 1 ? 'la' : 'las'} ${hora24(d)}`,
+    cubre: 'Durante el silencio no recibirás ningún aviso en tu celular, tampoco las alertas fuertes.',
+  }
+}

@@ -91,7 +91,7 @@ describe('ronda 3 · me pasó algo', async () => {
   })
   it('qué decir al llamar', () => {
     expect(mensajeLlamada({ say: 'hay una persona herida', lugar: 'Zapopan', personas: 2 }))
-      .toBe('Estoy en Zapopan. Hay una persona herida. Somos 2 personas.')
+      .toBe('Hay una persona herida. Somos 2 personas. Estamos en Zapopan.')
     expect(mensajeLlamada({ say: 'x' })).toBe('X. Somos 1 persona.')
   })
   it('ubicación para WhatsApp', () => {

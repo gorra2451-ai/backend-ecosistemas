@@ -8,6 +8,12 @@ const VAPID = import.meta.env.VITE_VAPID_PUBLIC_KEY
 export const pushDisponible = () =>
   typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && !!VAPID
 
+// Permiso de notificaciones del navegador: 'granted' | 'denied' | 'default' | 'no_disponible'.
+export function estadoPermiso() {
+  if (!pushDisponible()) return 'no_disponible'
+  return 'Notification' in window ? Notification.permission : 'default'
+}
+
 async function registro() {
   return (await navigator.serviceWorker.getRegistration('/')) || navigator.serviceWorker.register('/sw.js')
 }
