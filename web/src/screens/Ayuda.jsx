@@ -9,12 +9,14 @@ import {
   derivar, refugiosPublicos, alertasClima, guardarAccesibilidad, zonasPublicas, reportesCercanos, preferenciasPush, direccionDe,
 } from '../lib/api.js'
 import {
-  MUNICIPIOS_ZMG, CASOS, CASOS_EQUIPO, SITUACIONES, normalizarCaso, ordenarPorDistancia, formatoDistancia, urlRuta,
+  MUNICIPIOS_ZMG, CASOS, CASOS_URGENTES, CASOS_NO_URGENTES, SITUACIONES, etiquetaMunicipio, normalizarCaso, ordenarPorDistancia, formatoDistancia, urlRuta,
   municipioParaPush, nivelAlerta, textoHace, textoVigencia, mensajeAlerta, urlWhatsApp, urlSms, PREFS_AVISOS_BASE,
   DOS_HORAS_MS, silenciado, mensajeLlamada, mensajeUbicacion, argsPreferencias, grupoMedio, MEDIO_DE_GRUPO, GRUPOS,
   NIVEL_TXT, claseNivel, VEREDICTO, MENSAJE_VIA, PASO_VEHICULO, viasCercanas, urlRutaAlterna,
+  textoAvisosSinClima, resumenAvisos, textoSilencio, leerCacheRefugios, encabezadoGuardado, estadoRefugio,
+  accesibilidadRefugio, telRefugio, textoSinRefugios,
 } from '../lib/ayuda.js'
-import { pushDisponible, activarPush, desactivarPush, suscripcionActual } from '../lib/ayudaPush.js'
+import { pushDisponible, activarPush, desactivarPush, suscripcionActual, estadoPermiso } from '../lib/ayudaPush.js'
 import { vibracionActiva, vibrar, FRASE_VOZ } from '../lib/haptica.js'
 import { hablar as hablarVoz } from '../lib/confirmar.js'
 import '../styles/ayuda.css'
@@ -44,22 +46,30 @@ const Tel911 = ({ children = 'Emergencias · Llamar al 911' }) => (
 )
 
 // ---------------------------------------------------------------- Me pasó algo (¿Qué te pasó?)
-function SelectorMunicipio({ titulo }) {
+// El municipio no se detecta por GPS: recordamos si la persona lo eligió para no decir "detectado" (testeo).
+const KEY_MUNI_ELEGIDO = 'aguas.municipioElegido'
+
+function SelectorMunicipio() {
   const { municipio, setMunicipio } = useApp()
   const [abierto, setAbierto] = useState(false)
+  const [elegido, setElegido] = useState(() => leer(KEY_MUNI_ELEGIDO, false))
+  const elegir = (m) => { setMunicipio(m); setElegido(true); guardar(KEY_MUNI_ELEGIDO, true); setAbierto(false) }
   return (
     <>
       <div className="ay-muni-head">
-        <span className="ay-sub">{municipio} · {titulo}</span>
-        <button className="btn-text ay-cambiar" aria-expanded={abierto} onClick={() => setAbierto(!abierto)}>
-          {abierto ? 'Listo' : 'Cambiar municipio'}
+        <span className="ay-muni-txt">
+          <span className="ay-sub">{etiquetaMunicipio({ elegido })}</span>
+          <strong className="ay-muni-nombre">{municipio}</strong>
+        </span>
+        <button className="btn ay-cambiar" aria-expanded={abierto} onClick={() => setAbierto(!abierto)}>
+          <Icon name="pin" size={20} />{abierto ? 'Listo' : 'Cambiar municipio'}
         </button>
       </div>
+      {!elegido && <p className="ay-sub">La app no sabe dónde está la persona afectada: confirma el municipio.</p>}
       {abierto && (
-        <div className="ay-grid2" role="group" aria-label="Elige tu municipio">
+        <div className="ay-grid2" role="group" aria-label="Elige el municipio">
           {MUNICIPIOS_ZMG.map((m) => (
-            <button key={m} className="ay-opt" aria-pressed={m === municipio}
-              onClick={() => { setMunicipio(m); setAbierto(false) }}>
+            <button key={m} className="ay-opt" aria-pressed={m === municipio} onClick={() => elegir(m)}>
               <span>{m}</span>{m === municipio ? <span className="ay-si"><Icon name="check" size={14} stroke={3} />Aquí</span> : null}
             </button>
           ))}
@@ -69,15 +79,34 @@ function SelectorMunicipio({ titulo }) {
   )
 }
 
+// Guía de urgencia: va arriba, antes de cualquier recomendación (testeo: 2 de 8 pasaron de 45 s).
+function Urgente({ children }) {
+  return (
+    <section className="ay-urgente" aria-label="Urgencias">
+      <p className="ay-urg-t">Si hay personas en riesgo, llama al 911.</p>
+      <p className="ay-urg-d">El 911 coordina a otras instituciones.</p>
+      <Tel911>Llamar al 911 (Emergencias)</Tel911>
+      {children}
+    </section>
+  )
+}
+
 export function Acudo() {
   const { ir } = useApp()
   return (
     <Screen titulo="¿Qué te pasó?">
-      <SelectorMunicipio titulo="detectado" />
-      <p className="ay-sub" style={{ fontSize: 16 }}>Selecciona tu situación actual para canalizarte.</p>
+      <Urgente>
+        {CASOS_URGENTES.map((c) => (
+          <button key={c} className="ay-caso ay-caso--risk ay-caso--wide" onClick={() => ir('acudoresp', { caso: c })}>
+            {ICONO_CASO[c]}{CASOS[c]}
+          </button>
+        ))}
+      </Urgente>
+      <SelectorMunicipio />
+      <h2 className="ay-label">Si no es urgente, elige tu situación</h2>
       <div className="ay-casos">
-        {CASOS_EQUIPO.map((c) => (
-          <button key={c} className={'ay-caso' + (c === 'persona_herida' || c === 'riesgo_electrico' ? ' ay-caso--risk' : '')}
+        {CASOS_NO_URGENTES.map((c) => (
+          <button key={c} className={'ay-caso' + (c === 'riesgo_electrico' ? ' ay-caso--risk' : '')}
             onClick={() => ir('acudoresp', { caso: c })}>
             {ICONO_CASO[c]}{CASOS[c]}
           </button>
@@ -88,13 +117,24 @@ export function Acudo() {
   )
 }
 
+// Aviso "por confirmar" con la MISMA jerarquía que su botón: ícono + texto grande pegado al botón
+// (testeo: 5 de 8 no veían la letra chica y daban por válido el 071).
+const AvisoPorConfirmar = ({ children }) => (
+  <div className="ay-pc-aviso" role="note"><Icon name="alerta" size={24} stroke={2.4} /><span>{children}</span></div>
+)
+const soloDigitos = (t) => String(t).replace(/[^\d+]/g, '')
+
 // ---------------------------------------------------------------- Asistencia (respuesta de derivación)
 export function AcudoRespuesta() {
   const { ir, params, municipio, ubic, pedirUbicacion, avisar } = useApp()
   const caso = normalizarCaso(params?.caso)
   const s = SITUACIONES[caso]
+  const urgente = CASOS_URGENTES.includes(caso)
   const [res, setRes] = useState(null) // { pasos, instituciones, fallo }
+  const [heridas, setHeridas] = useState(urgente ? 1 : 0)
   const [personas, setPersonas] = useState(1)
+  const [referencia, setReferencia] = useState('')
+  const [editado, setEditado] = useState(null) // texto editado a mano (null = automático)
   const [guia, setGuia] = useState(false)
 
   useEffect(() => {
@@ -108,9 +148,10 @@ export function AcudoRespuesta() {
     return () => { vivo = false }
   }, [caso, municipio, ubic.lat, ubic.lng])
 
-  // PRIVACIDAD: el GPS del dispositivo no va a Nominatim. El mensaje usa el municipio; la ubicación exacta
-  // solo sale si la persona toca "compartir ubicación" (liga de Google Maps que ella misma envía).
-  const msg = mensajeLlamada({ say: s.say, lugar: municipio, personas })
+  // PRIVACIDAD: el GPS del dispositivo no va a Nominatim. El mensaje usa el municipio y la referencia que la
+  // persona escribe (no se guarda); la ubicación exacta solo sale si toca "compartir ubicación".
+  const auto = mensajeLlamada({ caso, say: s.say, lugar: municipio, referencia, personas, heridas })
+  const msg = editado ?? auto
   const copiar = async () => {
     try { await navigator.clipboard.writeText(msg); avisar('Mensaje copiado') } catch { avisar('No se pudo copiar') }
   }
@@ -120,40 +161,57 @@ export function AcudoRespuesta() {
     window.open(urlWhatsApp(mensajeUbicacion(msg, u.lat, u.lng)), '_blank', 'noopener')
   }
   const inst = (res?.instituciones || []).find((i) => i.telefono)
+  const stepper = (etq, valor, set, min) => (
+    <div className="ay-stepper" role="group" aria-label={etq}>
+      <button className="btn-icon" aria-label={`${etq}: menos`} disabled={valor <= min} onClick={() => set(Math.max(min, valor - 1))}>−</button>
+      <span>{etq}: <strong>{valor}</strong></span>
+      <button className="btn-icon" aria-label={`${etq}: más`} onClick={() => set(Math.min(50, valor + 1))}>+</button>
+    </div>
+  )
+  const cambiarHeridas = (v) => { setHeridas(v); if (personas < v) setPersonas(v) }
 
   return (
     <Screen titulo="Asistencia" paso={`Situación: ${s.n}`} onBack={() => ir('acudo')}>
+      <Urgente />
       <div className="ay-card ay-rec">
-        <span className="ay-rec-lead">Te recomendamos contactar a:</span>
+        <span className="ay-rec-lead">{urgente ? 'Después del 911 también puedes contactar a:' : 'Si no hay riesgo para personas, contacta a:'}</span>
         <span className="ay-rec-who">{s.who}</span>
         <span className="ay-sub">(Llamada directa sin internet)</span>
         {s.tel ? (
-          <>
+          <div className="ay-tel-pc">
             <a className="btn btn-primary ay-a" href={`tel:${s.tel}`}><Icon name="telefono" />{s.call}</a>
-            {s.telPorConfirmar && <span className="ay-sub">Número 071 <PorConfirmar>POR CONFIRMAR · falta fuente oficial</PorConfirmar></span>}
-          </>
+            {s.telPorConfirmar && <AvisoPorConfirmar>Número {s.tel} POR CONFIRMAR: aún no tenemos fuente oficial. Si hay riesgo, llama al 911.</AvisoPorConfirmar>}
+          </div>
         ) : inst ? (
-          <a className="btn btn-primary ay-a" href={`tel:${String(inst.telefono).replace(/[^\d+]/g, '')}`}>
+          <a className="btn btn-primary ay-a" href={`tel:${soloDigitos(inst.telefono)}`}>
             <Icon name="telefono" />Llamar a {inst.nombre} · {inst.telefono}
           </a>
         ) : s.call ? (
-          <div className="btn-disabled ay-a ay-sin-num" aria-label={`${s.call}: número por confirmar`}>
-            <Icon name="telefono" />{s.call}: número <PorConfirmar />
+          <div className="ay-tel-pc">
+            <div className="btn-disabled ay-a ay-sin-num" aria-label={`${s.call}: número por confirmar`}><Icon name="telefono" />{s.call}</div>
+            <AvisoPorConfirmar>Número POR CONFIRMAR: por ahora marca al 911.</AvisoPorConfirmar>
           </div>
         ) : null}
-        <Tel911>Llamar al 911 (Emergencias)</Tel911>
         <span className="ay-sub">{s.num}</span>
       </div>
 
       <div className="ay-say">
-        <span className="ay-say-t">Qué decir al llamar</span>
-        <div className="ay-stepper" role="group" aria-label="¿Cuántas personas?">
-          <button className="btn-icon" aria-label="Menos personas" onClick={() => setPersonas(Math.max(1, personas - 1))}>−</button>
-          <span>¿Cuántas personas?: <strong>{personas} {personas === 1 ? 'persona' : 'personas'}</strong></span>
-          <button className="btn-icon" aria-label="Más personas" onClick={() => setPersonas(Math.min(50, personas + 1))}>+</button>
-        </div>
-        <p className="ay-say-msg">“{msg}”</p>
-        <button className="btn-text ay-left" onClick={copiar}>Copiar mensaje</button>
+        <span className="ay-say-t">Mensaje para enviar o decir al llamar</span>
+        {stepper('Personas heridas', heridas, cambiarHeridas, urgente ? 1 : 0)}
+        {stepper('Personas en el lugar', personas, setPersonas, Math.max(1, heridas))}
+        <label className="ay-campo">
+          <span>Calle o referencia (opcional)</span>
+          <input type="text" value={referencia} maxLength={120} placeholder="Ej. esquina con…, frente a…"
+            onChange={(e) => setReferencia(e.target.value)} />
+        </label>
+        <label className="ay-campo">
+          <span>Puedes editar el mensaje antes de copiarlo</span>
+          <textarea rows={4} value={msg} onChange={(e) => setEditado(e.target.value)} />
+        </label>
+        {editado != null && editado !== auto && (
+          <button className="btn-text ay-left" onClick={() => setEditado(null)}>Volver al mensaje automático</button>
+        )}
+        <Btn icon="lista" onClick={copiar}>Copiar mensaje</Btn>
       </div>
 
       <Btn variant="outline-acc" icon="pin" onClick={compartirUbicacion}>Compartir mi ubicación</Btn>
@@ -187,8 +245,8 @@ export function AcudoRespuesta() {
               <span className="ay-inst-nombre">{it.nombre}</span>
               {it.horario && <span className="ay-sub">{it.horario}</span>}
               {it.telefono
-                ? <a className="btn ay-a ay-tel" href={`tel:${String(it.telefono).replace(/[^\d+]/g, '')}`}><Icon name="telefono" />Llamar · {it.telefono}</a>
-                : <span className="ay-sub">Teléfono <PorConfirmar /></span>}
+                ? <a className="btn ay-a ay-tel" href={`tel:${soloDigitos(it.telefono)}`}><Icon name="telefono" />Llamar · {it.telefono}</a>
+                : <AvisoPorConfirmar>Teléfono POR CONFIRMAR</AvisoPorConfirmar>}
               {it.url && <a className="btn-text" href={it.url} target="_blank" rel="noopener noreferrer">Sitio oficial</a>}
               {it.fuente && <span className="ay-sub">Fuente: {it.fuente}</span>}
             </div>
@@ -249,6 +307,23 @@ function AlertaClima({ a, ahora }) {
   )
 }
 
+// Calles con agua cerca (mismo cálculo que Monitoreo vial, sin pedir nombres de calle). null = no se pudo saber.
+function useCallesConAgua(activo) {
+  const { ubic } = useApp()
+  const [n, setN] = useState(null)
+  useEffect(() => {
+    let vivo = true
+    if (!activo) return undefined
+    Promise.all([zonasPublicas(), reportesCercanos(ubic.lat, ubic.lng, 1000)]).then(([z, r]) => {
+      if (!vivo) return
+      if (z.error && r.error) { setN(null); return }
+      setN(viasCercanas({ zonas: z.data || [], reportes: r.data || [], ubic }).length)
+    })
+    return () => { vivo = false }
+  }, [activo, ubic.lat, ubic.lng]) // eslint-disable-line react-hooks/exhaustive-deps
+  return n
+}
+
 function AlertasInicio() {
   const { ir } = useApp()
   const [alertas, setAlertas] = useState(null)
@@ -262,20 +337,25 @@ function AlertasInicio() {
   }, [])
 
   const hay = Array.isArray(alertas) && alertas.length > 0
+  const sinClima = Array.isArray(alertas) && !hay
+  const calles = useCallesConAgua(sinClima)
+  const txt = textoAvisosSinClima(calles)
   return (
     <Screen titulo="Avisos">
       {alertas === null && <p className="muted" role="status">Revisando alertas…</p>}
       {alertas === 'error' && <p className="ay-sub" role="status">No pudimos revisar las alertas. Vuelve a intentar con señal.</p>}
       {hay && alertas.map((a) => <AlertaClima key={a.id} a={a} ahora={ahora} />)}
-      {Array.isArray(alertas) && !hay && (
-        <div className="ay-vacio">
-          <Icon name="lluvia" size={40} />
-          <strong>Sin alertas de clima por ahora</strong>
-          <span>Solo mostramos alertas con fuente oficial. Si cambia algo, aparece aquí.</span>
+      {sinClima && (
+        <div className={'ay-vacio' + (calles > 0 ? ' ay-vacio--ojo' : '')} role="status">
+          <Icon name={calles > 0 ? 'calle' : 'lluvia'} size={40} />
+          <strong>{txt.titulo}</strong>
+          <span>{txt.cuerpo}</span>
+          {calles > 0 && <Btn variant="primary" icon="mapa" onClick={() => ir(null)}>Ver mapa</Btn>}
+          <span className="ay-sub">Solo mostramos alertas de clima con fuente oficial.</span>
         </div>
       )}
       <Btn variant="ghost" icon="calle" onClick={() => ir('alertas', { vista: 'calles' })}>Ver cómo están las calles →</Btn>
-      <button className="btn-text ay-centro" onClick={() => ir('preferencias')}><Icon name="ajustes" size={20} />Ajustar mis avisos</button>
+      <button className="btn-text ay-centro" onClick={() => ir('preferencias')}><Icon name="ajustes" size={20} />Elegir de dónde quiero avisos</button>
     </Screen>
   )
 }
@@ -451,20 +531,21 @@ export function AlertaDetalle() {
   )
 }
 
-// ---------------------------------------------------------------- Mis avisos (Ajustar mis avisos)
+// ---------------------------------------------------------------- Elegir de dónde quiero avisos
+// Interruptor con estado en palabras (testeo: 6 de 7 no sabían si se guardó).
 function Pref({ on, onClick, titulo, desc, disabled, extra }) {
   return (
     <button className="ay-toggle" role="switch" aria-checked={!!on} onClick={onClick} disabled={disabled}>
       <span><span className="ay-toggle-l">{titulo}</span><span className="ay-toggle-d">{desc}</span>{extra}</span>
       <span className="ay-toggle-r">
-        <span className={on ? '' : 'muted'} style={{ fontWeight: on ? 700 : 400 }}>{on ? 'Sí' : 'No'}</span>
+        <span className={on ? '' : 'muted'} style={{ fontWeight: on ? 700 : 400 }}>{on ? 'Activado' : 'Desactivado'}</span>
         <span className="switch" aria-hidden="true"><i /></span>
       </span>
     </button>
   )
 }
 
-// Manda las preferencias al backend si este navegador tiene suscripción push. Si falla, quedan en el celular.
+// Manda las preferencias al backend si este navegador tiene suscripción. Si falla, quedan en el celular.
 async function sincronizarPrefs(p) {
   const sub = await suscripcionActual()
   if (!sub) return false
@@ -479,28 +560,46 @@ export function Preferencias() {
   const [prefs, setPrefsAv] = useState(() => ({ ...PREFS_AVISOS_BASE, ...leer(KEY_PREFS, {}) }))
   const [ocupado, setOcupado] = useState(false)
   const [nota, setNota] = useState(null)
+  const [guardado, setGuardado] = useState(null) // { texto, ok } · confirmación visible al guardar
+  const [permiso, setPermiso] = useState(() => estadoPermiso())
   const [ahora, setAhora] = useState(() => Date.now())
 
   useEffect(() => {
-    // Si el navegador ya no tiene suscripción, el botón vuelve a "Activar".
+    // Si el navegador ya no tiene suscripción, el interruptor vuelve a "Desactivado".
     if (pushDisponible()) suscripcionActual().then((s) => { if (!s) { setOn(false); guardar(KEY_ON, false) } })
-    const t = setInterval(() => setAhora(Date.now()), 60000)
+    const t = setInterval(() => { setAhora(Date.now()); setPermiso(estadoPermiso()) }, 60000)
     return () => clearInterval(t)
   }, [])
 
-  const toggleMuni = (m) => { const n = { ...munis, [m]: !munis[m] }; setMunis(n); guardar(KEY_MUNIS, n) }
-  const cambiarPref = (cambio) => {
+  const confirmar = (sincronizado) => {
+    const hora = horaCorta(Date.now())
+    if (!on) setGuardado({ ok: true, texto: `Tus avisos se guardaron en este celular (${hora}). Para recibirlos con la app cerrada, activa los avisos.` })
+    else if (sincronizado) setGuardado({ ok: true, texto: `Tus avisos se guardaron (${hora}).` })
+    else setGuardado({ ok: false, texto: 'Se guardaron en este celular, pero no pudimos actualizarlos para la app cerrada. Vuelve a intentar con señal.' })
+  }
+
+  const municipioPush = municipioParaPush(munis, municipio)
+  const toggleMuni = async (m) => {
+    const n = { ...munis, [m]: !munis[m] }
+    setMunis(n); guardar(KEY_MUNIS, n)
+    if (!on) { confirmar(false); return }
+    // El backend acepta un municipio por celular: si cambia el que toca, se actualiza la suscripción.
+    const nuevo = municipioParaPush(n, municipio)
+    const r = nuevo !== municipioPush ? await activarPush(nuevo) : { ok: true }
+    confirmar(r.ok)
+  }
+  const cambiarPref = async (cambio) => {
     const n = { ...prefs, ...cambio }
     setPrefsAv(n); guardar(KEY_PREFS, n)
-    if (on) sincronizarPrefs(n)
+    confirmar(on ? await sincronizarPrefs(n) : false)
     return n
   }
   const callado = silenciado(prefs, ahora)
+  const silencio = callado ? textoSilencio(prefs.silencioHasta) : null
   const silenciar = () => {
     if (callado) { cambiarPref({ silencioHasta: null }); avisar('Avisos de vuelta'); return }
     const hasta = Date.now() + DOS_HORAS_MS
     cambiarPref({ silencioHasta: hasta }); setAhora(Date.now())
-    avisar(`Avisos en silencio hasta ${horaCorta(hasta)}`)
   }
 
   const toggleAvisos = async () => {
@@ -509,43 +608,49 @@ export function Preferencias() {
     if (on) {
       setOcupado(true); await desactivarPush(); setOcupado(false)
       setOn(false); guardar(KEY_ON, false); avisar('Avisos apagados')
+      setGuardado({ ok: true, texto: 'Avisos en tu celular desactivados. Tus zonas siguen guardadas.' })
       return
     }
-    if (!pushDisponible()) { setNota('Los avisos push se activan en la siguiente versión. Tus ajustes quedan guardados en este celular.'); return }
+    if (!pushDisponible()) { setPermiso('no_disponible'); setNota('Este navegador no puede recibir avisos con la app cerrada. Tus zonas quedan guardadas en este celular.'); return }
     setOcupado(true)
-    const m = municipioParaPush(munis, municipio)
-    const r = await activarPush(m)
+    const r = await activarPush(municipioPush)
     if (r.ok) await sincronizarPrefs(prefs)
     setOcupado(false)
-    if (r.ok) { setOn(true); guardar(KEY_ON, true); avisar(`Avisos activados para ${m}`) }
-    else if (r.motivo === 'sin_permiso') setNota('Tu navegador bloqueó los avisos. Puedes permitirlos en sus ajustes.')
-    else setNota('Los avisos push se activan en la siguiente versión. Tus ajustes quedan guardados en este celular.')
+    setPermiso(estadoPermiso())
+    if (r.ok) {
+      setOn(true); guardar(KEY_ON, true)
+      setGuardado({ ok: true, texto: `Avisos activados para ${municipioPush}. Tus avisos se guardaron.` })
+    } else if (r.motivo === 'sin_permiso') setNota('Tu navegador bloqueó los avisos. Permítelos en los ajustes del navegador y vuelve aquí.')
+    else setNota('No pudimos activar los avisos en este navegador. Tus zonas quedan guardadas en este celular.')
   }
 
+  const res = resumenAvisos({ munis, on, permiso, municipioPush })
+  const elegidos = MUNICIPIOS_ZMG.filter((m) => munis[m])
+  const puedeActivar = !on && permiso !== 'denied' && permiso !== 'no_disponible'
+
   return (
-    <Screen titulo="Mis avisos" onBack={() => ir('alertas')}>
-      <div className="ay-card">
-        <h2 className="ay-h" style={{ fontSize: 21 }}>Solo te avisamos si algo cambia</h2>
-        <p className="ay-sub" style={{ fontSize: 15, lineHeight: 1.4 }}>
-          Zona nueva, zona despejada o lluvia fuerte. Por municipio, nunca por tu ubicación exacta.
-        </p>
+    <Screen titulo="Elegir de dónde quiero avisos" onBack={() => ir('alertas')}>
+      <div className={'ay-card ay-resumen' + (on ? '' : ' ay-resumen--off')} aria-live="polite">
+        <span className="ay-res-l">{res.zonas}</span>
+        <span className="ay-res-l">{res.celular}</span>
         {on
-          ? <button className="ay-on" onClick={toggleAvisos} disabled={ocupado}><Icon name="check" size={20} />Avisos activados · toca para apagar</button>
-          : <Btn variant="primary" icon="campana" onClick={toggleAvisos} disabled={ocupado}>{ocupado ? 'Activando…' : 'Activar avisos'}</Btn>}
+          ? <p className="ay-sub">Te avisamos de alertas de clima oficiales. Por municipio, nunca por tu ubicación exacta.</p>
+          : <div className="ay-pc-aviso" role="note"><Icon name="alerta" size={24} stroke={2.4} /><span>{res.alerta}</span></div>}
+        {puedeActivar && (
+          <Btn variant="primary" icon="campana" onClick={toggleAvisos} disabled={ocupado}>{ocupado ? 'Activando…' : 'Activar avisos en mi celular'}</Btn>
+        )}
+        {!on && permiso === 'denied' && <p className="ay-sub">Tu navegador bloqueó los avisos. Permítelos en los ajustes del navegador y vuelve aquí.</p>}
+        {!on && permiso === 'no_disponible' && <p className="ay-sub">Este navegador no puede recibir avisos con la app cerrada.</p>}
         {nota && <p role="status" className="ay-nota">{nota}</p>}
+        {guardado && (
+          <p role="status" className={'ay-guardado' + (guardado.ok ? '' : ' ay-guardado--mal')}>
+            <Icon name={guardado.ok ? 'check' : 'alerta'} size={20} stroke={3} />{guardado.texto}
+          </p>
+        )}
       </div>
 
-      <div className="ay-lista-toggles">
-        <Pref on={false} disabled titulo="Avisarme 1 hora antes" desc="Para organizar tu día."
-          extra={<span className="ay-toggle-d">Necesita pronóstico · <PorConfirmar>por confirmar</PorConfirmar></span>} />
-        <Pref on={prefs.soloCambios} onClick={() => cambiarPref({ soloCambios: !prefs.soloCambios })}
-          titulo="Solo si cambia el estado" desc="Sin avisos repetidos." />
-        <Pref on={prefs.soloFuertes} onClick={() => cambiarPref({ soloFuertes: !prefs.soloFuertes })}
-          titulo="Solo alertas fuertes" desc="Nivel 3 de 3 y cierres de calle." />
-      </div>
-      <button className={callado ? 'ay-on' : 'btn btn-ghost'} onClick={silenciar}>
-        {callado ? `Silenciado hasta ${horaCorta(prefs.silencioHasta)} · toca para quitar` : 'Silenciar 2 horas'}
-      </button>
+      <Pref on={on} onClick={toggleAvisos} disabled={ocupado || (!on && !puedeActivar)}
+        titulo="Avisos en tu celular" desc="Te llegan aunque la app esté cerrada." />
 
       <h2 className="ay-label" style={{ fontSize: 17 }}>¿De dónde quieres avisos?</h2>
       <div className="ay-grid2" role="group" aria-label="Municipios">
@@ -555,7 +660,35 @@ export function Preferencias() {
           </button>
         ))}
       </div>
-      <p className="ay-sub">{on ? 'Se guardan en este celular y en tus avisos.' : 'Se guardan en este celular.'}</p>
+      {elegidos.length > 1 && (
+        <p className="ay-sub">Con la app cerrada te llegan avisos de un municipio a la vez: <strong>{municipioPush}</strong>.</p>
+      )}
+
+      <div className="ay-lista-toggles">
+        <Pref on={prefs.soloCambios} onClick={() => cambiarPref({ soloCambios: !prefs.soloCambios })}
+          titulo="Solo si cambia el estado"
+          desc="Cuenta como cambio una alerta de clima nueva para tu municipio. La misma alerta no se te repite." />
+        <Pref on={prefs.soloFuertes} onClick={() => cambiarPref({ soloFuertes: !prefs.soloFuertes })}
+          titulo="Solo alertas fuertes" desc="Solo alertas de clima nivel 3 de 3 (intensa)." />
+        <Pref on={false} disabled titulo="Avisarme 1 hora antes" desc="Para organizar tu día."
+          extra={<span className="ay-toggle-d">Necesita pronóstico · <PorConfirmar>por confirmar</PorConfirmar></span>} />
+      </div>
+
+      <div className={'ay-silencio' + (callado ? ' ay-silencio--on' : '')}>
+        {callado ? (
+          <>
+            <strong className="ay-sil-hasta">{silencio.hasta}</strong>
+            <span>{silencio.cubre}</span>
+            <button className="btn btn-ghost" onClick={silenciar}>Quitar silencio</button>
+          </>
+        ) : (
+          <>
+            <button className="btn btn-ghost" onClick={silenciar}>Silenciar 2 horas</button>
+            <span className="ay-sub">Durante el silencio no recibirás ningún aviso en tu celular, tampoco las alertas fuertes.</span>
+          </>
+        )}
+        {!on && <span className="ay-sub">El silencio solo importa si los avisos en tu celular están activados.</span>}
+      </div>
     </Screen>
   )
 }
@@ -563,17 +696,42 @@ export function Preferencias() {
 // ---------------------------------------------------------------- Refugios
 const CACHE_REF = 'aguas.refugios'
 
+function FichaRefugio({ r, guardadoEn, ahora }) {
+  const est = estadoRefugio(r, ahora)
+  const acc = accesibilidadRefugio(r)
+  const tel = telRefugio(r)
+  return (
+    <article className={'ay-ref' + (guardadoEn !== undefined ? ' ay-ref--viejo' : '')}>
+      {guardadoEn !== undefined && (
+        <div className="ay-viejo" role="note"><Icon name="alerta" size={20} stroke={2.4} />{encabezadoGuardado(guardadoEn, ahora)}</div>
+      )}
+      <h2 className="ay-ref-nombre">{r.nombre}</h2>
+      <span className={`ay-ref-estado ay-est-${est.clave}`}>{est.texto}</span>
+      {est.detalle && <span className="ay-sub">{est.detalle}</span>}
+      <span className="ay-sub">{[formatoDistancia(r.distancia_m), r.direccion, r.municipio].filter(Boolean).join(' · ')}</span>
+      <span className={`ay-acc ay-acc-${acc.clave}`}><Icon name="accesibilidad" size={20} />{acc.texto}</span>
+      {r.capacidad != null && <span className="ay-sub">Capacidad: {r.capacidad} personas</span>}
+      {tel && <a className="btn ay-a ay-tel" href={tel.href}><Icon name="telefono" />Llamar · {tel.texto}</a>}
+      {r.fuente && <span className="ay-sub">Fuente: {r.fuente}</span>}
+      <a className="btn ay-a" href={urlRuta(r.lat, r.lng)} target="_blank" rel="noopener noreferrer"
+        aria-label={`Cómo llegar a ${r.nombre} (abre Google Maps)`}><Icon name="mapa" />Cómo llegar</a>
+    </article>
+  )
+}
+
 export function Refugios() {
   const { ir, params, ubic } = useApp()
-  const [lista, setLista] = useState(() => leer(CACHE_REF, null))
+  const [cache] = useState(() => leerCacheRefugios(leer(CACHE_REF, null)))
+  const [lista, setLista] = useState(cache.lista)
   const [estado, setEstado] = useState('cargando') // cargando | ok | sin_red
+  const [ahora] = useState(() => Date.now())
 
   useEffect(() => {
     let vivo = true
     refugiosPublicos().then(({ data, error }) => {
       if (!vivo) return
       if (error) { setEstado('sin_red'); return }
-      guardar(CACHE_REF, data || []) // “Guardados en tu celular: los ves aunque no haya señal.”
+      guardar(CACHE_REF, { lista: data || [], guardadoEn: Date.now() }) // para verla sin señal, con su fecha
       setLista(data || []); setEstado('ok')
     })
     return () => { vivo = false }
@@ -582,47 +740,52 @@ export function Refugios() {
   const atras = params?.desde === 'acudoresp' ? () => ir('acudoresp', { caso: params.caso })
     : params?.desde === 'acudo' ? () => ir('acudo') : undefined
   const ordenados = ordenarPorDistancia(lista, ubic)
+  const viejo = estado !== 'ok' && lista // lo que se ve viene del celular, no de la red
+  const vacio = textoSinRefugios()
 
   return (
     <Screen titulo="Refugios cerca" onBack={atras}>
-      {estado === 'cargando' && !lista && <p className="muted" role="status">Buscando refugios…</p>}
-      {estado === 'sin_red' && lista && <div className="band-offline" role="status">Sin señal · mostramos los guardados en tu celular</div>}
-      {estado === 'sin_red' && !lista && <div className="band-offline" role="status">Sin señal y aún no hay refugios guardados en tu celular</div>}
-      {lista && ordenados.length === 0 && (
-        <div className="ay-vacio">
-          <Icon name="refugio" size={40} />
-          <strong>Aún no hay refugios verificados en tu zona</strong>
-          <span>Solo mostramos refugios con fuente oficial. Si estás en peligro, llama al 911.</span>
-          <PorConfirmar />
+      {estado === 'cargando' && <p className="muted" role="status">Buscando refugios…</p>}
+      {estado === 'sin_red' && (
+        <div className="band-offline" role="status">
+          {lista ? 'Sin conexión · te mostramos lo último que guardamos en tu celular' : 'Sin conexión · no pudimos revisar los refugios'}
         </div>
       )}
-      {ordenados.map((r) => (
-        <article key={r.id} className="ay-ref">
-          <h2 className="ay-ref-nombre">{r.nombre}</h2>
-          <span className="ay-sub">
-            {[formatoDistancia(r.distancia_m), r.direccion, r.municipio].filter(Boolean).join(' · ')}
-          </span>
-          {r.capacidad != null && <span className="ay-sub">Capacidad: {r.capacidad} personas</span>}
-          {r.fuente && <span className="ay-sub">Fuente: {r.fuente}</span>}
-          <a className="btn ay-a" href={urlRuta(r.lat, r.lng)} target="_blank" rel="noopener noreferrer"
-            aria-label={`Cómo llegar a ${r.nombre} (abre Google Maps)`}><Icon name="mapa" />Cómo llegar</a>
-        </article>
-      ))}
-      {lista && ordenados.length === 0 && <Tel911>Llamar al 911</Tel911>}
-      <p className="ay-sub ay-center">Guardados en tu celular: los ves aunque no haya señal.</p>
+      {estado === 'sin_red' && !lista && (
+        <div className="ay-vacio">
+          <Icon name="refugio" size={40} />
+          <strong>No pudimos revisar los refugios</strong>
+          <span>No es que no haya refugios: no tenemos señal y aún no hay información guardada en este celular. Vuelve a intentar con señal.</span>
+        </div>
+      )}
+      {lista && ordenados.length === 0 && (estado !== 'cargando') && (
+        <div className="ay-vacio">
+          <Icon name="refugio" size={40} />
+          <strong>{vacio.titulo}</strong>
+          <span>{vacio.cuerpo}</span>
+          <span className="ay-otra-via">{vacio.otraVia}.</span>
+          {viejo && <span className="ay-sub">{encabezadoGuardado(cache.guardadoEn, ahora)}</span>}
+        </div>
+      )}
+      {ordenados.map((r) => <FichaRefugio key={r.id} r={r} ahora={ahora} guardadoEn={viejo ? cache.guardadoEn : undefined} />)}
+      {(estado !== 'cargando' && ordenados.length === 0) && <Tel911>Si estás en peligro, llama al 911</Tel911>}
+      {estado === 'ok' && ordenados.length > 0 && (
+        <p className="ay-sub ay-center">Si pierdes la señal, verás esta lista con la fecha en que se guardó.</p>
+      )}
     </Screen>
   )
 }
 
 // ---------------------------------------------------------------- Accesibilidad
+// "Reducir movimiento" sube en la lista (testeo: 2 de 8 no lo encontraron).
 const A11Y = [
-  ['claro', 'Modo claro', 'Fondo claro para leer con sol'],
   ['grande', 'Texto grande', 'Todo se ve 22 % más grande'],
-  ['contraste', 'Alto contraste', 'Negro y blanco, bordes gruesos'],
+  ['contraste', 'Alto contraste', 'Fondo negro, texto blanco y bordes más gruesos. Se impone al modo claro.'],
+  ['motion', 'Reducir movimiento', 'Apaga todas las animaciones y transiciones'],
+  ['claro', 'Modo claro', 'Fondo claro para leer con sol'],
   ['dalton', 'Modo daltonismo', 'Escala azul → naranja, sin rojo/verde'],
   ['voz', 'Leer en voz alta', 'Lee zonas nuevas o que suben cerca de ti y botón “Escuchar” en el mapa'],
   ['vibra', 'Vibración', 'Vibra al tocar, al confirmar y en alertas (solo Android)'],
-  ['motion', 'Reducir movimiento', 'Apaga todas las animaciones'],
 ]
 
 // Misma voz que el resto de la app (lib/confirmar.js: arregla el silencio de Safari iOS).
@@ -659,6 +822,9 @@ export function Ajustes() {
 
   return (
     <Screen titulo="Accesibilidad">
+      <p className="ay-sub" style={{ fontSize: 15 }}>
+        Ajustes de lectura y uso. Los avisos están en Más › Notificaciones; el permiso de ubicación, en los ajustes de tu navegador.
+      </p>
       <div className="ay-card" style={{ borderRadius: 16, padding: 12 }}>
         <span className="ay-sub" style={{ fontWeight: 700 }}>Así se ve ahora la escala</span>
         <div className="ay-escala">
@@ -668,18 +834,9 @@ export function Ajustes() {
         </div>
       </div>
       <div className="ay-lista-toggles">
-        {A11Y.map(([k, l, d]) => {
-          const on = activo(k)
-          return (
-            <button key={k} className="ay-toggle" role="switch" aria-checked={on} onClick={() => toggle(k)}>
-              <span><span className="ay-toggle-l">{l}</span><span className="ay-toggle-d">{d}</span></span>
-              <span className="ay-toggle-r">
-                <span className={on ? '' : 'muted'} style={{ fontWeight: on ? 700 : 400 }}>{on ? 'Sí' : 'No'}</span>
-                <span className="switch" aria-hidden="true"><i /></span>
-              </span>
-            </button>
-          )
-        })}
+        {A11Y.map(([k, l, d]) => (
+          <Pref key={k} on={activo(k)} onClick={() => toggle(k)} titulo={l} desc={d} />
+        ))}
       </div>
       <p className="ay-sub ay-center">Los cambios se aplican al instante en toda la app.</p>
     </Screen>
