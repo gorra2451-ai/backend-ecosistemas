@@ -17,7 +17,9 @@ import {
 import { hablar } from '../lib/confirmar.js'
 import { fraseEstado, ubicacionReal } from '../lib/vozAlertas.js'
 import { useArrastreHoja } from '../lib/hoja.js'
-import { buscarRutas, mostrarRuta } from '../lib/rutas.js'
+import { pedirRutas, leerRutas, suscribirRuta, rutasPara, rutaActiva, elegirRuta, verRutaEnMapa, olvidarSiOtroDestino, debeRecalcular, claveDestino } from '../lib/rutas.js'
+import { avisoCorto, sugerenciasSinResultado, vistaLugar, encabezadoLugar, estadoCaminoDestino, POPULARES } from '../lib/buscar.js'
+import '../styles/buscar.css'
 import { etiquetaPin } from '../lib/pines.js'
 import NivelAgua from '../components/NivelAgua.jsx'
 import { simularInundacion, quitarSimulaciones, leerSimulacion, suscribirSimulacion, ESCENARIOS, cargarEscenario } from '../lib/simulacion.js'
@@ -658,29 +660,47 @@ const IcoRuta = () => (
     <circle cx="6" cy="19" r="2" /><circle cx="18" cy="5" r="2" /><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8" />
   </svg>
 )
-function PanelRutas({ rutas, elegida, setElegida, onVer, real }) {
-  if (rutas.estado === 'buscando') return <p className="mp-cargando" role="status">Buscando rutas…</p>
-  if (rutas.estado === 'error' || !rutas.lista.length) return <p className="mp-aviso">No pudimos calcular la ruta. Revisa tu conexión e inténtalo de nuevo.</p>
-  const r = rutas.lista[elegida]
+// Medio de transporte activo, cambiable desde el panel (testeo: chip "En auto ▾"). Usa medio/setMedio del store.
+const MEDIOS_RUTA = [['peaton', 'A pie'], ['bici', 'En bici'], ['moto', 'En moto'], ['auto', 'En auto'], ['transporte_publico', 'En transporte público']]
+const nReportes = (n) => (n ? `${n} reporte${n === 1 ? '' : 's'} en el camino` : 'Sin reportes en el camino')
+
+// rutas = estado ÚNICO de lib/rutas.js (el mismo que dibuja el mapa) o null.
+function PanelRutas({ rutas, onVer, real, medio, onMedio }) {
+  const chip = (
+    <label className="bs-medio">
+      <Icon name={MEDIOS_RUTA.some(([k]) => k === medio) ? medio : 'peaton'} size={20} />
+      <select value={medio} onChange={(e) => onMedio(e.target.value)} aria-label="Cambiar cómo te mueves">
+        {MEDIOS_RUTA.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
+      </select>
+      <span aria-hidden="true">▾</span>
+    </label>
+  )
+  if (rutas.estado === 'buscando') return <section className="mp-rutas">{chip}<p className="mp-cargando" role="status">Buscando rutas…</p></section>
+  if (rutas.estado === 'error' || !rutas.lista.length) {
+    return <section className="mp-rutas">{chip}<p className="mp-aviso">No pudimos calcular la ruta. Revisa tu conexión e inténtalo de nuevo.</p></section>
+  }
+  const r = rutas.lista[rutas.elegida] || rutas.lista[0]
   return (
     <section className="mp-rutas" aria-label="Rutas para llegar">
+      <div className="bs-rutas-head"><b>Rutas</b>{chip}</div>
       {!real && <p className="mp-aviso">Sin tu ubicación: la ruta sale del punto de ejemplo del mapa.</p>}
       <div className="mp-rutas-op" role="radiogroup" aria-label="Elige una ruta">
         {rutas.lista.map((x, i) => (
-          <button key={i} type="button" role="radio" aria-checked={i === elegida} className="mp-ruta" onClick={() => setElegida(i)}>
-            <b>{x.min} min</b><span>{x.km} km</span>
-            <span className={'mp-ruta-tag' + (x.enCamino.length ? ' mal' : ' bien')}>
-              {x.enCamino.length ? `${x.enCamino.length} reporte${x.enCamino.length === 1 ? '' : 's'} en el camino` : 'Sin reportes en el camino'}
+          <button key={i} type="button" role="radio" aria-checked={i === rutas.elegida} className="bs-ruta" onClick={() => elegirRuta(i)}>
+            <span className="bs-ruta-linea" aria-hidden="true" />
+            <span className="bs-ruta-txt">
+              <span className="bs-ruta-1"><b>{x.min} min</b> · {x.km} km{i === rutas.elegida && <span className="bs-ruta-activa">Ruta activa</span>}</span>
+              <span className={'mp-ruta-tag' + (x.enCamino.length ? ' mal' : ' bien')}>{nReportes(x.enCamino.length)}</span>
             </span>
           </button>
         ))}
       </div>
       {r.enCamino.length > 0 && (
-        <ul className="mp-ruta-alertas">
+        <ul className="mp-ruta-alertas" aria-label="Reportes en esta ruta">
           {r.enCamino.map((p) => <li key={p.id}><span className="mp-sw mp-sw--risk" aria-hidden="true" />{etiquetaPin(p)}</li>)}
         </ul>
       )}
-      <button type="button" className="btn btn-primary mp-btn-prim" onClick={() => onVer(elegida)}><Icon name="mapa" />Ver ruta en el mapa</button>
+      <button type="button" className="btn btn-primary mp-btn-prim" onClick={() => onVer(rutas.elegida)}><Icon name="mapa" />Ver ruta en el mapa</button>
       <details className="mp-pasos">
         <summary>Paso a paso ({r.pasos.length})</summary>
         <ol>{r.pasos.map((p, i) => <li key={i}>{p.texto}{p.m > 0 && <span> · {p.m >= 1000 ? (p.m / 1000).toFixed(1) + ' km' : p.m + ' m'}</span>}</li>)}</ol>
@@ -694,113 +714,151 @@ function PanelRutas({ rutas, elegida, setElegida, onVer, real }) {
 // ---------- Buscar un lugar · equipo Mapa, pantalla 4 ----------
 // Nombres del equipo como atajos: al tocarlos se buscan en OpenStreetMap (no guardamos coordenadas propias).
 // Sin autocompletar (reglas de Nominatim): se busca solo al enviar (Enter o "Buscar") o al tocar un atajo.
-const SUGERENCIAS = ['Centro Histórico, Guadalajara', 'Zapopan Centro', 'Colonia Americana', 'Av. López Mateos',
-  'Plaza del Sol', 'Expo Guadalajara', 'Parque Revolución', 'Glorieta Minerva']
+// Los apodos ("la Mine") se traducen al nombre oficial en api.buscarLugar (lib/alias.js).
+const SUGERENCIAS = POPULARES
 
 export function Buscar() {
-  const { ir, params } = useApp()
+  const { ir, params, ubic, medio, setMedio, avisar } = useApp()
   const datos = useDatosMapa()
   const [q, setQ] = useState(params?.q || '')
-  const [res, setRes] = useState({ estado: 'vacio', lista: [] }) // vacio | buscando | listo | error
+  const [res, setRes] = useState({ estado: 'vacio', lista: [], q: '' }) // vacio | corto | buscando | listo | error
   const [lugar, setLugar] = useState(params?.destino || null)
-  const [rutas, setRutas] = useState({ estado: 'nada', lista: [] }) // nada | buscando | listo | error
-  const [elegida, setElegida] = useState(0)
-  const { ubic, medio } = useApp()
+  const [repDestino, setRepDestino] = useState([]) // reportes alrededor del destino (puede quedar lejos de ti)
+  const todas = useSyncExternalStore(suscribirRuta, leerRutas)
+  const rutas = rutasPara(todas, lugar) // solo las de ESTE destino: una sola fuente con el mapa
   const pedido = useRef(0)
   const inputRef = useRef(null)
+  const calcularAlCargar = useRef(false)
 
   async function buscar(v) {
     const texto = textoBusqueda(v)
     const n = ++pedido.current
-    if (!texto) { setRes({ estado: v.trim() ? 'corto' : 'vacio', lista: [] }); return }
+    if (!texto) { setRes({ estado: v.trim() ? 'corto' : 'vacio', lista: [], q: v }); return }
     setRes((r) => ({ ...r, estado: 'buscando' }))
     let r
     try { r = await buscarLugar(texto) } catch { r = { data: null, error: 'sin_red' } }
     if (n !== pedido.current) return // llegó tarde: ya se buscó otra cosa
-    setRes(r.error ? { estado: 'error', lista: [] } : { estado: 'listo', lista: r.data || [] })
+    setRes(r.error ? { estado: 'error', lista: [], q: texto } : { estado: 'listo', lista: r.data || [], q: texto })
   }
   useEffect(() => () => { pedido.current++ }, [])
-  useEffect(() => { if (params?.destino) { centrarEn(params.destino); calcular(params.destino) } else { inputRef.current?.focus(); if (q) buscar(q) } }, []) // eslint-disable-line
+  useEffect(() => { if (!params?.destino) { inputRef.current?.focus(); if (q) buscar(q) } }, []) // eslint-disable-line
 
-  async function calcular(destino = lugar) {
-    if (!destino) return
-    setRutas({ estado: 'buscando', lista: [] }); setElegida(0)
-    const r = await buscarRutas(medio, ubic, destino, datos.reportes)
-    setRutas(r.error ? { estado: 'error', lista: [] } : { estado: 'listo', lista: r.data })
+  // Un solo destino a la vez: el pin del mapa, el encabezado y las rutas cambian juntos.
+  function fijarDestino(l, aviso = true) {
+    setLugar(l); centrarEn(l); olvidarSiOtroDestino(l)
+    if (aviso) avisar(`Destino: ${vistaLugar(l).nombre}`)
   }
-  const verRuta = (i) => {
-    const rt = rutas.lista[i]
-    mostrarRuta({ ...rt, destino: lugar, i }); ir(null)
+  // Bug del testeo: el nombre de arriba se quedaba en "Plaza del Sol" al llegar con otro destino. La pantalla no se
+  // vuelve a montar si ya estaba abierta, así que se sincroniza con params cada vez que cambia el destino.
+  const claveParams = claveDestino(params?.destino)
+  useEffect(() => { if (params?.destino) { fijarDestino(params.destino, false); calcularAlCargar.current = true } }, [claveParams]) // eslint-disable-line
+
+  useEffect(() => {
+    if (!lugar) { setRepDestino([]); return }
+    let vivo = true
+    reportesEnArea(bboxAlrededor(lugar.lat, lugar.lng, 1500)).then(({ data }) => { if (vivo) setRepDestino(data || []) })
+    return () => { vivo = false }
+  }, [lugar?.lat, lugar?.lng, datos.cargando]) // eslint-disable-line
+  const ids = new Set(datos.reportes.map((x) => x.id))
+  const reportes = [...datos.reportes, ...repDestino.filter((x) => !ids.has(x.id))]
+
+  function calcular(m = medio) {
+    if (lugar) pedirRutas({ medio: m, origen: ubic, destino: lugar, reportes })
   }
+  // Desde el detalle de alerta: calcula en cuanto hay reportes cargados (si no, "en el camino" sale en 0).
+  useEffect(() => { if (calcularAlCargar.current && lugar && !datos.cargando) { calcularAlCargar.current = false; calcular() } }, [datos.cargando, lugar]) // eslint-disable-line
+  // Llegó el GPS real (o te moviste): la ruta vieja ya no sale de donde estás.
+  useEffect(() => { if (rutas && debeRecalcular(rutas, ubic)) calcular(rutas.medio) }, [ubic.lat, ubic.lng]) // eslint-disable-line
+  const cambiarMedio = (m) => { setMedio(m); if (rutas) calcular(m) }
+  const verRuta = (i) => { verRutaEnMapa(i); ir(null) }
 
   // Teclear solo cambia el texto; si se borra todo, vuelven los atajos. No consulta a Nominatim.
   function escribir(v) {
-    setQ(v); setLugar(null); setRutas({ estado: 'nada', lista: [] })
-    if (!v.trim()) { pedido.current++; setRes({ estado: 'vacio', lista: [] }) }
+    setQ(v); setLugar(null)
+    if (!v.trim()) { pedido.current++; setRes({ estado: 'vacio', lista: [], q: '' }) }
   }
   const atajo = (s) => { setQ(s); setLugar(null); buscar(s) }
-  const elegir = (l) => { setLugar(l); centrarEn(l); setRutas({ estado: 'nada', lista: [] }) }
+  const elegir = (l) => fijarDestino(l)
   const cancelar = () => (q ? (escribir(''), inputRef.current?.focus()) : ir(null))
 
-  const cercaDelLugar = lugar ? loCercano({ ...filtrarCapas({ zonas: datos.zonas, reportes: datos.reportes }, datos.capas), ubic: lugar }) : []
-  const { t, sub } = partirLugar(lugar?.nombre)
+  const cercaDelLugar = lugar ? loCercano({ ...filtrarCapas({ zonas: datos.zonas, reportes }, datos.capas), ubic: lugar }) : []
+  const enDestino = lugar ? reportes.filter((x) => distanciaM(lugar, x) <= RADIO_TU_ZONA_M).length : 0
+  const activa = rutaActiva(rutas)
+  const v = vistaLugar(lugar)
+  const corto = avisoCorto(q)
 
   return (
-    <Screen titulo="Buscar un lugar" label="Buscar un lugar">
+    <Screen titulo={lugar ? 'Destino' : 'Buscar un lugar'} label="Buscar un lugar">
       <form className="mp-buscar" role="search" onSubmit={(e) => { e.preventDefault(); inputRef.current?.blur(); buscar(q) }}>
         <label className="mp-buscar-campo">
           <IcoLupa />
           <span className="sr-only">Buscar dirección, colonia o lugar</span>
           <input ref={inputRef} type="search" value={q} onChange={(e) => escribir(e.target.value)} enterKeyHint="search"
-            placeholder="Buscar dirección, colonia o lugar" autoComplete="off" />
+            placeholder="Lugar, colonia o calle (ej. la Mine)" autoComplete="off" aria-describedby="bs-corto" />
         </label>
         <button type="submit" className="btn-text mp-cancelar" disabled={res.estado === 'buscando'}>Buscar</button>
         <button type="button" className="btn-text mp-cancelar" onClick={cancelar}>Cancelar</button>
       </form>
+      <p id="bs-corto" className="bs-corto" role="status" aria-live="polite">{corto || ''}</p>
 
       {lugar ? (
         <>
-          <div className="mp-lugar">
-            <span className="mp-lugar-ico"><Icon name="pin" /></span>
-            <div><b>{t}</b>{sub && <span>{sub}</span>}</div>
-          </div>
+          <header className="bs-destino" aria-label={`Destino: ${encabezadoLugar(lugar)}`}>
+            <span className="bs-over"><Icon name="pin" size={16} stroke={2.6} />Destino</span>
+            <h2 className="bs-dest-t">{v.nombre}{v.municipio && <span className="bs-dest-muni"> · {v.municipio}</span>}</h2>
+            {(v.categoria || v.detalle) && <p className="bs-dir">{[v.categoria, v.detalle].filter(Boolean).join(' · ')}</p>}
+            <p className="bs-estado">{estadoCaminoDestino({ enCamino: activa ? activa.enCamino.length : null, enDestino })}</p>
+          </header>
           <div className="mp-lugar-acc">
-            <button type="button" className="btn btn-primary mp-btn-prim" onClick={() => ir(null)}><Icon name="mapa" />Ver en el mapa</button>
-            <button type="button" className="btn mp-btn-ruta" onClick={() => calcular()} disabled={rutas.estado === 'buscando'}>
-              <IcoRuta />{rutas.estado === 'buscando' ? 'Buscando rutas…' : 'Cómo llegar'}
+            <button type="button" className="btn btn-primary mp-btn-prim" onClick={() => calcular()} disabled={rutas?.estado === 'buscando'}>
+              <IcoRuta />{rutas?.estado === 'buscando' ? 'Buscando rutas…' : rutas ? 'Volver a calcular rutas' : 'Cómo llegar'}
             </button>
+            <button type="button" className="btn mp-btn-ruta" onClick={() => ir(null)}><Icon name="mapa" />Ver en el mapa</button>
           </div>
-          {rutas.estado !== 'nada' && (
-            <PanelRutas rutas={rutas} elegida={elegida} setElegida={setElegida} onVer={verRuta} real={ubic.real} />
-          )}
-          <h2 className="mp-side-h">Alertas cerca de este lugar</h2>
+          {rutas && <PanelRutas rutas={rutas} onVer={verRuta} real={ubic.real} medio={medio} onMedio={cambiarMedio} />}
+          <h2 className="mp-side-h">Alertas cerca de {v.nombre}</h2>
           {datos.cargando ? <p className="mp-cargando" role="status">Cargando alertas…</p>
             : cercaDelLugar.length
               ? <ul className="mp-list mp-list--libre">{cercaDelLugar.map((it) => <Fila key={it.id} it={it} desde="del lugar" onClick={() => abrirItem(ir, it)} />)}</ul>
-              : <div className="mp-calma"><b>Sin alertas activas cerca</b><p>No hay inundaciones confirmadas cerca de este lugar ahora. Revisa antes de salir.</p></div>}
+              : <div className="mp-calma"><b>Sin alertas activas cerca de {v.nombre}</b><p>No hay inundaciones confirmadas cerca de este lugar ahora. Revisa antes de salir.</p></div>}
           <button type="button" className="btn-text" onClick={() => { setLugar(null); inputRef.current?.focus() }}>Elegir otro lugar</button>
         </>
       ) : (
         <div aria-live="polite">
           {res.estado === 'buscando' && <p className="mp-cargando" role="status">Buscando…</p>}
-          {res.estado === 'corto' && <p className="mp-aviso">Escribe al menos 3 letras y toca Buscar.</p>}
           {res.estado === 'error' && <p className="mp-aviso">No pudimos buscar. Revisa tu conexión y vuelve a intentar.</p>}
-          {res.estado === 'listo' && !res.lista.length && <p className="mp-aviso">No encontramos ese lugar en la zona metropolitana de Guadalajara.</p>}
+          {res.estado === 'listo' && !res.lista.length && (
+            <div className="bs-vacio">
+              <p><b>No encontramos «{res.q}».</b> Prueba con el nombre oficial, la colonia o una calle cercana.</p>
+              <p className="bs-vacio-sub">Corrige arriba o toca una sugerencia:</p>
+              <ul className="bs-sug">
+                {sugerenciasSinResultado(res.q).map((s) => (
+                  <li key={s}><button type="button" onClick={() => atajo(s)}><Icon name="pin" size={18} />{s}</button></li>
+                ))}
+              </ul>
+            </div>
+          )}
           {res.estado === 'listo' && res.lista.length > 0 && (
-            <ul className="mp-res">
+            <ul className="bs-res">
               {res.lista.map((l, i) => {
-                const p = partirLugar(l.nombre)
+                const p = vistaLugar(l)
+                const dist = ubic.real ? formatoDist(distanciaM(ubic, l)) : ''
                 return (
                   <li key={i}>
                     <button type="button" onClick={() => elegir(l)}>
-                      <Icon name="pin" size={22} /><span><b>{p.t}</b>{p.sub && <span>{p.sub}</span>}</span>
+                      <Icon name="pin" size={22} />
+                      <span className="bs-r">
+                        <span className="bs-r-top"><b>{p.nombre}</b>{p.municipio && <span className="bs-muni">{p.municipio}</span>}</span>
+                        {(p.categoria || p.detalle) && <span className="bs-r-dir">{[p.categoria, p.detalle].filter(Boolean).join(' · ')}</span>}
+                        {dist && <span className="bs-r-dist">a {dist} de ti</span>}
+                      </span>
                     </button>
                   </li>
                 )
               })}
             </ul>
           )}
-          {res.estado === 'vacio' && (
+          {(res.estado === 'vacio' || res.estado === 'corto') && (
             <>
               <p className="mp-cargando">Escribe al menos 3 letras y toca Buscar, o elige un lugar:</p>
               <ul className="mp-res">
