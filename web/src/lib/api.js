@@ -2,6 +2,7 @@
 // Contrato: docs/API.md. Cada función regresa { data, error } donde error es un código del contrato.
 import { supabase } from './supabase.js'
 import { conSimuladas, conReportesSimulados } from './simulacion.js'
+import { resolverAlias } from './alias.js'
 
 const CODIGOS = [ // códigos reales de supabase/migrations (los más largos primero: se busca por substring)
   'reporte_no_autorizado', 'proveedor_push_no_permitido', 'video_deshabilitado', 'tipo_archivo_invalido', 'area_demasiado_grande',
@@ -158,15 +159,47 @@ export function etiquetaLugar(x) {
   const muni = a.city || a.town || a.municipality || a.village || ''
   return [calle || x?.name, a.suburb, muni].filter(Boolean).join(', ') || x?.display_name || ''
 }
+// Categoría específica según OSM (testeo: "Lugar de interés" no decía nada). Sin dato claro → null (no se muestra).
+const CATEGORIA_TIPO = {
+  mall: 'Centro comercial', department_store: 'Tienda departamental', supermarket: 'Supermercado',
+  monument: 'Monumento', memorial: 'Monumento', artwork: 'Monumento', statue: 'Monumento',
+  roundabout: 'Glorieta', park: 'Parque', garden: 'Jardín', stadium: 'Estadio', sports_centre: 'Centro deportivo',
+  university: 'Universidad', college: 'Escuela', school: 'Escuela', hospital: 'Hospital', clinic: 'Clínica',
+  place_of_worship: 'Templo', cathedral: 'Templo', church: 'Templo', museum: 'Museo', theatre: 'Teatro',
+  marketplace: 'Mercado', market: 'Mercado', square: 'Plaza', townhall: 'Gobierno', station: 'Estación',
+  neighbourhood: 'Colonia', suburb: 'Colonia', quarter: 'Colonia', residential: 'Colonia',
+  city: 'Municipio', town: 'Municipio', village: 'Localidad', hotel: 'Hotel', attraction: 'Atracción',
+}
+const CATEGORIA_CLASE = { highway: 'Calle', junction: 'Glorieta', shop: 'Tienda', leisure: 'Parque' }
+export function categoriaLugar(x) {
+  const tipo = x?.type || ''
+  const clase = x?.category || x?.class || ''
+  if (clase === 'highway' && tipo === 'bus_stop') return null
+  if (clase === 'boundary') return x?.addresstype === 'city' ? 'Municipio' : null
+  return CATEGORIA_TIPO[tipo] || CATEGORIA_TIPO[x?.addresstype] || CATEGORIA_CLASE[clase] || null
+}
+export const municipioDe = (a = {}) => a.city || a.town || a.municipality || a.village || a.county || ''
+// Resultado listo para pintar: primero el NOMBRE del lugar, luego la dirección y el municipio aparte (etiqueta).
+// `nombre` se queda como antes (etiqueta completa) porque Reportar y el mapa lo usan.
+export function formatoResultado(x) {
+  const a = x?.address || {}
+  const calle = [a.road || a.pedestrian, a.house_number].filter(Boolean).join(' ')
+  const municipio = municipioDe(a)
+  const titulo = x?.name || calle || a.neighbourhood || a.suburb || String(x?.display_name || '').split(',')[0].trim() || 'Lugar sin nombre'
+  const direccion = [calle !== titulo && calle, a.suburb !== titulo && a.suburb].filter(Boolean).join(', ')
+  return { nombre: etiquetaLugar(x), titulo, direccion, municipio, categoria: categoriaLugar(x), lat: +x.lat, lng: +x.lon }
+}
 // Política de Nominatim: nada de autocompletar. Las pantallas llaman a buscarLugar SOLO al enviar
 // (Enter o botón "Buscar"), nunca mientras se teclea. textoBusqueda: texto recortado o null si < 3 letras.
 export const textoBusqueda = (q) => { const t = String(q ?? '').trim(); return t.length >= 3 ? t : null }
+// Lo que de verdad va a Nominatim: el apodo ("la Mine") se traduce al nombre oficial (lib/alias.js).
+export const consultaLugar = (q) => { const t = textoBusqueda(q); return t ? resolverAlias(t) : null }
 export async function buscarLugar(q) {
-  const t = textoBusqueda(q)
+  const t = consultaLugar(q)
   if (!t) return { data: [], error: null }
   const u = `${NOMI}/search?format=jsonv2&addressdetails=1&countrycodes=mx&viewbox=-103.60,20.85,-103.15,20.45&bounded=1&limit=5&q=${encodeURIComponent(t)}`
   const { data, error } = await nomi(u)
-  return { data: (data || []).map((x) => ({ nombre: etiquetaLugar(x), lat: +x.lat, lng: +x.lon })), error }
+  return { data: (data || []).map(formatoResultado), error }
 }
 // PRIVACIDAD: solo coordenadas de reportes (o zonas), nunca del dispositivo. La ubicación de un reporte
 // ya es pública; la del GPS de la persona no se manda a terceros (se muestra "Tu ubicación (GPS)").
