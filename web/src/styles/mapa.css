@@ -293,3 +293,110 @@
 .mp-pasos summary{font:700 15px var(--f-body);cursor:pointer;min-height:44px;display:flex;align-items:center}
 .mp-pasos ol{margin:4px 0 0 18px;padding:0;display:flex;flex-direction:column;gap:6px;font-size:15px;line-height:1.35}
 .mp-pasos li span{color:var(--mu)}
+
+/* ---------- Testeo de usabilidad · carril A1 (mapa) ---------- */
+/* 1 · Tarjeta de estado: zona nombrada, aviso de que sin reportes no es sin riesgo, ubicación aproximada */
+.mp-donde{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font:700 13px/1.25 var(--f-body);color:var(--tx)}
+.mp-priv{display:inline-flex;align-items:center;gap:4px;font:400 12px/1.2 var(--f-body);color:var(--mu)}
+.mp-priv svg{color:var(--acc)}
+.mp-frase--calma{font-size:17px;line-height:1.15}
+.mp-aviso-riesgo{display:flex;align-items:center;gap:5px;font:700 13px/1.25 var(--f-body);color:var(--amber)}
+.mp-side-card .mp-frase--calma{font-size:24px}
+.mp-side-card .mp-aviso-riesgo{font-size:15px}
+
+/* 2 / 11 · "Mi ubicación" con diana y texto; punto de ejemplo cuando no hay permiso */
+.mp-miubic{min-height:48px;border:2px solid var(--acc);border-radius:14px;background:var(--s1);color:var(--acc);
+  display:flex;align-items:center;gap:6px;padding:0 10px;font:700 14px var(--f-body);box-shadow:var(--sh-legend-light)}
+.mk-ejemplo{position:relative;width:24px;height:24px}
+.mk-ejemplo span{position:absolute;inset:0;border-radius:50%;background:var(--s1);border:3px dashed var(--mu)}
+.mk-ejemplo b{position:absolute;left:50%;top:28px;transform:translateX(-50%);white-space:nowrap;background:var(--s1);color:var(--tx);
+  border:var(--bw) solid var(--line);border-radius:8px;padding:2px 6px;font:700 12px var(--f-body)}
+.mp-ejemplo-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;background:var(--s1);border:2px dashed var(--mu);
+  border-radius:14px;padding:6px 6px 6px 12px;font:400 14px/1.3 var(--f-body);color:var(--tx);box-shadow:var(--sh-legend-light)}
+.mp-ejemplo-bar span{flex:1;min-width:160px}
+.mp-ejemplo-bar button{min-height:44px;border:0;border-radius:10px;background:var(--acc);color:var(--accTx);font:700 14px var(--f-body);
+  display:flex;align-items:center;gap:6px;padding:0 12px}
+
+/* 3 · Panel con pestañas "Leyenda del mapa" / "Filtrar reportes": solo el cuerpo se desplaza.
+   Fallback a vh: sin soporte de dvh la altura máxima se perdía y el panel no se podía bajar en el celular. */
+.mp-capas{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow:hidden}
+.mp-capas-head,.mp-tabs,.mp-capas-acc{flex:none}
+.mp-capas-cuerpo{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;
+  display:flex;flex-direction:column;gap:10px;margin:0 -4px;padding:2px 4px 8px}
+.mp-capas-cuerpo > *{flex:none}
+.mp-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--s2);border-radius:14px;padding:4px}
+.mp-tab{min-height:44px;border:0;border-radius:10px;background:transparent;color:var(--mu);font:700 15px var(--f-body);
+  display:flex;align-items:center;justify-content:center;gap:6px}
+.mp-tab[aria-selected=true]{background:var(--s1);color:var(--tx);box-shadow:inset 0 -3px 0 var(--acc)}
+.mp-tab-n{min-width:22px;height:22px;border-radius:11px;background:var(--acc);color:var(--accTx);font:700 13px/22px var(--f-body);padding:0 6px}
+.mp-chip{min-height:52px}
+.mp-chip span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
+.mp-chip small{font:400 12px var(--f-body);color:var(--mu)}
+.mp-capa{min-height:56px}
+.mp-ley-h{font:700 14px var(--f-body);color:var(--mu);margin:4px 0 0}
+.mp-capas-sim li{grid-template-columns:32px auto;min-height:36px}
+.mp-capas-btn--on{border:2px solid var(--acc);background:var(--chip)}
+.mp-capas-btn--todos{color:var(--acc);border-color:var(--acc)}
+.mp-top-row--chips{flex-wrap:wrap}
+.mp-sw--letra{width:20px;height:20px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center}
+.mp-sw--letra b{font:800 11px/1 var(--f-body);color:#0B1220;background:rgba(255,255,255,.9);border-radius:3px;padding:1px 2px}
+.mp-sw--sim{width:16px;height:16px;border-radius:50%;border:2px dashed var(--tx);flex:none}
+
+/* 4 · Mini leyenda fija sobre la esquina del mapa (encima de la hoja) */
+.mp-full{position:relative}
+.mp-minileyenda{position:absolute;left:12px;bottom:calc(100% + 10px);z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+  background:var(--s1);border:var(--bw) solid var(--line);border-radius:12px;padding:6px 8px;opacity:.95;
+  color:var(--tx);font:700 12px/1.2 var(--f-body);text-align:left;box-shadow:var(--sh-legend-light);min-width:44px}
+.mp-minileyenda > span{display:flex;align-items:center;gap:6px}
+.mp-minileyenda .mp-sw--letra{width:18px;height:18px}
+.mp-minileyenda-mas{color:var(--acc);gap:2px!important;margin-top:1px}
+
+/* 5 · Mismo ícono por tipo en mapa, lista y leyenda. Coche ya no es verde (se leía como "está bien"). */
+.mp-tipo{position:relative;flex:none;border-radius:50%;border:2px solid #fff;display:inline-flex;align-items:center;justify-content:center;color:#fff}
+.mp-tipo--calle{background:var(--t-calle)} .mp-tipo--casa{background:var(--t-casa)}
+.mp-tipo--coche{background:var(--t-coche);color:#0B1220}
+.mp-tipo--persona_en_riesgo{background:var(--risk);color:#fff;box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--risk)}
+.mp-tipo-niv{position:absolute;right:-7px;bottom:-6px;width:20px;height:20px;border-radius:6px;border:2px solid #fff;display:flex;align-items:center;justify-content:center}
+.mp-tipo-niv b{font:800 10px/1 var(--f-body);color:#0B1220;background:rgba(255,255,255,.9);border-radius:3px;padding:1px 2px}
+.mp-near-tipo{position:absolute;left:4px;top:4px}
+.mp-near-tipo>.mp-tipo>svg{background:transparent}
+.mp-near--riesgo .mp-near-art{background:var(--bg)}
+.mp-res-pill .mp-tipo{border-width:1px}
+.mp-res-pill .mp-sw--letra{width:16px;height:16px}
+
+/* 7 · Simulaciones: etiqueta visible en todas las tarjetas, marcador distinto y aviso fijo de modo práctica */
+.mp-simtag{align-self:flex-start;display:inline-block;width:max-content;background:var(--tx);color:var(--bg);border-radius:6px;padding:2px 8px;
+  font:800 12px/1.3 var(--f-body);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.mp-row--sim,.mp-near--sim{border-style:dashed;border-width:2px}
+.pin--sim .pin-cab{border-style:dashed;border-width:3px;opacity:.92}
+.pin--sim::before{content:"SIMULACIÓN";position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:2px;white-space:nowrap;
+  background:#0B1220;color:#fff;border:1px dashed #fff;border-radius:5px;padding:1px 4px;font:800 9px/1.2 var(--f-body);letter-spacing:.06em}
+.mp-practica{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--tx);color:var(--bg);
+  border:2px dashed var(--bg);border-radius:14px;padding:4px 4px 4px 12px;font:400 14px/1.2 var(--f-body);box-shadow:var(--sh-toast)}
+.mp-practica b{font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.mp-practica button{min-height:44px;border:0;border-radius:10px;background:var(--bg);color:var(--tx);font:700 14px var(--f-body);padding:0 12px;flex:none}
+
+/* 6 · Cómo me muevo hoy: ícono + texto del medio actual */
+.mp-mode--sm{width:auto;min-width:64px;padding:4px 8px;gap:3px}
+.mp-mode--sm .mp-mode-ico{width:34px;height:34px}
+.mp-mode--sm .mp-mode-tx{white-space:nowrap}
+
+/* 8 · Más: privacidad al inicio, accesibilidad aparte */
+.mp-mas-priv{border:2px solid var(--acc)}
+.mp-conf-tx{display:flex;flex-direction:column;gap:2px}
+.mp-conf-tx small{font:400 13px var(--f-body);color:var(--mu)}
+
+/* 9 · Tarjetas y detalle: nivel y verificación con su etiqueta; acción > nivel; calle grande; WhatsApp visible */
+.mp-badge small{font:400 11px var(--f-body);opacity:.85;margin-right:2px}
+.mp-badge small::after{content:":"}
+.mp-z-head{justify-content:flex-start}
+.mp-z-calle{font:800 24px/1.2 var(--f-head)!important}
+.mp-z-consejo{font:800 24px/1.15 var(--f-head);padding:6px 12px;border-radius:12px;display:inline-flex;align-items:center;gap:8px}
+.mp-z-consejo svg{width:22px;height:22px;color:var(--ra)}
+.mp-z-lvl{font:700 16px/1.2 var(--f-body);padding:4px 10px;display:inline-flex;align-items:baseline;gap:6px}
+.mp-z-lvl small{font:400 13px var(--f-body);color:var(--mu)}
+.mp-z-lvl small::after{content:":"}
+.mp-z-verif{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.mp-z-etq{font:700 14px var(--f-body);color:var(--mu)}
+.mp-z-hacer ul{font:400 17px/1.4 var(--f-body)}
+.mp-link--wa{min-height:60px;border:2px solid var(--tx);background:var(--s1);color:var(--tx);font-size:18px}
