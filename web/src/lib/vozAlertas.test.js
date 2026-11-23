@@ -75,8 +75,8 @@ describe('cambiosParaVoz', () => {
 })
 
 describe('fraseEstado (botón Escuchar)', () => {
-  it('sin zonas: dice que tu zona está sin reportes', () => {
-    expect(fraseEstado({ zonas: [], ubic: TU, municipio: 'Zapopan' })).toBe('Tu zona: sin reportes. Zapopan.')
+  it('sin zonas: dice dónde no hay reportes y que eso no significa sin riesgo', () => {
+    expect(fraseEstado({ zonas: [], ubic: TU, municipio: 'Zapopan' })).toBe('Sin reportes registrados en Zapopan. Sin reportes no significa sin riesgo.')
   })
 
   it('con zona grave cerca: frase y aviso de no cruzar, con unidades en palabras', () => {
