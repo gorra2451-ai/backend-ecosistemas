@@ -1,5 +1,6 @@
 // Registro de pantallas: id → componente. Cada módulo es dueño de SUS ids; no edites los de otro.
 import * as A from './Onboarding.jsx'
+import { PrivacidadPermisos } from './Privacidad.jsx'
 import * as B from './Reportar.jsx'
 import * as C from './Mapa.jsx'
 import * as E from './Ayuda.jsx'
@@ -11,6 +12,7 @@ const o = (C, id) => C || (() => <Pendiente id={id} />)
 export const PANTALLAS = {
   // A · Primera vez
   acceso: A.Acceso, privacidad: A.Privacidad, ubicacion: A.Ubicacion, avisos: A.AvisosPermiso, onb: A.Medio,
+  privacidad_permisos: PrivacidadPermisos, // se abre desde Más (testeo de usabilidad)
   // B · Reportar
   tipo: B.Tipo, paso2: B.Paso2, riesgo: B.Riesgo, mireporte: B.MiReporte, error: B.ErrorPantalla,
   inicio: o(B.Inicio, 'inicio'), misreportes: o(B.MisReportes, 'misreportes'),
