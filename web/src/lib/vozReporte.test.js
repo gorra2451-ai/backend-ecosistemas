@@ -110,8 +110,9 @@ describe('resolverReporteVoz', () => {
     expect(resolverReporteVoz([])).toEqual({ ok: false, mensaje: NO_TE_ENTENDI })
     expect(resolverReporteVoz(null)).toEqual({ ok: false, mensaje: NO_TE_ENTENDI })
   })
-  it('el mensaje trae un ejemplo', () => {
-    expect(NO_TE_ENTENDI).toBe('No te entendí. Intenta: «calle inundada, agua a la rodilla»')
+  it('el mensaje trae un ejemplo con referencia fija (llanta, D-028) y el ejemplo se entiende', () => {
+    expect(NO_TE_ENTENDI).toBe('No te entendí. Intenta: «calle inundada, agua a media llanta»')
+    expect(interpretarReporteVoz('calle inundada, agua a media llanta')).toEqual({ tipo: 'calle', gravedad: 'limitado' })
   })
 })
 
