@@ -175,3 +175,41 @@
 .rp-tiles .tile--casa{border-color:color-mix(in srgb,var(--t-casa) 55%,var(--line))}
 .rp-tiles .tile--coche{border-color:color-mix(in srgb,var(--t-coche) 55%,var(--line))}
 .rp-badge--calle{background:var(--t-calle);color:#fff} .rp-badge--casa{background:var(--t-casa);color:#fff} .rp-badge--coche{background:var(--t-coche);color:#04201E}
+
+/* Testeo de usabilidad (8 participantes) */
+/* Paso Tipo: reporte a medias de esta sesión */
+.rp-borrador{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:2px solid var(--acc);border-radius:var(--r-card);background:var(--s1)}
+.rp-borrador p{margin:0;font:var(--t-small);color:var(--tx);overflow-wrap:anywhere}
+.rp-borrador-btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:4px}
+/* Detalles: "Marca dónde viste el agua, no dónde estás ahora" */
+.rp-aclara{margin:-6px 0 0;font:var(--t-small);font-weight:700;color:var(--tx)}
+/* Evidencia: recordatorio junto al botón de subir foto */
+.rp-drop-ojo{font:700 15px var(--f-body);color:var(--tx);background:var(--s2);border-radius:var(--r-pill);padding:4px 12px}
+/* Enviado: sin ayuda en camino + estado actual y qué significa */
+.rp-sin-ayuda{display:flex;flex-direction:column;gap:10px;padding:12px 14px;border:3px solid var(--ra);border-radius:var(--r-card);background:var(--s1)}
+.rp-sin-ayuda p{display:flex;gap:8px;align-items:flex-start;margin:0;font-size:16px;line-height:1.35}
+.rp-sin-ayuda p svg{color:var(--ra);flex:none;margin-top:1px}
+.rp-estado-box{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border:var(--bw) solid var(--line);border-radius:var(--r-card);background:var(--s1)}
+.rp-estado-box p{margin:0;font-size:15px;line-height:1.4}
+.rp-estado-cab{font-weight:700}
+.rp-estados{display:flex;flex-direction:column;gap:6px;margin:0}
+.rp-estados > div{padding:8px 10px;border-radius:12px;border:var(--bw) dashed var(--line)}
+.rp-estados > div.ahora{border:2px solid var(--acc)}
+.rp-estados dt{font-weight:800;font-size:15px}
+.rp-estados dd{margin:2px 0 0;font:var(--t-small);color:var(--mu)}
+.rp-ahora{font-weight:700;color:var(--acc)}
+.rp-cerrar{display:flex;gap:8px;align-items:center;justify-content:center;margin:0;font-size:15px;font-weight:700;text-align:center}
+.rp-cerrar svg{color:var(--acc);flex:none}
+/* Persona en riesgo: lugar escrito obligatorio + vista previa del mensaje */
+.rp-compartir{display:flex;flex-direction:column;gap:8px;background:var(--scrim);border-radius:18px;padding:12px}
+.rp-compartir label{font-size:17px}
+.rp-compartir input{min-height:56px;border:2px solid white;border-radius:var(--r-field);background:white;color:var(--risk-tx-on-white);
+  font:var(--t-body);padding:0 12px;width:100%}
+.rp-compartir input[aria-invalid=true]{outline:3px solid white;outline-offset:2px}
+.rp-riesgo .rp-ref-ayuda{margin:0;font-size:15px;font-weight:700}
+.rp-preview{background:white;color:var(--risk-tx-on-white);border-radius:14px;padding:10px 12px}
+.rp-preview small{display:block;font-size:13px;font-weight:700}
+.rp-riesgo .rp-preview p{margin:2px 0 0;font-size:16px;overflow-wrap:anywhere}
+.rp-riesgo button.sec{background:transparent;width:100%}
+/* Listas: etiqueta "Tuyo" en tus reportes */
+.rp-tuyo{display:inline-flex;align-items:center;font:800 14px var(--f-body);background:var(--acc);color:var(--accTx);border-radius:var(--r-pill);padding:2px 10px}

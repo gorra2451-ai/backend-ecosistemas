@@ -1,0 +1,55 @@
+/* Buscar un lugar y rutas (Mapa.jsx · Buscar/PanelRutas). Hallazgos del testeo de usabilidad (carril A2). */
+
+/* Aviso de 3 letras junto al campo, mientras se escribe */
+.bs-corto{min-height:22px;margin:4px 0 0 18px;font:700 15px var(--f-body);color:var(--amber)}
+.bs-corto:empty{min-height:0;margin:0}
+
+/* Resultados: NOMBRE primero, municipio como etiqueta visible, dirección legible, distancia al final */
+.bs-res{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.bs-res li + li{border-top:var(--bw) solid var(--line)}
+.bs-res button{width:100%;min-height:68px;border:0;background:transparent;color:var(--tx);display:flex;align-items:flex-start;gap:12px;padding:12px 4px;text-align:left}
+.bs-res button > svg{color:var(--acc);flex:none;margin-top:2px}
+.bs-r{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.bs-r-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.bs-r-top b{font:700 18px/1.25 var(--f-body);overflow-wrap:anywhere}
+.bs-muni{display:inline-flex;align-items:center;font:700 14px/1 var(--f-body);color:var(--tx);background:var(--chip);
+  border:var(--bw) solid var(--acc);border-radius:var(--r-pill);padding:5px 10px;white-space:nowrap}
+.bs-r-dir{font:400 16px/1.35 var(--f-body);color:var(--mu2);overflow-wrap:anywhere}
+.bs-r-dist{font:400 14px var(--f-body);color:var(--mu)}
+
+/* Sin resultados: mensaje claro + sugerencias tocables; el campo sigue arriba */
+.bs-vacio{display:flex;flex-direction:column;gap:8px;padding:8px 2px}
+.bs-vacio p{margin:0;font:400 17px/1.4 var(--f-body);color:var(--tx)}
+.bs-vacio .bs-vacio-sub{font-size:15px;color:var(--mu2)}
+.bs-sug{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.bs-sug button{width:100%;min-height:52px;display:flex;align-items:center;gap:10px;padding:0 14px;text-align:left;
+  border:var(--bw) solid var(--line);border-radius:14px;background:var(--s2);color:var(--tx);font:700 16px var(--f-body)}
+.bs-sug button svg{color:var(--acc);flex:none}
+
+/* Encabezado del destino: "Nombre · Municipio", distinto de "Tu zona" */
+.bs-destino{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:18px;background:var(--s1);border:2px solid var(--acc)}
+.bs-over{display:inline-flex;align-items:center;gap:6px;font:var(--t-overline);letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+.bs-dest-t{margin:0;font:800 24px/1.2 var(--f-head);color:var(--tx);overflow-wrap:anywhere}
+.bs-dest-muni{font-weight:700;color:var(--mu2)}
+.bs-dir{margin:0;font:400 16px/1.35 var(--f-body);color:var(--mu2)}
+.bs-estado{margin:2px 0 0;font:700 15px/1.35 var(--f-body);color:var(--tx)}
+
+/* Panel de rutas: medio activo cambiable + cada ruta como opción claramente seleccionable */
+.bs-rutas-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bs-rutas-head > b{font:800 18px var(--f-head)}
+.bs-medio{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border-radius:var(--r-pill);
+  border:var(--bw) solid var(--acc);background:var(--chip);color:var(--tx);font:700 15px var(--f-body);align-self:flex-start}
+.bs-medio svg{color:var(--acc);flex:none}
+.bs-medio select{appearance:none;-webkit-appearance:none;border:0;background:transparent;color:var(--tx);font:inherit;min-height:42px;padding:0;cursor:pointer}
+.bs-medio select:focus-visible{outline:3px solid var(--acc);outline-offset:4px}
+.bs-medio option{color:#0B1220;background:#fff}
+.bs-ruta{display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 12px;text-align:left;width:100%;
+  border:2px dashed var(--line);border-radius:14px;background:var(--s2);color:var(--tx);opacity:.85}
+.bs-ruta[aria-checked=true]{border:3px solid var(--acc);opacity:1;background:var(--s1)}
+.bs-ruta-linea{flex:none;width:6px;align-self:stretch;border-radius:3px;background:repeating-linear-gradient(var(--mu) 0 4px,transparent 4px 10px)}
+.bs-ruta[aria-checked=true] .bs-ruta-linea{background:var(--acc)}
+.bs-ruta-txt{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.bs-ruta-1{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font:400 16px var(--f-body)}
+.bs-ruta-1 b{font:800 20px var(--f-head)}
+.bs-ruta-activa{font:700 12px var(--f-body);color:var(--accTx);background:var(--acc);border-radius:var(--r-pill);padding:3px 8px}
+.bs-ruta .mp-ruta-tag{align-self:flex-start;font-size:14px}

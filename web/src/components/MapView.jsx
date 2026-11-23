@@ -5,12 +5,13 @@ import { MapContainer, TileLayer, Marker, Circle, Polyline, useMap } from 'react
 import { renderToStaticMarkup } from 'react-dom/server'
 import Icon from './Icon.jsx'
 import { htmlPin } from '../lib/pines.js'
-import { leerRuta, suscribirRuta, mostrarRuta } from '../lib/rutas.js'
+import { leerRutas, suscribirRuta, quitarRuta, elegirRuta, rutaActiva } from '../lib/rutas.js'
+import { htmlDestino } from '../lib/destino.js'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useApp } from '../lib/store.jsx'
 import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor } from '../lib/api.js'
-import { leerCapas, suscribirCapas, filtrarCapas, zonasConNivelAgua, leerCentro, suscribirCentro } from '../lib/mapa.js'
+import { leerCapas, suscribirCapas, filtrarCapas, zonasConNivelAgua, leerCentro, suscribirCentro, leerEnfoque, suscribirEnfoque, enfocarEn, centroVisible } from '../lib/mapa.js'
 import { agruparRafaga } from '../lib/rafaga.js'
 
 const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)', critico: 'var(--risk)' }
@@ -31,14 +32,17 @@ function Seguir({ ubic, centrarSeq }) {
   return null
 }
 
-// Lugar elegido en Buscar (store centrarEn de lib/mapa.js): centra el mapa y lo marca.
+// Lugar elegido en Buscar (store centrarEn de lib/mapa.js): centra el mapa y lo marca con su nombre.
+// Solo hay un destino a la vez: al elegir otro, este marcador se mueve (no quedan pines viejos).
+// Zoom 14: se ven las avenidas principales alrededor, no solo las calles de junto (testeo).
+const ZOOM_DESTINO = 14
 function CentrarEn() {
   const map = useMap()
   const c = useSyncExternalStore(suscribirCentro, leerCentro)
-  useEffect(() => { if (c) map.setView([c.lat, c.lng], 16) }, [c?.seq]) // eslint-disable-line
+  useEffect(() => { if (c) map.setView([c.lat, c.lng], Math.min(map.getZoom(), ZOOM_DESTINO)) }, [c?.seq]) // eslint-disable-line
+  const icon = useMemo(() => (c ? L.divIcon({ html: htmlDestino(c.nombre), className: '', iconSize: [28, 28], iconAnchor: [14, 14] }) : null), [c?.seq]) // eslint-disable-line
   if (!c) return null
-  return <Marker position={[c.lat, c.lng]} zIndexOffset={900} title={c.nombre || 'Lugar buscado'}
-    icon={icono('<div class="mp-sw--lugar" style="width:22px;height:22px;border-width:4px" aria-label="Lugar buscado"></div>', 22)} />
+  return <Marker position={[c.lat, c.lng]} zIndexOffset={900} title={c.nombre || 'Destino'} icon={icon} />
 }
 
 // Crédito de OpenStreetMap compacto: la licencia (ODbL) obliga a mostrarlo, pero no tiene que tapar el mapa.
@@ -61,24 +65,36 @@ function Creditos() {
   )
 }
 
-// Ruta elegida en "Cómo llegar" (D-031): línea gruesa, encuadre y chip para quitarla.
+// Ruta elegida en "Cómo llegar" (D-031). Lee el MISMO estado que el panel de Buscar (lib/rutas.js):
+// la activa con línea gruesa y continua; las otras punteadas y tenues (tocarlas las vuelve activa).
+// Las líneas van en el panel de vectores: los pines de alerta (marcadores) quedan siempre encima.
 function RutaEnMapa() {
   const map = useMap()
-  const r = useSyncExternalStore(suscribirRuta, leerRuta)
-  const linea = useMemo(() => (r ? r.coords.map(([lng, lat]) => [lat, lng]) : null), [r])
-  useEffect(() => { if (linea?.length) map.fitBounds(linea, { padding: [40, 40] }) }, [linea]) // eslint-disable-line
+  const e = useSyncExternalStore(suscribirRuta, leerRutas)
+  const r = e?.enMapa ? rutaActiva(e) : null
+  const lineas = useMemo(() => (e?.enMapa && e.estado === 'listo' ? e.lista.map((x) => x.coords.map(([lng, lat]) => [lat, lng])) : []), [e?.seq, e?.enMapa, e?.lista]) // eslint-disable-line
+  useEffect(() => { const l = lineas[e?.elegida]; if (l?.length) map.fitBounds(l, { padding: [40, 40] }) }, [lineas, e?.elegida]) // eslint-disable-line
   if (!r) return null
+  const nombre = e.destino?.titulo || String(e.destino?.nombre || '').split(',')[0]
   return (
     <>
-      <Polyline positions={linea} pathOptions={{ color: '#05080F', weight: 10, opacity: 0.6 }} />
-      <Polyline positions={linea} pathOptions={{ color: 'var(--acc)', weight: 6 }} />
-      <div ref={(el) => { if (el) { L.DomEvent.disableClickPropagation(el) } }}
-        style={{ position: 'absolute', left: 12, top: 196, zIndex: 455, display: 'flex', gap: 8, alignItems: 'center',
-          background: 'var(--s1)', border: 'var(--bw) solid var(--acc)', borderRadius: 14, padding: '6px 6px 6px 12px',
-          color: 'var(--tx)', font: '700 14px var(--f-body)' }}>
-        <span>Ruta · {r.min} min · {r.km} km{r.enCamino.length ? ` · ⚠ ${r.enCamino.length} en el camino` : ''}</span>
-        <button type="button" onClick={() => mostrarRuta(null)} aria-label="Quitar ruta"
-          style={{ minHeight: 36, border: 'var(--bw) solid var(--line)', borderRadius: 10, background: 'var(--s2)', color: 'var(--tx)', padding: '0 10px', font: '700 13px var(--f-body)' }}>
+      {lineas.map((l, i) => i !== e.elegida && (
+        <Polyline key={'alt' + i} positions={l} eventHandlers={{ click: () => elegirRuta(i) }}
+          pathOptions={{ color: 'var(--mu)', weight: 5, opacity: 0.7, dashArray: '2 10', lineCap: 'round' }} />
+      ))}
+      <Polyline key={'b' + e.elegida} positions={lineas[e.elegida]} pathOptions={{ color: '#05080F', weight: 11, opacity: 0.6 }} interactive={false} />
+      <Polyline key={'a' + e.elegida} positions={lineas[e.elegida]} pathOptions={{ color: 'var(--acc)', weight: 7, opacity: 1 }} interactive={false} />
+      <div ref={(el) => { if (el) { L.DomEvent.disableClickPropagation(el) } }} role="status"
+        style={{ position: 'absolute', left: 12, right: 72, top: 196, zIndex: 455, display: 'flex', gap: 8, alignItems: 'center',
+          background: 'var(--s1)', border: '2px solid var(--acc)', borderRadius: 14, padding: '6px 6px 6px 12px',
+          color: 'var(--tx)', font: '700 14px/1.3 var(--f-body)' }}>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          {nombre && <span style={{ display: 'block', font: '800 15px var(--f-body)' }}>Ruta a {nombre}</span>}
+          {r.min} min · {r.km} km · {r.enCamino.length ? `⚠ ${r.enCamino.length} reporte${r.enCamino.length === 1 ? '' : 's'} en el camino` : 'sin reportes en el camino'}
+          {e.lista.length > 1 && <span style={{ display: 'block', fontWeight: 400, color: 'var(--mu2)' }}>Opción {e.elegida + 1} de {e.lista.length} · toca la línea punteada para cambiar</span>}
+        </span>
+        <button type="button" onClick={quitarRuta} aria-label="Quitar ruta"
+          style={{ minHeight: 40, border: 'var(--bw) solid var(--line)', borderRadius: 10, background: 'var(--s2)', color: 'var(--tx)', padding: '0 10px', font: '700 13px var(--f-body)' }}>
           Quitar
         </button>
       </div>
@@ -86,18 +102,58 @@ function RutaEnMapa() {
   )
 }
 
+// Pin elegido (alerta): se centra en la parte del mapa que NO tapan la barra de arriba, la hoja ni el panel
+// de escritorio (testeo: la tarjeta tapaba el pin). Mide lo que cubre al momento de enfocar.
+function Enfocar() {
+  const map = useMap()
+  const e = useSyncExternalStore(suscribirEnfoque, leerEnfoque)
+  useEffect(() => {
+    if (!e) return
+    const t = setTimeout(() => {
+      const cont = map.getContainer().getBoundingClientRect()
+      const alto = (sel) => { const el = document.querySelector(sel); return el ? el.getBoundingClientRect() : null }
+      const arriba = alto('.map-top .mp-top')
+      const hoja = alto('.map-sheet')
+      const panel = window.innerWidth >= 1024 ? alto('.map-area > .screen') : null
+      const tapado = {
+        top: arriba ? Math.max(0, arriba.bottom - cont.top) : 0,
+        bottom: hoja ? Math.max(0, cont.bottom - hoja.top) : 0,
+        right: panel ? Math.max(0, cont.right - panel.left) : 0,
+      }
+      const { dx, dy } = centroVisible({ w: cont.width, h: cont.height }, tapado)
+      const z = Math.max(map.getZoom(), 16)
+      const p = map.project([e.lat, e.lng], z).subtract([dx, dy])
+      map.setView(map.unproject(p, z), z)
+    }, 80) // tras cerrar la pantalla / abrir el panel, para medir lo que de verdad tapa
+    return () => clearTimeout(t)
+  }, [e?.seq]) // eslint-disable-line
+  return null
+}
+
+const IcoDiana = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" fill="currentColor" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+  </svg>
+)
+
 function Controles({ ubic }) {
   const map = useMap()
+  const { avisar } = useApp()
   const b = { width: 48, height: 48, border: 'var(--bw) solid var(--line)', borderRadius: 14, background: 'var(--s1)',
     color: 'var(--tx)', fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }
   const ref = (el) => { if (el) { L.DomEvent.disableClickPropagation(el); L.DomEvent.disableScrollPropagation(el) } }
+  // Testeo: 8 de 10 no entendieron "◎" (lo vieron como un ojo). Diana + texto visible. Sin permiso no se va a un
+  // punto que la persona no reconoce: se le pide activar la ubicación.
+  const recentrar = () => {
+    if (!ubic.real) { avisar('Activa tu ubicación para volver a donde estás'); return }
+    map.setView([ubic.lat, ubic.lng], Math.max(map.getZoom(), 15))
+  }
   return (
     <div ref={ref}
-      style={{ position: 'absolute', right: 12, top: '40%', zIndex: 455, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      style={{ position: 'absolute', right: 12, top: '40%', zIndex: 455, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
       <button style={b} aria-label="Acercar el mapa" onClick={() => map.zoomIn()}>+</button>
       <button style={b} aria-label="Alejar el mapa" onClick={() => map.zoomOut()}>−</button>
-      <button style={{ ...b, color: 'var(--acc)' }} aria-label="Volver a mi ubicación"
-        onClick={() => map.setView([ubic.lat, ubic.lng], 15)}>◎</button>
+      <button className="mp-miubic" onClick={recentrar}><IcoDiana /><span>Mi ubicación</span></button>
       <Creditos />
     </div>
   )
@@ -141,13 +197,15 @@ export default function MapView({ centrarSeq = 0 }) {
       <Seguir ubic={ubic} centrarSeq={centrarSeq} />
       <Controles ubic={ubic} />
       <CentrarEn />
+      <Enfocar />
       <RutaEnMapa />
 
       {/* D-031: sin halos de zona; cada reporte se marca en su calle */}
       {/* Cada reporte en su calle: ícono del tipo + color/patrón del nivel. Al tocarlo, todos sus datos. */}
       {ver.reportes.map((r) => (
         <Marker key={r.id} position={[r.lat, r.lng]} zIndexOffset={r.tipo === 'persona_en_riesgo' ? 1000 : 500}
-          icon={pin(r)} eventHandlers={{ click: () => ir('zona', { reporte: r }) }} />
+          title={r.simulada ? 'Simulación: solo la ves tú' : undefined}
+          icon={pin(r)} eventHandlers={{ click: () => { enfocarEn(r); ir('zona', { reporte: r }) } }} />
       ))}
 
       {ver.misReportes.filter((m) => !activosIds.has(m.id) && Date.now() - m.creado < 3 * 3600e3).map((m) => (
@@ -162,7 +220,12 @@ export default function MapView({ centrarSeq = 0 }) {
 
       <Circle center={[ubic.lat, ubic.lng]} radius={300}
         pathOptions={{ color: 'var(--acc)', weight: 2, dashArray: '6 6', fillOpacity: 0.04 }} />
-      <Marker position={[ubic.lat, ubic.lng]} icon={icono('<div class="mk-you" aria-label="Tú"></div>', 24)} />
+      {/* Sin permiso de ubicación no es "Tú": es un punto de ejemplo (testeo) */}
+      {ubic.real === false
+        ? <Marker position={[ubic.lat, ubic.lng]} title="Punto de ejemplo: no es tu ubicación"
+            icon={L.divIcon({ html: '<div class="mk-ejemplo" role="img" aria-label="Punto de ejemplo, no es tu ubicación"><span></span><b>Punto de ejemplo</b></div>',
+              className: '', iconSize: [24, 24], iconAnchor: [12, 12] })} />
+        : <Marker position={[ubic.lat, ubic.lng]} icon={icono('<div class="mk-you" role="img" aria-label="Tú"></div>', 24)} />}
     </MapContainer>
   )
 }

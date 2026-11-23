@@ -340,3 +340,11 @@ débil. Las pruebas unitarias pasaban porque repetían las mismas suposiciones d
   WebKit + Chromium) contra el sitio publicado y una lista corta en teléfono real.
 - Playwright (gratuito) vive aparte en `web/campo/` con su propio `package.json`: no entra al build de la app.
 - Los números de la app se justifican con una medición; si no se puede medir, `POR CONFIRMAR`.
+
+## D-033 · Cambios del testeo mid-fi (2026-11-23)
+**Contexto:** el documento de testeos de los 5 equipos (13 módulos) mostró que la falta de información se lee como
+seguridad (9/10 "sin reportes" = zona segura) y fallas de orientación, búsqueda y confirmación de estado.
+**Decisión:** se aplican los cambios ALTA y los MEDIA baratos en el front (`docs/CAMBIOS_TESTEO_MIDFI.md`): todo
+estado vacío dice lo que la app NO sabe; tras reportar se dice que no se avisó a ninguna institución; pantalla nueva
+"Privacidad y permisos"; buscador con apodos locales; una sola fuente de ruta. Sin cambios de esquema. Lo que
+requiere datos oficiales queda "por confirmar" (P-34, P-39); avisos por zona y "solo si cambia" → P-38.

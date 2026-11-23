@@ -6,10 +6,12 @@ import { useApp } from '../lib/store.jsx'
 import { crearReporte, reportesCercanos, mensajeError, misReportes as apiMisReportes, buscarLugar, textoBusqueda } from '../lib/api.js'
 import {
   armarReporte, etiquetaReporte, chipEstado, mensajeEnviado, estadoEnviado, lineaDeTiempo, casoAcudo, haceCuanto,
-  linkWhatsApp, textoFamilia, textoRiesgo, encolar, leerCola, quitarDeCola, quitarExif, subirEvidenciaReporte, tipoEvidencia,
-  seguimientoReporte, soltarSesion, TIPO_LABEL, TIPOS_REPORTE, GRAVEDAD, pasosStepper, resumenReporte, textoUbicacion,
+  linkWhatsApp, textoFamilia, encolar, leerCola, quitarDeCola, quitarExif, subirEvidenciaReporte, tipoEvidencia,
+  seguimientoReporte, soltarSesion, TIPO_LABEL, TIPO_LARGO, TIPOS_REPORTE, GRAVEDAD, pasosStepper, resumenReporte, textoUbicacion,
   unirMisReportes, filaMiReporte, filaCercano, iconoTipo, PRECISION_LUGAR_BUSCADO,
   validarArchivo, MENSAJE_ARCHIVO, ACEPTA_EVIDENCIA, tituloUbicacion, crearCandado,
+  explicacionEstado, AVISO_SIN_AYUDA, PUEDES_CERRAR, nivelConReferencia, validarReferencia, mensajeRiesgo, MAX_REFERENCIA,
+  leerBorrador, guardarBorrador, borrarBorrador, AVISO_FOTO, RECORDATORIO_FOTO,
 } from '../lib/reportar.js'
 import { Screen, Btn } from '../components/ui.jsx'
 import Icon, { Logo } from '../components/Icon.jsx'
@@ -95,6 +97,7 @@ function useMandar() {
     const res = await enviarConEvidencia(app, armado, archivo)
     setEnviando(false)
     if (res.error) return app.ir('error', { codigo: res.error, ...armado, archivo })
+    borrarBorrador() // enviado (o en cola): el borrador ya no hace falta
     app.ir('paso2', { fase: 'enviado', id: armado.rep.id }, { cerrarFlujo: true }) // atrás no regresa al formulario
   }), [app])
   return { mandar, enviando }
@@ -206,7 +209,7 @@ export function Inicio() {
         <span className="rp-mini-cta"><Icon name="mapa" size={18} />Abrir el mapa</span>
       </button>
       {reciente && (
-        <p className="rp-nota">Tu reporte está en el mapa · <b className="rp-sinconf">{ultimo.estado === 'cola' ? 'en cola, sin señal' : 'sin confirmar'}</b></p>
+        <p className="rp-nota">Tu último reporte · <b className="rp-sinconf">{chipEstado(ultimo.estado).texto}</b></p>
       )}
       <div className="rp-spacer" />
       <Btn variant="primary" icon="alerta" onClick={() => ir('tipo')}>Reportar inundación</Btn>
@@ -257,10 +260,26 @@ export function Tipo() {
     ? ir('riesgo', { armado: ubic.real ? armarReporte({ tipo, ubic }) : null }, { cerrarFlujo: true })
     : ir('paso2', gravedad ? { tipo, gravedad } : { tipo }))
   const voz = useVozTipo(elegir)
+  // Reporte a medias de esta sesión (sessionStorage): se ofrece seguir o descartarlo.
+  const [borrador, setBorrador] = useState(() => leerBorrador())
+  const seguir = () => ir('paso2', {
+    tipo: borrador.tipo, ...(borrador.gravedad && { gravedad: borrador.gravedad }), ...(borrador.lugar && { lugar: borrador.lugar }),
+  })
+  const descartar = () => { borrarBorrador(); setBorrador(null) }
   return (
     <Screen onBack={false} label="Reportar inundación · paso 1 de 4 · Tipo">
       <Cabeza onBack={() => ir('inicio')} />
       <Stepper actual={0} />
+      {borrador && (
+        <div className="rp-borrador" role="group" aria-labelledby="rp-borrador-t">
+          <p id="rp-borrador-t"><b>Tienes un reporte sin terminar</b></p>
+          <p>{[TIPO_LARGO[borrador.tipo], nivelConReferencia(borrador.gravedad), borrador.lugar?.direccion].filter(Boolean).join(' · ')}</p>
+          <div className="rp-borrador-btns">
+            <Btn variant="primary" onClick={seguir}>Continuar</Btn>
+            <Btn variant="ghost" onClick={descartar}>Descartar</Btn>
+          </div>
+        </div>
+      )}
       <h1 className="rp-h1">¿Qué se inundó?</h1>
       <div className="rp-tiles">
         {TIPOS_REPORTE.map((k) => (
@@ -351,6 +370,8 @@ function Detalles() {
   const [buscandoGps, setBuscandoGps] = useState(!ubic.real)
 
   useEffect(() => { if (!ubic.real) pedirUbicacion().catch(() => {}).finally(() => setBuscandoGps(false)) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Borrador de la sesión: tipo, nivel y SOLO el lugar elegido en la búsqueda (nunca el GPS del dispositivo).
+  useEffect(() => { guardarBorrador({ tipo, gravedad, lugar }) }, [tipo, gravedad, lugar])
   // PRIVACIDAD: el GPS del dispositivo NO va a Nominatim (tercero). Se muestra "Tu ubicación (GPS) ±N m".
   const punto = lugar || (ubic.real ? { lat: ubic.lat, lng: ubic.lng, precision: ubic.precision } : null)
   const textoPunto = lugar ? lugar.direccion
@@ -379,14 +400,16 @@ function Detalles() {
           </button>
         ))}
       </div>
-      <p className="rp-label">Ubicación</p>
-      <div className="rp-loc">
+      <h2 className="rp-label" id="rp-donde">¿Dónde ocurrió?</h2>
+      <p className="rp-aclara">Marca dónde viste el agua, no dónde estás ahora.</p>
+      <div className="rp-loc" role="group" aria-labelledby="rp-donde">
         <Icon name="pin" size={24} />
         <div className="txt"><b>{tituloUbicacion({ elegido: !!lugar, real: ubic.real })}</b><span>{textoPunto}</span></div>
         <button className="btn-icon rp-back" aria-label="Cambiar ubicación" aria-expanded={editar} onClick={() => setEditar((v) => !v)}><Ico name="lapiz" size={20} /></button>
       </div>
       {editar && <BuscarLugar onElegir={elegir} onCerrar={() => setEditar(false)} />}
-      {lugar && <button className="btn-text" onClick={() => setLugar(null)}>Usar mi ubicación actual</button>}
+      {lugar && <button className="btn-text" onClick={() => setLugar(null)}>Fue donde estoy: usar mi ubicación actual</button>}
+      {!lugar && !editar && <button className="btn-text" onClick={() => setEditar(true)}>¿Fue en otro lugar? Búscalo</button>}
       <div className="rp-spacer" />
       <Btn variant="primary" disabled={!gravedad || !punto}
         onClick={() => ir('paso2', { tipo, gravedad, lugar: punto, fase: 'evidencia' })}>Continuar</Btn>
@@ -427,11 +450,12 @@ function Evidencia() {
         <Ico name={archivo ? 'check' : 'imagen'} size={40} stroke={1.8} />
         <b>{archivo ? 'Foto agregada' : 'Subir foto'}</b>
         <small>{archivo ? archivo.name : 'Toca para elegir una foto (JPG, PNG o WEBP)'}</small>
+        {!archivo && <span className="rp-drop-ojo">{RECORDATORIO_FOTO}</span>}
       </button>
       <input ref={input} type="file" accept={ACEPTA_EVIDENCIA} hidden onChange={elegir} />
       {aviso && <p className="rp-nota" role="alert">{aviso}</p>}
       {archivo && <button className="btn-text" disabled={enviando} onClick={() => setArchivo(null)}>Quitar foto</button>}
-      <p className="rp-hint"><Ico name="info" size={20} /><span>Es opcional. Cuida que no se vean caras ni placas. A las fotos les quitamos los datos ocultos (lugar, hora, equipo).</span></p>
+      <p className="rp-hint"><Ico name="info" size={20} /><span>Es opcional. {AVISO_FOTO}</span></p>
       <div className="rp-spacer" />
       <Estado texto={enviando ? (archivo ? 'Enviando tu reporte y tu foto…' : 'Enviando tu reporte…') : ''} />
       <Btn variant="primary" disabled={enviando} onClick={enviarYa}>{archivo ? 'Enviar reporte' : 'Enviar sin foto'}</Btn>
@@ -446,6 +470,7 @@ function Enviado() {
   useSeguimiento(rep)
   if (!rep) return null
   const enCola = rep.estado === 'cola'
+  const exp = explicacionEstado(rep.estado)
   return (
     <Screen onBack={false} label="Reporte enviado">
       <Cabeza onBack={() => ir('inicio')} />
@@ -454,10 +479,28 @@ function Enviado() {
         <span className={'rp-sent-ok grande' + (enCola ? ' cola' : '')}><Icon name={enCola ? 'alerta' : 'check'} size={40} stroke={2.8} /></span>
         <h1 className="rp-h1">{enCola ? 'Reporte guardado' : 'Reporte enviado'}</h1>
         <p className="rp-lead">{mensajeEnviado(rep.estado)}</p>
-        <span className={`rp-chip ${chipEstado(rep.estado).clase}`}>{estadoEnviado(rep.estado)}</span>
       </div>
+      {/* Testeo: 1/8 creyó que se avisó a una institución. Se dice claro que no, y el 911 queda a un toque. */}
+      <div className="rp-sin-ayuda" role="note">
+        <p><Icon name="alerta" size={20} /><b>{AVISO_SIN_AYUDA}</b></p>
+        <a className="rp-tel" href="tel:911"><Icon name="telefono" />Llamar al 911</a>
+      </div>
+      <section className="rp-estado-box" aria-labelledby="rp-estado-t">
+        <p className="rp-estado-cab" id="rp-estado-t">Estado de tu reporte: <span className={`rp-chip ${chipEstado(rep.estado).clase}`}>{estadoEnviado(rep.estado)}</span></p>
+        {/* Qué significa cada estado; el actual va marcado. Cola y revisión solo explican el suyo. */}
+        {['pendiente', 'activo'].includes(rep.estado) ? (
+          <dl className="rp-estados">
+            {['pendiente', 'activo'].map((e) => (
+              <div key={e} className={e === rep.estado ? 'ahora' : ''}>
+                <dt>{explicacionEstado(e).titulo}{e === rep.estado && <span className="rp-ahora"> · así está ahora</span>}</dt>
+                <dd>{explicacionEstado(e).texto}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : <p>{exp.texto}</p>}
+      </section>
+      {exp.puedesCerrar && <p className="rp-cerrar"><Icon name="check" size={18} />{PUEDES_CERRAR}</p>}
       <Resumen rep={rep} />
-      {rep.tipo === 'persona_en_riesgo' && <a className="rp-tel" href="tel:911"><Icon name="telefono" />Si es emergencia, llama al 911</a>}
       <div className="rp-spacer" />
       <Btn variant="primary" icon="mapa" onClick={() => { ir(null); setSheet('min') }}>Ver en el mapa</Btn>
       <Btn variant="ghost" onClick={() => ir('tipo')}>Hacer otro reporte</Btn>
@@ -482,8 +525,11 @@ export function Riesgo() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const lat = armado?.rep.lat ?? ubic.lat
-  const lng = armado?.rep.lng ?? ubic.lng
+  // Nunca el punto de ejemplo del mapa: sin GPS real el mensaje solo lleva el lugar que la persona escribe.
+  const gps = armado ? { lat: armado.rep.lat, lng: armado.rep.lng } : ubic.real ? { lat: ubic.lat, lng: ubic.lng } : null
+  const [referencia, setReferencia] = useState('')
+  const [intento, setIntento] = useState(false)
+  const mensaje = mensajeRiesgo({ referencia, ...gps, conGps: !!gps, enCoche: coche })
   const linea = {
     enviando: 'Poniendo tu aviso en el mapa…',
     pendiente: 'Tu aviso ya está en el mapa.',
@@ -501,9 +547,33 @@ export function Riesgo() {
         <div className="envio" role="status" aria-live="polite">{linea}</div>
         <div className="rp-spacer" />
         <a className="rp-911" href="tel:911"><Icon name="telefono" size={38} />Llamar al 911</a>
-        <a className="sec" href={linkWhatsApp(textoRiesgo(lat, lng, coche))} target="_blank" rel="noopener noreferrer">
-          <Icon name="compartir" />Compartir ubicación con mi familia
-        </a>
+        {/* Después del 911: avisar a la familia. El lugar escrito es obligatorio y NO se guarda en la base. */}
+        <div className="rp-compartir">
+          <label htmlFor="rp-ref"><b>¿Dónde está? Calle, cruce o algo cercano</b></label>
+          <input id="rp-ref" type="text" value={referencia} maxLength={MAX_REFERENCIA} autoComplete="off" enterKeyHint="done"
+            aria-describedby="rp-ref-ayuda" aria-invalid={intento && !validarReferencia(referencia)}
+            onChange={(e) => setReferencia(e.target.value)} />
+          <p id="rp-ref-ayuda" className="rp-ref-ayuda">
+            {intento && !validarReferencia(referencia) ? 'Escribe dónde está para poder compartir.'
+              : gps ? 'Se manda lo que escribas y tu ubicación aproximada del GPS. Lo que escribas no se guarda en la app.'
+                : 'No tenemos tu GPS: solo se manda lo que escribas. Lo que escribas no se guarda en la app.'}
+          </p>
+          {mensaje && (
+            <div className="rp-preview">
+              <small>Así se verá tu mensaje:</small>
+              <p>{mensaje}</p>
+            </div>
+          )}
+          {mensaje ? (
+            <a className="sec" href={linkWhatsApp(mensaje)} target="_blank" rel="noopener noreferrer">
+              <Icon name="compartir" />Enviar a mi familia por WhatsApp
+            </a>
+          ) : (
+            <button type="button" className="sec" aria-describedby="rp-ref-ayuda" onClick={() => { setIntento(true); document.getElementById('rp-ref')?.focus() }}>
+              <Icon name="compartir" />Enviar a mi familia por WhatsApp
+            </button>
+          )}
+        </div>
         <button className="volver" onClick={() => ir(null)}>
           {['pendiente', 'activo', 'cola'].includes(envio) ? 'Volver al mapa (tu aviso ya está arriba)' : 'Volver al mapa'}
         </button>
@@ -556,9 +626,10 @@ export function MisReportes() {
                 <button className="rp-item" onClick={() => ir('mireporte', { id: r.id })}>
                   <span className={"rp-badge rp-badge--" + r.tipo}><Icon name={iconoTipo(r.tipo)} size={26} /></span>
                   <span className="txt">
-                    <b>Tu reporte · {f.titulo}</b>
+                    <b>{f.titulo}</b>
                     {r.direccion && <span className="lugar">{r.direccion}</span>}
                     <span className="tags">
+                      <span className="rp-tuyo">Tuyo</span>
                       <Chip texto={f.estado} clase={chipEstado(r.estado).clase} />
                       {f.nivel && <span className="rp-tag"><Muestra patron={f.nivel.patron} />{f.nivel.texto}</span>}
                     </span>

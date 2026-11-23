@@ -143,3 +143,47 @@
 .ay-stepper .btn-icon{color:var(--tx);font-size:22px;font-weight:700}
 .ay-guia{font-size:16px;line-height:1.45}
 @media (max-width:360px){.ay-modo{flex-direction:column;gap:2px;font-size:13px}}
+
+/* Testeo de usabilidad (carril C) */
+/* Municipio: nombre grande y botón de cambio con contraste */
+.ay-muni-head{justify-content:space-between}
+.ay-muni-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ay-muni-nombre{font:800 22px/1.1 var(--f-head)}
+.ay-cambiar{display:flex;align-items:center;gap:8px;min-height:52px;padding:0 16px;border:2px solid var(--acc);border-radius:14px;
+  background:var(--s1);color:var(--tx);font-size:16px;font-weight:700}
+/* Urgente arriba: persona herida + 911 */
+.ay-urgente{display:flex;flex-direction:column;gap:10px;border:3px solid var(--ra);border-radius:20px;padding:14px;background:var(--s1)}
+.ay-urg-t{margin:0;font:800 21px/1.2 var(--f-head)}
+.ay-urg-d{margin:0;font-size:16px;line-height:1.35}
+/* "Por confirmar" con la misma jerarquía que su botón */
+.ay-tel-pc{display:flex;flex-direction:column;gap:6px}
+.ay-pc-aviso{display:flex;align-items:center;gap:10px;text-align:left;border:2px solid var(--amber);border-radius:14px;
+  padding:10px 12px;color:var(--tx);font-size:17px;font-weight:700;line-height:1.3}
+.ay-pc-aviso svg{color:var(--amber);flex:none}
+/* Mensaje editable */
+.ay-campo{display:flex;flex-direction:column;gap:4px;font-size:15px;font-weight:700}
+.ay-campo input,.ay-campo textarea{font:400 17px/1.4 var(--f-body);color:var(--tx);background:var(--s1);
+  border:var(--bw) solid var(--line);border-radius:12px;padding:10px 12px;width:100%;box-sizing:border-box}
+.ay-campo input{min-height:48px}
+.ay-campo textarea{resize:vertical}
+.ay-stepper .btn-icon:disabled{opacity:.4}
+/* Avisos */
+.ay-vacio--ojo{border-style:solid;border-color:var(--amber)}
+.ay-resumen{gap:6px}
+.ay-res-l{font-size:18px;font-weight:700}
+.ay-guardado{display:flex;align-items:center;gap:8px;margin:0;border-radius:12px;padding:10px 12px;background:var(--s2);
+  font-size:16px;font-weight:700;line-height:1.3}
+.ay-guardado svg{color:var(--acc);flex:none}
+.ay-guardado--mal svg{color:var(--amber)}
+.ay-silencio{display:flex;flex-direction:column;gap:8px}
+.ay-silencio--on{border:2px solid var(--acc);border-radius:18px;padding:14px;background:var(--s1);font-size:16px;line-height:1.35}
+.ay-sil-hasta{font:800 26px/1.1 var(--f-head)}
+/* Refugios: la ficha guardada se ve distinta a la actual */
+.ay-ref--viejo{border:2px dashed var(--amber)}
+.ay-viejo{display:flex;align-items:flex-start;gap:8px;background:var(--amber);color:var(--amberTx);border-radius:10px;
+  padding:8px 10px;font-size:15px;font-weight:700;line-height:1.3}
+.ay-viejo svg{flex:none}
+.ay-ref-estado{font-size:18px;font-weight:700}
+.ay-acc{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700}
+.ay-acc-sin_info{color:var(--amber)}
+.ay-otra-via{color:var(--tx);font-weight:700}

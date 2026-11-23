@@ -81,7 +81,9 @@ describe('estadoZona', () => {
   const ahora = Date.parse('2026-11-10T12:00:00Z')
   it('calma si no hay zonas a 300 m', () => {
     const e = estadoZona({ zonas: [zona(800)], ubic: TU, municipio: 'Zapopan', revisado: ahora - 60000, ahora })
-    expect(e).toMatchObject({ calma: true, frase: 'Tu zona: sin reportes', sub: 'Zapopan · revisado hace 1 min' })
+    // Testeo: ya no "Tu zona: sin reportes" (se leía como zona segura) ni "revisado hace…" (ver mapa.testeo.test.js).
+    expect(e).toMatchObject({ calma: true, frase: 'Sin reportes registrados en Zapopan', aviso: 'Sin reportes no significa sin riesgo' })
+    expect(e.sub).toMatch(/^Reportes actualizados a las \d\d:\d\d$/)
   })
   it('cuenta calles a 300 m y avisa del Alto', () => {
     const e = estadoZona({ zonas: [zona(100), zona(250, 'alto'), zona(900)], ubic: TU, municipio: 'Zapopan', ahora })

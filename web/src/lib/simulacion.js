@@ -9,6 +9,10 @@ export const suscribirSimulacion = (f) => { subs.add(f); return () => subs.delet
 export const zonasSimuladas = () => estado.zonas
 export const reportesSimulados = () => estado.reportes
 export const leerSimulacion = () => estado
+// Copy del testeo (4 de 8 confundieron simulado con real).
+export const AVISO_CARGAR_SIM = 'Datos de práctica cargados. Solo tú lo ves, no se publica nada.'
+export const AVISO_QUITAR_SIM = 'Quitaste los datos de práctica. Que no haya reportes no significa que la zona esté segura.'
+export const haySimulacion =() => estado.reportes.length > 0 || estado.zonas.length > 0
 
 export const ESCENARIOS = [
   { nivel: 'bajo', titulo: 'Riesgo bajo', desc: 'El agua no pasa de la banqueta' },

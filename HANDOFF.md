@@ -1,8 +1,8 @@
 # HANDOFF — Estado actual
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
-**Última actualización:** 2026-11-11 11:20 · Diego (con Claude Code)
-**Fase actual:** F5-T3, mid-fi ENVIADO a testers (testeo 2026-11-11 12:00)
+**Última actualización:** 2026-11-23 · Diego (con Claude Code)
+**Fase actual:** post-testeo mid-fi: cambios D-033 aplicados en prod (ver `docs/CAMBIOS_TESTEO_MIDFI.md`)
 **Liga del testeo:** https://aguas-zmg.netlify.app/?prueba=1 (main `a708f16` desplegado en Netlify prod)
 **Rama activa:** ninguna (todo en `main`). Merge a main: Diego, por PR con checks verdes (D-025).
 
@@ -15,6 +15,7 @@
   Diego ya se borró. Todo reporte que NO empiece con `5eed` es de un tester.
 
 ## Siguiente paso (en este orden)
+0. Probar D-033 en teléfono real (`docs/PRUEBAS_CAMPO.md` §2) y decidir P-38 (avisos por zona) y P-39 (datos de refugios).
 1. Durante el testeo (si Diego lo pide): vigilar `en_revision` y `persona_en_riesgo` nuevos con
    `supabase db query --linked`; restaurar/ocultar solo con OK de Diego.
 2. Al terminar el testeo: borrar semilla → `delete from auth.users where id::text like '5eed0000-%'` (cascada a

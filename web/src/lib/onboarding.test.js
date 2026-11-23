@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   conTiempo, entrarConMedio, avisoEntrada, pedirPermisoAvisos, MUNICIPIOS_ZMG, MEDIOS,
   idCorto, a11yActivo, alternarA11y, resumenA11y, tituloMedio,
+  normalizarPermiso, textoPermiso, leerPermisoUbicacion, leerPermisoAvisos, COMO_CAMBIAR, volverAtras,
 } from './onboarding.js'
 
 const ok = () => Promise.resolve({ data: null, error: null })
@@ -88,5 +89,60 @@ describe('ajustes de accesibilidad (mismos valores que Módulo E)', () => {
     p = alternarA11y(p, 'grande')
     expect(p.a11y).toEqual(['contraste'])
     expect(resumenA11y({})).toBe('ninguna activada')
+  })
+})
+
+describe('estado de permisos (pantalla Privacidad y permisos)', () => {
+  it('normaliza los valores del navegador', () => {
+    expect(normalizarPermiso('granted')).toBe('permitido')
+    expect(normalizarPermiso('denied')).toBe('bloqueado')
+    expect(normalizarPermiso('prompt')).toBe('sin_decidir')
+    expect(normalizarPermiso('default')).toBe('sin_decidir') // Notification.permission
+    expect(normalizarPermiso(undefined)).toBe('desconocido')
+  })
+  it('traduce el estado a texto corto', () => {
+    expect(textoPermiso('permitido')).toBe('Permitido')
+    expect(textoPermiso('bloqueado')).toBe('No permitido')
+    expect(textoPermiso('sin_decidir')).toBe('Sin decidir')
+    expect(textoPermiso('no_soportado')).toMatch(/no disponible/i)
+    expect(textoPermiso('desconocido')).toBeTruthy()
+  })
+  it('ubicación: usa navigator.permissions cuando existe', async () => {
+    const perms = (state) => ({ query: async ({ name }) => { expect(name).toBe('geolocation'); return { state } } })
+    expect(await leerPermisoUbicacion(perms('granted'), {})).toBe('permitido')
+    expect(await leerPermisoUbicacion(perms('denied'), {})).toBe('bloqueado')
+    expect(await leerPermisoUbicacion(perms('prompt'), {})).toBe('sin_decidir')
+  })
+  it('ubicación: sin permissions no inventa; sin geolocation no está disponible', async () => {
+    expect(await leerPermisoUbicacion(undefined, {})).toBe('desconocido')
+    expect(await leerPermisoUbicacion({ query: async () => { throw new Error('x') } }, {})).toBe('desconocido')
+    expect(await leerPermisoUbicacion(undefined, undefined)).toBe('no_soportado')
+  })
+  it('avisos: lee Notification.permission; sin Notification no está disponible', () => {
+    expect(leerPermisoAvisos({ permission: 'granted' })).toBe('permitido')
+    expect(leerPermisoAvisos({ permission: 'denied' })).toBe('bloqueado')
+    expect(leerPermisoAvisos({ permission: 'default' })).toBe('sin_decidir')
+    expect(leerPermisoAvisos(undefined)).toBe('no_soportado')
+  })
+  it('instrucciones para iPhone y Android en ambos permisos', () => {
+    for (const k of ['ubicacion', 'avisos']) {
+      expect(COMO_CAMBIAR[k].map((x) => x.donde)).toEqual(['iPhone (Safari)', 'Android (Chrome)'])
+      expect(COMO_CAMBIAR[k].every((x) => x.pasos.length > 10)).toBe(true)
+    }
+  })
+})
+
+describe('volverAtras', () => {
+  it('con historial de la app regresa a la pantalla anterior', () => {
+    let atras = 0
+    const ir = () => { throw new Error('no debe ir') }
+    volverAtras({ state: { aguasD: 2 }, back: () => { atras += 1 } }, ir)
+    expect(atras).toBe(1)
+  })
+  it('sin historial (entrada directa) va al respaldo', () => {
+    const fue = []
+    volverAtras({ state: { aguasD: 0 }, back: () => { throw new Error('no') } }, (s) => fue.push(s))
+    volverAtras(undefined, (s) => fue.push(s), 'acceso')
+    expect(fue).toEqual([null, 'acceso'])
   })
 })

@@ -85,3 +85,53 @@ export async function pedirPermisoAvisos(N = typeof window !== 'undefined' ? win
     return 'negado'
   }
 }
+
+// ---------- Privacidad y permisos (testeo de usabilidad: 5 de 10 no encontraron cómo cambiar el permiso) ----------
+// Estados: permitido · bloqueado · sin_decidir · no_soportado · desconocido (el navegador no dice).
+export function normalizarPermiso(v) {
+  if (v === 'granted') return 'permitido'
+  if (v === 'denied') return 'bloqueado'
+  if (v === 'prompt' || v === 'default') return 'sin_decidir'
+  return 'desconocido'
+}
+const TEXTOS_PERMISO = {
+  permitido: 'Permitido',
+  bloqueado: 'No permitido',
+  sin_decidir: 'Sin decidir',
+  no_soportado: 'No disponible en este navegador',
+  desconocido: 'Tu navegador no lo indica',
+}
+export const textoPermiso = (estado) => TEXTOS_PERMISO[estado] || TEXTOS_PERMISO.desconocido
+
+export async function leerPermisoUbicacion(
+  perms = typeof navigator !== 'undefined' ? navigator.permissions : undefined,
+  geo = typeof navigator !== 'undefined' ? navigator.geolocation : undefined,
+) {
+  if (!geo) return 'no_soportado'
+  try { return perms ? normalizarPermiso((await perms.query({ name: 'geolocation' })).state) : 'desconocido' } catch { return 'desconocido' }
+}
+
+// Notification.permission es síncrono y más confiable que permissions.query({name:'notifications'}) en Safari.
+export function leerPermisoAvisos(N = typeof window !== 'undefined' ? window.Notification : undefined) {
+  if (!N) return 'no_soportado'
+  return normalizarPermiso(N.permission)
+}
+
+// Cómo cambiarlo cuando el navegador ya no vuelve a preguntar (bloqueado) o para quitarlo (permitido).
+export const COMO_CAMBIAR = {
+  ubicacion: [
+    { donde: 'iPhone (Safari)', pasos: 'Toca "aA" en la barra de dirección › Configuración del sitio web › Ubicación › Permitir. Si sigue sin funcionar: Ajustes › Privacidad y seguridad › Localización › Sitios web de Safari.' },
+    { donde: 'Android (Chrome)', pasos: 'Toca el ícono a la izquierda de la dirección › Permisos › Ubicación › Permitir. Revisa también que la ubicación del teléfono esté encendida.' },
+  ],
+  avisos: [
+    { donde: 'iPhone (Safari)', pasos: 'Los avisos solo funcionan si agregas ¡Aguas! a tu pantalla de inicio (Compartir › Agregar a inicio). Después: Ajustes › Notificaciones › ¡Aguas!.' },
+    { donde: 'Android (Chrome)', pasos: 'Toca el ícono a la izquierda de la dirección › Permisos › Notificaciones › Permitir.' },
+  ],
+}
+
+// Botón "Atrás" de una pantalla: si la app abrió esta pantalla desde otra (historial propio, lib/historial.js),
+// regresa a esa; si se entró directo, va al respaldo (mapa por omisión).
+export function volverAtras(h = typeof window !== 'undefined' ? window.history : undefined, ir, respaldo = null) {
+  if (Number(h?.state?.aguasD) > 0) { try { h.back(); return } catch { /* sin historial */ } }
+  ir(respaldo)
+}
