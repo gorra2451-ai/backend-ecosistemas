@@ -11,8 +11,9 @@ import { vibrar, FRASE_VOZ } from '../lib/haptica.js'
 import { hablar } from '../lib/confirmar.js'
 import {
   MEDIOS, AJUSTES_A11Y, tituloMedio, a11yActivo, alternarA11y, resumenA11y, idCorto, yaEntro,
-  conTiempo, entrarConMedio, avisoEntrada, pedirPermisoAvisos,
+  conTiempo, entrarConMedio, avisoEntrada, pedirPermisoAvisos, volverAtras,
 } from '../lib/onboarding.js'
+import { MODO_PRUEBA } from '../lib/prueba.js'
 import '../styles/onboarding.css'
 
 // Íconos que no están en Icon.jsx (solo de este módulo).
@@ -95,14 +96,14 @@ function Flujo({ desde = 1 }) {
     const u = await pedirUbicacion()
     setPidiendo(null)
     setLoc(!!u)
-    if (!u) avisar('No pudimos usar tu ubicación. Puedes activarla después.')
+    if (!u) avisar('No pudimos usar tu ubicación. Puedes activarla después en Más › Privacidad y permisos.')
   }
   const activarAvisos = async () => {
     setPidiendo('not')
     const r = await pedirPermisoAvisos()
     setPidiendo(null)
     setNot(r === 'concedido')
-    if (r === 'negado') avisar('Puedes activarlas después en Ajustes')
+    if (r === 'negado') avisar('Puedes activarlas después en Más › Privacidad y permisos')
     if (r === 'no_soportado') avisar('Este navegador no permite notificaciones')
   }
   const alternar = (k) => {
@@ -133,7 +134,8 @@ function Flujo({ desde = 1 }) {
     <Onb label="Bienvenida, paso 1 de 4">
       <Cabeza n={1} />
       <h1 className="onb-h1">Juntos ante las inundaciones</h1>
-      <p className="onb-lead">Consulta riesgos, recibe alertas y encuentra rutas más seguras en tiempo real.</p>
+      <p className="onb-lead">¡Aguas! sirve para reportar y ver inundaciones en la zona metropolitana de Guadalajara: consulta riesgos, recibe alertas y encuentra rutas más seguras.</p>
+      {MODO_PRUEBA && <p className="onb-tip" role="note"><Icon name="alerta" size={22} /><span>Versión de prueba: algunos reportes son de ejemplo.</span></p>}
       <ul className="onb-beneficios">
         {BENEFICIOS.map((b) => <li key={b.t}><span className="onb-ic"><Ico name={b.icon} /></span><span>{b.t}</span></li>)}
       </ul>
@@ -146,12 +148,20 @@ function Flujo({ desde = 1 }) {
             <li>Tu ID se crea solo y es temporal: dura solo esta sesión</li>
           </ul>
           <IdChip id={id} />
+          <div className="s" style={{ marginTop: 6 }}>Es un código al azar: no te identifica.</div>
         </div>
       </div>
+      {/* Testeo: 1 de 10 no abrió "Leer" pensando que era un trámite legal → el resumen va visible. */}
       <div className="onb-sello onb-priv">
         <span className="onb-ic"><Icon name="lista" /></span>
-        <div className="onb-priv-t"><div className="t">Aviso de privacidad</div><div className="s">Qué datos usamos y para qué.</div></div>
-        <button type="button" className="btn btn-ghost onb-leer" onClick={() => ir('privacidad')}>Leer</button>
+        <div className="onb-priv-t">
+          <div className="t">Tu privacidad</div>
+          <ul className="onb-puntos" style={{ marginBottom: 0 }}>
+            <li>Usamos tu ubicación solo para mostrarte riesgos cerca; no la guardamos.</li>
+            <li>De un reporte guardamos el lugar y la hora; nadie ve quién lo hizo.</li>
+          </ul>
+        </div>
+        <button type="button" className="btn btn-ghost onb-leer" aria-label="Leer el aviso de privacidad completo" onClick={() => ir('privacidad')}>Leer</button>
       </div>
       <div className="onb-spacer" />
       <button type="button" className="btn btn-primary" onClick={() => setPaso(2)}>Comenzar</button>
@@ -180,12 +190,12 @@ function Flujo({ desde = 1 }) {
       <Onb label="Permisos, paso 4 de 4">
         <Cabeza n={4} onAtras={() => setPaso(3)} />
         <h1 className="onb-h1">Permisos que te ayudan a estar más seguro</h1>
-        <p className="onb-lead">Ambos son opcionales. Puedes cambiarlos o desactivarlos más tarde.</p>
-        <Permiso icon="pin" titulo="Ubicación" texto="Para mostrar zonas de riesgo cerca de ti." valor={loc}
-          si={pidiendo === 'loc' ? 'Buscando tu ubicación…' : 'Permitir ubicación'} ocupado={pidiendo === 'loc'}
+        <p className="onb-lead">Puedes continuar sin activar estos permisos. Puedes cambiarlos después en Más › Privacidad y permisos.</p>
+        <Permiso icon="pin" titulo="Ubicación" texto="Para mostrar tu zona en el mapa. No es indispensable: también puedes buscar un lugar." valor={loc}
+          si={pidiendo === 'loc' ? 'Buscando tu ubicación…' : loc ? 'Ubicación permitida' : 'Permitir ubicación'} ocupado={pidiendo === 'loc'}
           onSi={permitirUbicacion} onNo={() => setLoc(false)} />
-        <Permiso icon="campana" titulo="Notificaciones" texto="Para avisarte de alertas, incluso con la app cerrada." valor={not}
-          si={pidiendo === 'not' ? 'Esperando tu respuesta…' : 'Activar notificaciones'} ocupado={pidiendo === 'not'}
+        <Permiso icon="campana" titulo="Notificaciones" texto="Solo te avisamos de las zonas que elijas." valor={not}
+          si={pidiendo === 'not' ? 'Esperando tu respuesta…' : not ? 'Notificaciones activadas' : 'Activar notificaciones'} ocupado={pidiendo === 'not'}
           onSi={activarAvisos} onNo={() => setNot(false)} />
         <div className="onb-resumen" aria-live="polite">
           <b>Lo que compartes ahora</b>
@@ -270,9 +280,10 @@ function Permiso({ icon, titulo, texto, valor, si, ocupado, onSi, onNo }) {
         <div><div className="t">{titulo} <span className="onb-tag">Opcional</span></div><div className="s">{texto}</div></div>
       </div>
       <div className="onb-acts" role="group" aria-label={titulo}>
-        <button type="button" className={'btn' + (valor === true ? ' sel' : '')} aria-pressed={valor === true}
+        {/* Testeo: 3 de 10 sintieron que debían contestar → "Permitir" primario, "Ahora no" secundario */}
+        <button type="button" className="btn btn-primary" aria-pressed={valor === true}
           disabled={ocupado} aria-busy={ocupado} onClick={onSi}>{si}</button>
-        <button type="button" className={'btn' + (valor === false ? ' sel' : '')} aria-pressed={valor === false}
+        <button type="button" className={'btn btn-ghost' + (valor === false ? ' sel' : '')} aria-pressed={valor === false}
           disabled={ocupado} onClick={onNo}>Ahora no</button>
       </div>
     </div>
@@ -318,7 +329,7 @@ function CambiarMedio() {
 // ---------- privacidad (lectura; se abre desde "Leer") ----------
 export function Privacidad() {
   const { ir } = useApp()
-  const volver = () => ir(yaEntro() ? null : 'acceso')
+  const volver = () => volverAtras(undefined, ir, yaEntro() ? null : 'acceso')
   return (
     <Onb label="Aviso de privacidad">
       <div className="onb-top">
