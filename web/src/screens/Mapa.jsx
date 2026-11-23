@@ -745,7 +745,7 @@ export function Buscar() {
 
   // Un solo destino a la vez: el pin del mapa, el encabezado y las rutas cambian juntos.
   function fijarDestino(l, aviso = true) {
-    setLugar(l); centrarEn(l); olvidarSiOtroDestino(l)
+    setLugar(l); centrarEn({ ...l, nombre: vistaLugar(l).nombre }); olvidarSiOtroDestino(l) // pin con el NOMBRE, no la calle
     if (aviso) avisar(`Destino: ${vistaLugar(l).nombre}`)
   }
   // Bug del testeo: el nombre de arriba se quedaba en "Plaza del Sol" al llegar con otro destino. La pantalla no se
