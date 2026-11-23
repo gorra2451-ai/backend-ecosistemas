@@ -4,7 +4,7 @@
 import { claseVoz } from './confirmar.js'
 import { GRAVEDAD } from './reportar.js'
 
-export const NO_TE_ENTENDI = 'No te entendí. Intenta: «calle inundada, agua a la rodilla»'
+export const NO_TE_ENTENDI = 'No te entendí. Intenta: «calle inundada, agua a media llanta»'
 
 // nivel de la UI (Bajo/Medio/Alto) → clave del contrato que usa Detalles (sin_riesgo/limitado/bloqueado).
 const CLAVE = Object.fromEntries(GRAVEDAD.map((g) => [g.nivel, g.k]))

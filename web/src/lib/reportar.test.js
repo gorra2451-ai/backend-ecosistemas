@@ -6,6 +6,8 @@ import {
   GRAVEDAD_CALLE, pasanCarrosDeGravedad, pasosStepper, resumenReporte,
   unirMisReportes, filaMiReporte, filaCercano, textoUbicacion, extensionEvidencia, tipoEvidencia, estadoEnviado, mensajeEnviado,
   validarArchivo, MAX_EVIDENCIA_BYTES, MENSAJE_ARCHIVO, ACEPTA_EVIDENCIA, tituloUbicacion, crearCandado, seguimientoReporte,
+  explicacionEstado, AVISO_SIN_AYUDA, QUE_PASA_CON_TU_REPORTE, nivelConReferencia, validarReferencia, mensajeRiesgo,
+  leerBorrador, guardarBorrador, borrarBorrador, AVISO_FOTO, RECORDATORIO_FOTO,
 } from './reportar.js'
 import { supabase } from './supabase.js'
 
@@ -47,7 +49,8 @@ describe('etiquetas y estado', () => {
     expect(casoAcudo('calle')).toBe(null)
   })
   it('chip según estado', () => {
-    expect(chipEstado('pendiente').texto).toBe('Pendiente')
+    expect(chipEstado('pendiente').texto).toBe('En verificación')
+    expect(chipEstado('activo').texto).toBe('Visible en el mapa')
     expect(chipEstado('activo').clase).toBe('chip-act')
     expect(chipEstado('cola').texto).toBe('En cola · sin señal')
   })
@@ -118,7 +121,7 @@ describe('ronda 2 · flujo del Equipo Reporte', () => {
   it('resumen: tipo, nivel con patrón, dirección o precisión, foto', () => {
     expect(resumenReporte({ tipo: 'calle', gravedad: 'bloqueado', direccion: 'Av. Patria 123, Zapopan', archivo: 'a.jpg' }))
       .toEqual([
-        { icono: 'calle', texto: 'Calle inundada' }, { icono: 'barras', texto: 'Alto', patron: 'p-alto' },
+        { icono: 'calle', texto: 'Calle inundada' }, { icono: 'barras', texto: 'Alto · cubre la llanta', patron: 'p-alto' },
         { icono: 'pin', texto: 'Av. Patria 123, Zapopan' }, { icono: 'imagen', texto: 'a.jpg' },
       ])
     expect(resumenReporte({ tipo: 'casa', precision: 12.4 }).map((x) => x.texto)).toEqual(['Casa inundada', 'Tu ubicación (GPS) ±12 m', 'Sin foto'])
@@ -157,8 +160,10 @@ describe('ronda 3 · HTML validado del Equipo Reporte + contrato v2', () => {
     expect(ACEPTA_EVIDENCIA).toBe('image/jpeg,image/png,image/webp')
   })
   it('enviado: copy honesto según estado', () => {
-    expect(mensajeEnviado('pendiente')).toBe('Tu reporte ya está en el mapa. Te avisamos cuando lo confirmen.')
-    expect(estadoEnviado('pendiente')).toBe('Sin confirmar · esperando a otros vecinos')
+    // Testeo de usabilidad: un pendiente NO sale en el mapa de los demás (REGLAS_NEGOCIO §1); no se promete eso.
+    expect(mensajeEnviado('pendiente')).not.toMatch(/ya está en el mapa/)
+    expect(estadoEnviado('pendiente')).toBe('En verificación')
+    expect(estadoEnviado('activo')).toBe('Visible en el mapa')
     expect(estadoEnviado('cola')).toMatch(/En cola/)
   })
   it('unirMisReportes: servidor manda, local aporta dirección y lo que el servidor no tiene', () => {
@@ -174,16 +179,16 @@ describe('ronda 3 · HTML validado del Equipo Reporte + contrato v2', () => {
   })
   it('filaMiReporte: estado, confirmaciones, nivel con patrón y hace cuánto', () => {
     const f = filaMiReporte({ tipo: 'coche', estado: 'pendiente', confirmacionesSi: 1, creado: 1 }, 5 * 60000)
-    expect(f).toEqual({ titulo: 'Coche atrapado', estado: 'Esperando 5 confirmaciones', confirmaciones: '1 confirmación “sí”', nivel: null, hace: 'hace 5 min' })
+    expect(f).toEqual({ titulo: 'Coche atrapado', estado: 'En verificación', confirmaciones: '1 confirmación “sí”', nivel: null, hace: 'hace 5 min' })
     expect(filaMiReporte({ tipo: 'calle', estado: 'activo', nivel: 'critico', confirmacionesSi: 21 }).nivel).toEqual({ texto: 'Nivel crítico', patron: 'p-alto' })
     expect(filaMiReporte({ tipo: 'calle', estado: 'en_revision' }).estado).toBe('En revisión')
   })
   it('filaCercano: distancia, estado y nivel', () => {
     const f = filaCercano({ tipo: 'calle', distancia_m: 120.4, estado: 'pendiente', gravedad: 'bloqueado', ultima_confirmacion: null, creado_en: new Date(0).toISOString() }, 7 * 60000)
-    expect(f).toEqual({ titulo: 'Calle inundada', lugar: 'A 120 m de ti', estado: 'Sin confirmar', nivel: { texto: 'Agua: alto', patron: 'p-alto' }, hace: 'Actualizado hace 7 min' })
+    expect(f).toEqual({ titulo: 'Calle inundada', lugar: 'A 120 m de ti', estado: 'Sin confirmar', nivel: { texto: 'Agua: alto · cubre la llanta', patron: 'p-alto' }, hace: 'Actualizado hace 7 min' })
     expect(filaCercano({ tipo: 'casa', estado: 'activo', nivel: 'medio' }).nivel).toEqual({ texto: 'Nivel medio', patron: 'p-medio' })
     // D-029: manda la altura del agua aunque las confirmaciones digan otro nivel; persona en riesgo sin nivel
-    expect(filaCercano({ tipo: 'casa', nivel: 'bajo', gravedad: 'limitado' }).nivel.texto).toBe('Agua: medio')
+    expect(filaCercano({ tipo: 'casa', nivel: 'bajo', gravedad: 'limitado' }).nivel.texto).toBe('Agua: medio · a media llanta')
     expect(filaCercano({ tipo: 'persona_en_riesgo', nivel: 'alto' }).nivel).toBe(null)
     expect(filaMiReporte({ tipo: 'persona_en_riesgo', nivel: 'alto' }).nivel).toBe(null)
   })
@@ -254,5 +259,91 @@ describe('seguimientoReporte', () => {
     const { data } = await seguimientoReporte('r1')
     expect(cols).toEqual(['reporte_id'])
     expect(data.confirmaciones).toBe(3)
+  })
+})
+
+describe('testeo de usabilidad · pantalla Enviado', () => {
+  it('dice quién lo ve y quién lo confirma (vecinos, no autoridades)', () => {
+    expect(QUE_PASA_CON_TU_REPORTE).toBe('Lo verán otras personas en el mapa. Lo confirman vecinos que pasen por ahí, no autoridades.')
+    expect(AVISO_SIN_AYUDA).toBe('No se avisó a ninguna institución ni viene ayuda. Si hay peligro, llama al 911.')
+  })
+  it('explica cada estado y si ya se puede cerrar la app', () => {
+    const p = explicacionEstado('pendiente')
+    expect(p.titulo).toBe('En verificación')
+    expect(p.texto).toMatch(/5/)
+    expect(p.puedesCerrar).toBe(true)
+    expect(explicacionEstado('activo')).toMatchObject({ titulo: 'Visible en el mapa', puedesCerrar: true })
+    // En cola el reporte solo sale con la app abierta: no se dice "ya puedes cerrar".
+    expect(explicacionEstado('cola').puedesCerrar).toBe(false)
+    expect(explicacionEstado('en_revision').titulo).toBe('En revisión')
+  })
+})
+
+describe('testeo de usabilidad · nivel con referencia concreta', () => {
+  it('la palabra siempre va con banqueta / llanta', () => {
+    expect(nivelConReferencia('sin_riesgo')).toBe('Bajo · no sube de la banqueta')
+    expect(nivelConReferencia('limitado')).toBe('Medio · a media llanta')
+    expect(nivelConReferencia('bloqueado')).toBe('Alto · cubre la llanta')
+    expect(nivelConReferencia('otro')).toBe(null)
+    expect(etiquetaReporte({ tipo: 'calle', gravedad: 'bloqueado' })).toBe('Calle inundada · Nivel alto · cubre la llanta')
+  })
+})
+
+describe('testeo de usabilidad · persona en riesgo sin GPS', () => {
+  it('la referencia del lugar es obligatoria (mín. 3 letras, sin solo espacios)', () => {
+    expect(validarReferencia('')).toBe(false)
+    expect(validarReferencia('   ')).toBe(false)
+    expect(validarReferencia('ab')).toBe(false)
+    expect(validarReferencia(null)).toBe(false)
+    expect(validarReferencia('Esquina con la gasolinera')).toBe(true)
+  })
+  it('sin GPS el mensaje lleva solo el lugar escrito, nunca un punto de ejemplo', () => {
+    const t = mensajeRiesgo({ referencia: '  frente a la farmacia  ', lat: 20.6497, lng: -103.4016, conGps: false })
+    expect(t).toBe('Hay una persona en riesgo por inundación. Lugar: frente a la farmacia.')
+    expect(t).not.toMatch(/maps|20\.6497/)
+  })
+  it('con GPS agrega el enlace como apoyo, después del lugar escrito', () => {
+    const t = mensajeRiesgo({ referencia: 'Cruce de la avenida y el puente', lat: 1, lng: 2, conGps: true, enCoche: true })
+    expect(t).toBe('Hay alguien dentro de un coche en el agua. Lugar: Cruce de la avenida y el puente. Ubicación aproximada (GPS): https://www.google.com/maps?q=1.000000,2.000000')
+  })
+  it('sin referencia válida no hay mensaje', () => {
+    expect(mensajeRiesgo({ referencia: ' ', lat: 1, lng: 2, conGps: true })).toBe(null)
+  })
+})
+
+describe('testeo de usabilidad · borrador del reporte (sessionStorage)', () => {
+  const sesion = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) } }
+  it('guarda tipo, nivel y el lugar elegido; se borra', () => {
+    const st = sesion()
+    const lugar = { lat: 20.67, lng: -103.35, precision: 50, direccion: 'Av. X, Guadalajara', elegido: true }
+    guardarBorrador({ tipo: 'calle', gravedad: 'bloqueado', lugar }, st)
+    expect(leerBorrador(st)).toEqual({ tipo: 'calle', gravedad: 'bloqueado', lugar })
+    borrarBorrador(st)
+    expect(leerBorrador(st)).toBe(null)
+  })
+  it('PRIVACIDAD: no guarda el GPS crudo de la persona (solo un lugar elegido en la búsqueda)', () => {
+    const st = sesion()
+    guardarBorrador({ tipo: 'casa', gravedad: 'limitado', lugar: { lat: 20.6, lng: -103.4, precision: 8 } }, st)
+    expect(leerBorrador(st)).toEqual({ tipo: 'casa', gravedad: 'limitado', lugar: null })
+    expect(st.getItem('aguas.borradorReporte')).not.toMatch(/20\.6/)
+  })
+  it('descarta basura y persona en riesgo', () => {
+    const st = sesion()
+    guardarBorrador({ tipo: 'persona_en_riesgo' }, st)
+    expect(leerBorrador(st)).toBe(null)
+    guardarBorrador({ tipo: 'calle', gravedad: 'inventado' }, st)
+    expect(leerBorrador(st)).toEqual({ tipo: 'calle', gravedad: null, lugar: null })
+    st.setItem('aguas.borradorReporte', '{roto')
+    expect(leerBorrador(st)).toBe(null)
+    expect(leerBorrador(null)).toBe(null)
+  })
+})
+
+describe('testeo de usabilidad · aviso de la foto', () => {
+  it('sin la palabra "metadatos"; dice qué se quita y qué no se tapa', () => {
+    expect(AVISO_FOTO).toBe('Quitamos de la foto la ubicación, la fecha y el modelo del teléfono. Lo que se ve en la foto (placas, caras, casas) no se tapa: evita que salgan. Si necesitas tapar algo, edítala antes en tu galería.')
+    expect(AVISO_FOTO + RECORDATORIO_FOTO).not.toMatch(/metadato/i)
+    expect(RECORDATORIO_FOTO).toMatch(/placas/)
+    expect(RECORDATORIO_FOTO).toMatch(/caras/)
   })
 })

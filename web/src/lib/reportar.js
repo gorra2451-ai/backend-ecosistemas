@@ -12,17 +12,20 @@ export const TIPOS_REPORTE = ['casa', 'coche', 'calle', 'persona_en_riesgo'] // 
 // Mapeo propio (el equipo no usa los nombres del contrato): Bajo → sin_riesgo · Medio → limitado · Alto → bloqueado.
 export const GRAVEDAD = [
   // D-028: referencia fija (banqueta / llanta), no la estatura de quien reporta.
-  { k: 'sin_riesgo', nivel: 'bajo', t: 'Bajo', d: 'El agua no sube de la banqueta. Se puede pasar con cuidado.', pasanCarros: true },
-  { k: 'limitado', nivel: 'medio', t: 'Medio', d: 'Sube la banqueta y llega a media llanta. Mejor esperar.', pasanCarros: true },
-  { k: 'bloqueado', nivel: 'alto', t: 'Alto', d: 'Cubre la llanta o más. No pasan carros: no cruzar.', pasanCarros: false },
+  // `ref`: referencia corta que acompaña SIEMPRE a la palabra del nivel (testeo de usabilidad, hallazgo 6).
+  { k: 'sin_riesgo', nivel: 'bajo', t: 'Bajo', ref: 'no sube de la banqueta', d: 'El agua no sube de la banqueta. Se puede pasar con cuidado.', pasanCarros: true },
+  { k: 'limitado', nivel: 'medio', t: 'Medio', ref: 'a media llanta', d: 'Sube la banqueta y llega a media llanta. Mejor esperar.', pasanCarros: true },
+  { k: 'bloqueado', nivel: 'alto', t: 'Alto', ref: 'cubre la llanta', d: 'Cubre la llanta o más. No pasan carros: no cruzar.', pasanCarros: false },
 ]
 export const GRAVEDAD_CALLE = GRAVEDAD // alias de la ronda 2
 export const pasanCarrosDeGravedad = (k) => GRAVEDAD.find((g) => g.k === k)?.pasanCarros ?? true
 export const gravedadInfo = (k) => GRAVEDAD.find((g) => g.k === k) || null
+// "Alto · cubre la llanta": la palabra sola no dice cuánta agua es.
+export const nivelConReferencia = (k) => { const g = gravedadInfo(k); return g ? `${g.t} · ${g.ref}` : null }
 
 export const DETALLE_LABEL = {
   si: 'Pasan carros', no: 'No pasan carros', // ronda 1 (se conservan para reportes ya guardados)
-  bloqueado: 'Nivel alto', limitado: 'Nivel medio', sin_riesgo: 'Nivel bajo',
+  bloqueado: 'Nivel alto · cubre la llanta', limitado: 'Nivel medio · a media llanta', sin_riesgo: 'Nivel bajo · no sube de la banqueta',
   tobillo: 'Agua a los tobillos', rodilla: 'Agua a las rodillas', cintura: 'Agua a la cintura o más', // ronda 1
   vacio: 'Coche sin nadie dentro', dentro: 'Hay alguien dentro de un coche',
 }
@@ -56,7 +59,7 @@ export function resumenReporte(rep) {
   const g = gravedadInfo(rep.gravedad || rep.detalle)
   return [
     { icono: iconoTipo(rep.tipo), texto: TIPO_LARGO[rep.tipo] || 'Reporte' },
-    g && { icono: 'barras', texto: g.t, patron: PATRON[g.nivel] },
+    g && { icono: 'barras', texto: `${g.t} · ${g.ref}`, patron: PATRON[g.nivel] },
     { icono: 'pin', texto: textoUbicacion(rep.direccion, rep.precision) },
     { icono: 'imagen', texto: rep.evidenciaFallo ? 'La foto no se subió' : rep.archivo || (rep.evidencia ? 'Con evidencia' : 'Sin foto') },
   ].filter(Boolean)
@@ -93,24 +96,39 @@ export function crearCandado() {
 export const casoAcudo = (tipo) => (tipo === 'casa' || tipo === 'coche' ? tipo : null)
 
 // ---------- Estado → chip y línea de tiempo ----------
+// Mismos nombres que la leyenda del mapa: "En verificación" (pendiente) y "Visible en el mapa" (activo).
 export function chipEstado(estado) {
   if (estado === 'cola') return { clase: 'chip-cola', texto: 'En cola · sin señal' }
-  if (estado === 'activo') return { clase: 'chip-act', texto: 'Activo' }
+  if (estado === 'activo') return { clase: 'chip-act', texto: 'Visible en el mapa' }
   if (estado === 'resuelto') return { clase: 'chip-res', texto: 'Resuelto' }
   if (estado === 'no_enviado') return { clase: 'chip-cola', texto: 'No se envió' }
   if (estado === 'en_revision') return { clase: 'chip-pend', texto: 'En revisión' }
-  return { clase: 'chip-pend', texto: 'Pendiente' }
+  return { clase: 'chip-pend', texto: 'En verificación' }
 }
 
+// Pantalla "Enviado" (testeo de usabilidad, hallazgo 1: 6/8 no supieron qué pasa con su reporte y 1 creyó
+// que se avisó a una institución). Un `pendiente` NO sale en el mapa de los demás (REGLAS_NEGOCIO §1).
+export const QUE_PASA_CON_TU_REPORTE = 'Lo verán otras personas en el mapa. Lo confirman vecinos que pasen por ahí, no autoridades.'
+export const AVISO_SIN_AYUDA = 'No se avisó a ninguna institución ni viene ayuda. Si hay peligro, llama al 911.'
+export const PUEDES_CERRAR = 'Ya puedes cerrar la app: tu reporte sigue activo.'
+
 export function mensajeEnviado(estado) {
-  if (estado === 'cola') return 'No hay señal. Tu reporte se guardó y se envía solo cuando vuelva. No tienes que hacer nada.'
-  return 'Tu reporte ya está en el mapa. Te avisamos cuando lo confirmen.'
+  if (estado === 'cola') return 'No hay señal. Tu reporte se guardó en este celular y se envía cuando vuelva la señal.'
+  return QUE_PASA_CON_TU_REPORTE
 }
-// Línea de estado bajo el título (honesta: pendiente = sin confirmar).
-export function estadoEnviado(estado) {
-  if (estado === 'cola') return 'En cola · se envía al volver la señal'
-  if (estado === 'activo') return 'Publicado · visible para todos'
-  return 'Sin confirmar · esperando a otros vecinos'
+// Línea de estado bajo el título: el nombre del estado actual.
+export const estadoEnviado = (estado) => explicacionEstado(estado).titulo
+
+// Estado actual + qué significa + si ya se puede cerrar la app (la cola solo se manda con la app abierta).
+export function explicacionEstado(estado) {
+  if (estado === 'cola') return { titulo: 'En cola · sin señal', texto: 'Se envía solo cuando vuelva la señal, con la app abierta. Si la cierras, se envía la próxima vez que la abras.', puedesCerrar: false }
+  if (estado === 'activo') return { titulo: 'Visible en el mapa', texto: 'Ya lo ve cualquier persona que abra el mapa.', puedesCerrar: true }
+  if (estado === 'en_revision') return { titulo: 'En revisión', texto: 'Lo está revisando el equipo. Mientras, no sale en el mapa.', puedesCerrar: true }
+  return {
+    titulo: 'En verificación',
+    texto: `Todavía no sale en el mapa de los demás. Los vecinos que pasen cerca pueden confirmarlo; con ${CONFIRMACIONES_PARA_PUBLICAR} confirmaciones pasa a «Visible en el mapa».`,
+    puedesCerrar: true,
+  }
 }
 
 // Pasos: Enviado → Pendiente → Activo → Resuelto. k: done | now | next.
@@ -120,8 +138,8 @@ export function lineaDeTiempo(estado, creado) {
   const k = (paso) => (paso < i ? 'done' : paso === i ? (paso === 3 ? 'done' : 'now') : 'next')
   return [
     { label: 'Enviado', desc: estado === 'cola' ? 'En cola: se envía cuando vuelva la señal' : horaCorta(creado), k: i === 0 ? 'now' : 'done' },
-    { label: estado === 'en_revision' ? 'En revisión' : 'Pendiente', desc: estado === 'en_revision' ? 'Lo está revisando el equipo' : `Esperando ${CONFIRMACIONES_PARA_PUBLICAR} confirmaciones de otros vecinos`, k: k(1) },
-    { label: 'Activo', desc: 'Ya es zona en el mapa', k: k(2) },
+    { label: estado === 'en_revision' ? 'En revisión' : 'En verificación', desc: estado === 'en_revision' ? 'Lo está revisando el equipo' : `Esperando ${CONFIRMACIONES_PARA_PUBLICAR} confirmaciones de otros vecinos`, k: k(1) },
+    { label: 'Visible en el mapa', desc: 'Ya lo ve cualquier persona en el mapa', k: k(2) },
     { label: 'Resuelto', desc: 'Cuando dejen de confirmarlo o digan “ya no”', k: k(3) },
   ]
 }
@@ -155,14 +173,14 @@ export function unirMisReportes(servidor, local = []) {
 function nivelFila(r) {
   if (r?.tipo === 'persona_en_riesgo') return null
   const g = gravedadInfo(r?.gravedad)
-  if (g) return { texto: `Agua: ${g.t.toLowerCase()}`, patron: PATRON[g.nivel] }
+  if (g) return { texto: `Agua: ${g.t.toLowerCase()} · ${g.ref}`, patron: PATRON[g.nivel] }
   return r?.nivel && NIVEL_LABEL[r.nivel] ? { texto: `Nivel ${NIVEL_LABEL[r.nivel].toLowerCase()}`, patron: PATRON[r.nivel] } : null
 }
 
 // Texto de la fila en "Mis reportes".
 export function filaMiReporte(r, ahora = Date.now()) {
   const estado = {
-    pendiente: `Esperando ${CONFIRMACIONES_PARA_PUBLICAR} confirmaciones`, activo: 'Activo · en el mapa', resuelto: 'Resuelto',
+    pendiente: 'En verificación', activo: 'Visible en el mapa', resuelto: 'Resuelto',
     en_revision: 'En revisión', cola: 'En cola · sin señal', no_enviado: 'No se envió', oculto: 'Retirado',
   }[r.estado] || 'Pendiente'
   const n = r.confirmacionesSi
@@ -217,8 +235,42 @@ export function textoFamilia(rep) {
   }[rep.tipo] || 'Hay una inundación.'
   return `${que} Aquí: ${linkMaps(rep.lat, rep.lng)}`
 }
-export const textoRiesgo = (lat, lng, enCoche) =>
-  `${enCoche ? 'Hay alguien dentro de un coche en el agua.' : 'Hay una persona en riesgo por inundación.'} Es aquí: ${linkMaps(lat, lng)}`
+
+// Persona en riesgo (testeo de usabilidad, hallazgo 2): 6/8 dudaron qué ubicación se mandaría sin GPS.
+// La referencia escrita es obligatoria y va primero; el enlace de GPS solo si hay GPS real (nunca el punto
+// de ejemplo del mapa). La referencia NO se guarda en la base: solo viaja en el mensaje que la persona comparte.
+export const MAX_REFERENCIA = 140
+export const validarReferencia = (texto) => String(texto ?? '').trim().length >= 3
+export function mensajeRiesgo({ referencia, lat, lng, conGps = false, enCoche = false }) {
+  if (!validarReferencia(referencia)) return null
+  const lugar = String(referencia).trim().slice(0, MAX_REFERENCIA).replace(/[.\s]+$/, '')
+  const que = enCoche ? 'Hay alguien dentro de un coche en el agua.' : 'Hay una persona en riesgo por inundación.'
+  return `${que} Lugar: ${lugar}.${conGps ? ` Ubicación aproximada (GPS): ${linkMaps(lat, lng)}` : ''}`
+}
+
+// ---------- Borrador del reporte en curso (sessionStorage `aguas.borradorReporte`) ----------
+// Hallazgo 5: si la persona sale y vuelve en la misma sesión, no pierde tipo, nivel y lugar.
+// PRIVACIDAD: solo se guarda un lugar ELEGIDO en la búsqueda (el punto del reporte); el GPS del
+// dispositivo nunca se guarda aquí (se vuelve a pedir). Persona en riesgo no usa borrador (va al 911).
+const CLAVE_BORRADOR = 'aguas.borradorReporte'
+const sesion = () => { try { return globalThis.sessionStorage || null } catch { return null } }
+function limpiarBorrador(b) {
+  if (!b || !TIPOS_REPORTE.includes(b.tipo) || b.tipo === 'persona_en_riesgo') return null
+  const l = b.lugar
+  const lugar = l?.elegido && Number.isFinite(l.lat) && Number.isFinite(l.lng)
+    ? { lat: l.lat, lng: l.lng, precision: l.precision ?? PRECISION_LUGAR_BUSCADO, direccion: String(l.direccion || ''), elegido: true }
+    : null
+  return { tipo: b.tipo, gravedad: gravedadInfo(b.gravedad) ? b.gravedad : null, lugar }
+}
+export function leerBorrador(st = sesion()) {
+  try { const v = st?.getItem(CLAVE_BORRADOR); return v ? limpiarBorrador(JSON.parse(v)) : null } catch { return null }
+}
+export function guardarBorrador(b, st = sesion()) {
+  const limpio = limpiarBorrador(b)
+  try { if (limpio) st?.setItem(CLAVE_BORRADOR, JSON.stringify(limpio)); else st?.removeItem?.(CLAVE_BORRADOR) } catch { /* sin storage */ }
+  return limpio
+}
+export function borrarBorrador(st = sesion()) { try { st?.removeItem(CLAVE_BORRADOR) } catch { /* sin storage */ } }
 
 // ---------- Cola sin señal (localStorage `aguas.cola`) ----------
 const CLAVE_COLA = 'aguas.cola'
@@ -242,6 +294,10 @@ export function quitarDeCola(id, st = almacen()) {
 }
 
 // ---------- Foto sin EXIF ----------
+// Hallazgo 3: sin la palabra "metadatos"; qué se quita y qué NO se tapa. El recordatorio va junto al botón.
+export const AVISO_FOTO = 'Quitamos de la foto la ubicación, la fecha y el modelo del teléfono. Lo que se ve en la foto (placas, caras, casas) no se tapa: evita que salgan. Si necesitas tapar algo, edítala antes en tu galería.'
+export const RECORDATORIO_FOTO = 'Que no salgan placas ni caras.'
+
 // Medidas para que el lado mayor no pase de `max` (no agranda).
 export function medidasMax(w, h, max = 1600) {
   if (!w || !h) return { w: 0, h: 0 }
