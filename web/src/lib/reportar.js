@@ -108,7 +108,7 @@ export function chipEstado(estado) {
 
 // Pantalla "Enviado" (testeo de usabilidad, hallazgo 1: 6/8 no supieron qué pasa con su reporte y 1 creyó
 // que se avisó a una institución). Un `pendiente` NO sale en el mapa de los demás (REGLAS_NEGOCIO §1).
-export const QUE_PASA_CON_TU_REPORTE = 'Lo verán otras personas en el mapa. Lo confirman vecinos que pasen por ahí, no autoridades.'
+export const QUE_PASA_CON_TU_REPORTE = 'Saldrá en el mapa para todos cuando vecinos que pasen por ahí lo confirmen. Lo confirman vecinos, no autoridades.'
 export const AVISO_SIN_AYUDA = 'No se avisó a ninguna institución ni viene ayuda. Si hay peligro, llama al 911.'
 export const PUEDES_CERRAR = 'Ya puedes cerrar la app: tu reporte sigue activo.'
 

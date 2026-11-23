@@ -264,7 +264,7 @@ describe('seguimientoReporte', () => {
 
 describe('testeo de usabilidad · pantalla Enviado', () => {
   it('dice quién lo ve y quién lo confirma (vecinos, no autoridades)', () => {
-    expect(QUE_PASA_CON_TU_REPORTE).toBe('Lo verán otras personas en el mapa. Lo confirman vecinos que pasen por ahí, no autoridades.')
+    expect(QUE_PASA_CON_TU_REPORTE).toBe('Saldrá en el mapa para todos cuando vecinos que pasen por ahí lo confirmen. Lo confirman vecinos, no autoridades.')
     expect(AVISO_SIN_AYUDA).toBe('No se avisó a ninguna institución ni viene ayuda. Si hay peligro, llama al 911.')
   })
   it('explica cada estado y si ya se puede cerrar la app', () => {

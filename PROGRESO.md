@@ -2,6 +2,15 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-23 (testeo mid-fi → cambios) · Diego · Claude Code
+**Hecho**
+- Leído el doc de testeos (5 equipos, 13 módulos); síntesis y D-033 (`docs/CAMBIOS_TESTEO_MIDFI.md`).
+- 5 carriles en paralelo (mapa, buscar/rutas, reportar, ayuda, permisos) integrados en `feat/testeo-midfi-cambios`:
+  342 pruebas, build, recorrido WebKit y escenarios de red OK.
+- Prompt de presentación para Claude Design entregado a Diego.
+**Pendiente**
+- P-38 avisos por zona y `solo_cambios`; P-39 datos de refugios/Protección Civil; prueba en teléfono real.
+
 ## 2026-11-11 (feedback de usuarios) · Diego · Claude Code
 **Hecho**
 - PR #24: voz mexicana natural (Paulina/Google/Microsoft); antes salía "Eddy", voz novedad de Apple con acento extranjero.

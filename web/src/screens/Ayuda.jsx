@@ -823,7 +823,7 @@ export function Ajustes() {
   return (
     <Screen titulo="Accesibilidad">
       <p className="ay-sub" style={{ fontSize: 15 }}>
-        Ajustes de lectura y uso. Los avisos están en Más › Notificaciones; el permiso de ubicación, en los ajustes de tu navegador.
+        Ajustes de lectura y uso. Los permisos de ubicación y avisos están en Más › Privacidad y permisos.
       </p>
       <div className="ay-card" style={{ borderRadius: 16, padding: 12 }}>
         <span className="ay-sub" style={{ fontWeight: 700 }}>Así se ve ahora la escala</span>

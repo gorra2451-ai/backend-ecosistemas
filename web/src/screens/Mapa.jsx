@@ -791,7 +791,7 @@ export function Zona() {
           <p className="mp-z-nota">Te mostramos qué reportes hay en cada camino para que elijas el más seguro.</p>
         </>
       )}
-      <button type="button" className="btn" onClick={verEnMapa}>Ver en el mapa</button>
+      <button type="button" className="btn btn-ghost" onClick={verEnMapa}>Ver en el mapa</button>
       {/* Datos completos plegados (auditoría: la pantalla tenía 5 tarjetas antes de las acciones) */}
       <details className="mp-card mp-det mp-z-datos">
         <summary><h2>Más datos del reporte</h2><Icon name="chevron" size={20} /></summary>
@@ -1123,8 +1123,7 @@ export function Mas() {
       <section className="mp-card" aria-labelledby="mp-conf">
         <h2 id="mp-conf">Avisos y forma de moverte</h2>
         <ul className="mp-conf">
-          {fila('campana', 'Notificaciones', 'preferencias')}
-          {fila('pin', 'De dónde quiero avisos', 'preferencias')}
+          {fila('campana', 'Elegir de dónde quiero avisos', 'preferencias', 'Zonas y avisos en tu celular')}
           {fila('peaton', 'Cómo me muevo hoy', 'onb')}
         </ul>
       </section>
