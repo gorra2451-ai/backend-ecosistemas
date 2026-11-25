@@ -187,3 +187,38 @@
 .ay-acc{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700}
 .ay-acc-sin_info{color:var(--amber)}
 .ay-otra-via{color:var(--tx);font-weight:700}
+
+/* Presentación (revisado con capturas en 1366–1920 px y 375–430 px) */
+/* Los .btn-text de estas pantallas no tenían tamaño: el navegador los dejaba en 13.3 px (lo más chico de la app). */
+.ay-centro,.ay-left,.ay-card .btn-text{font-size:16px}
+.ay-inline{font-size:inherit}
+/* "Ver cómo están las calles →" (Avisos): que la flecha no quede sola en el renglón de abajo */
+.btn-ghost:has(+ .ay-centro){text-wrap:balance}
+@media (max-width:399.98px){
+  .ay-toggle{padding:8px 12px}
+  .ay-toggle-r{gap:6px;font-size:13px}
+}
+/* Escritorio: el panel derecho mide 560 px; textos e íconos proporcionales a laptop/monitor */
+@media (min-width:1024px){
+  .ay-sub,.ay-toggle-d{font-size:15px}
+  .ay-nota,.ay-alerta,.ay-clima-desc{font-size:16px}
+  .ay-toggle-l{font-size:18px}
+  .ay-toggle-r{font-size:15px}
+  .ay-toggle .switch{width:60px;height:34px} .ay-toggle .switch>i{width:28px;height:28px}
+  .ay-opt{font-size:16px;min-height:58px}
+  .ay-si,.ay-no{font-size:14px} .ay-si svg{width:16px;height:16px}
+  .ay-caso{font-size:21px} .ay-caso svg{width:56px;height:56px}
+  .ay-cambiar svg,.ay-centro svg,.ay-acc svg,.ay-viejo svg,.ay-guardado svg,.ay-clima-tag svg{width:24px;height:24px}
+  .ay-pc-aviso svg{width:28px;height:28px}
+  .ay-modo{min-height:64px;font-size:17px;gap:8px} .ay-modo svg{width:26px;height:26px}
+  .ay-via-t{font-size:17px}
+  .ay-via-ic{width:42px;height:42px} .ay-via-ic svg{width:24px;height:24px}
+  .ay-via > svg:last-child{width:24px;height:24px}
+  .ay-pasa-l{font-size:17px} .ay-pasa-l svg{width:26px;height:26px}
+  .ay-si-pasa svg,.ay-no-pasa svg{width:22px;height:22px}
+  .ay-vacio{font-size:16px} .ay-vacio strong{font-size:20px} .ay-vacio svg{width:52px;height:52px}
+  .ay-escala > span{height:46px}
+  .ay-pill{font-size:15px}
+  .ay-stepper{font-size:16px}
+  .ay-num{width:36px;height:36px;font-size:20px}
+}
