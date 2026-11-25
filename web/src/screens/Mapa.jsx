@@ -640,7 +640,9 @@ export function Sidebar() {
 export function DeskHeader() {
   const { ir, screen } = useApp()
   const nav = [[null, 'Mapa'], ['buscar', 'Buscar'], ['acudo', '¿A quién acudo?'], ['refugios', 'Refugios'], ['alertas', 'Avisos'], ['mas', 'Más']]
-  const activo = nav.some(([id]) => id === screen) ? screen : screen === 'acudoresp' ? 'acudo' : null
+  // Pantalla → pestaña. Antes, cualquier pantalla fuera del menú (Accesibilidad, Privacidad…) marcaba "Mapa".
+  const DE = { acudoresp: 'acudo', preferencias: 'alertas', alertadetalle: 'alertas', privacidad: 'mas', privacidad_permisos: 'mas', zona: null, inicio: null }
+  const activo = !screen ? null : nav.some(([id]) => id === screen) ? screen : screen in DE ? DE[screen] : 'ninguna'
   return (
     <>
       <div className="mp-brand"><Logo size={40} /><span>¡Aguas!</span></div>
@@ -651,7 +653,7 @@ export function DeskHeader() {
       </nav>
       <div className="mp-head-right">
         <span className="mp-sello"><Icon name="escudo" size={20} stroke={2} />Anónimo. No guardamos dónde estás.</span>
-        <button type="button" className="mp-head-a11y" onClick={() => ir('ajustes')}><Icon name="accesibilidad" size={20} />Accesibilidad</button>
+        <button type="button" className="mp-head-a11y" aria-current={screen === 'ajustes' ? 'page' : undefined} onClick={() => ir('ajustes')}><Icon name="accesibilidad" size={20} />Accesibilidad</button>
       </div>
     </>
   )

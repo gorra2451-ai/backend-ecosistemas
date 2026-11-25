@@ -463,3 +463,4 @@
   .mp-miubic{min-width:52px;justify-content:center}
   .mp-verlista--pill{align-self:flex-start}
 }
+.mp-head-a11y[aria-current=page]{border:2px solid var(--acc);background:var(--chip)}
