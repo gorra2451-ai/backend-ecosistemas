@@ -127,3 +127,8 @@
   .screen.full:has(.onb) > .screen-inner{padding:24px 36px}
   .onb{gap:12px}
 }
+/* Laptop 1366×768: el paso 1 mide más que la pantalla y "Comenzar" quedaba abajo del borde. El botón principal de cada
+   paso se queda fijo al pie mientras el contenido se desplaza detrás (con un borde del color de la tarjeta). */
+@media (min-width:1024px) and (max-height:900px){
+  .onb > .onb-spacer + .btn-primary{position:sticky;bottom:0;z-index:2;box-shadow:0 0 0 10px var(--s1),0 -18px 18px 4px var(--s1)}
+}

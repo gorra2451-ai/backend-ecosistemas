@@ -197,7 +197,7 @@ function Fuentes({ fuenteLluvia }) {
       <li><b>Reportes ciudadanos anónimos.</b> Un reporte aparece en el mapa cuando otras 5 personas cerca lo confirman.</li>
       <li><b>Avisos de lluvia:</b> {fuenteLluvia ? `alertas de clima vigentes (hoy: ${fuenteLluvia}).` : <>alertas de clima vigentes · fuente oficial <PorConfirmar /></>}</li>
       <li><b>Búsqueda de lugares y mapa base:</b> OpenStreetMap.</li>
-      <li><b>Rutas:</b> Google Maps. No conoce nuestras alertas: revisa el mapa antes de salir.</li>
+      <li><b>Rutas:</b> «Cómo llegar» se calcula dentro de la app con OpenStreetMap (OSRM) y cuenta los reportes en el camino, pero no los esquiva sola. «Desviar ruta» y «Rutas alternativas» abren Google Maps, que no conoce nuestras alertas: revisa el mapa antes de salir.</li>
     </ul>
   )
 }
