@@ -2,6 +2,18 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-24 (listo para presentar en compu y celular) · Diego · Claude Code
+**Hecho**
+- Escritorio: el mapa ya no se aleja al mapamundi (límites de la ZMG, zoom mín. 10); aviso "Ruta a …" bajo la barra
+  (estaba a media pantalla); leyenda, zoom, "Mi ubicación", © y pines más grandes; pestaña activa correcta en el encabezado.
+- Celular: barra y hoja compactas (en iPhone SE/13 casi no se veía el mapa), mini leyenda bajo los botones, sin "+/−"
+  (pellizco), la hoja se baja al ver una ruta. Ayuda/Privacidad/Bienvenida y Reportar/Confirmar revisados en 9 tamaños.
+- `web/campo/pantallas*.mjs`: capturas en Mac, Windows, monitor, iPhone SE/13/Pro Max y Pixel 7. 344 pruebas, build.
+**Pendiente**
+- En 1366×768 la bienvenida (paso 1) necesita desplazarse para ver "Comenzar". Mapa en vivo vacío: usar `?prueba=1` y
+  Más → Simulaciones para la demo. Límite de 30 sesiones anónimas por hora por IP (D-019): en una red escolar compartida
+  puede salir "Algo salió mal" si muchos abren la liga a la vez.
+
 ## 2026-11-23 (testeo mid-fi → cambios) · Diego · Claude Code
 **Hecho**
 - Leído el doc de testeos (5 equipos, 13 módulos); síntesis y D-033 (`docs/CAMBIOS_TESTEO_MIDFI.md`).

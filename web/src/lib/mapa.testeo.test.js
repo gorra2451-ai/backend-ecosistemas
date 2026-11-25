@@ -141,3 +141,18 @@ describe('simulaciones', () => {
     cargarEscenario(TU); expect(haySimulacion()).toBe(true)
   })
 })
+
+import { LIMITES_MAPA, ZMG_RECT, ZOOM_MIN, topAvisoRuta } from './mapa.js'
+describe('límites del mapa (escritorio)', () => {
+  it('la ZMG completa cabe dentro de los límites, con margen', () => {
+    const [[s, o], [n, e]] = LIMITES_MAPA
+    expect(s).toBeLessThan(ZMG_RECT.sur); expect(o).toBeLessThan(ZMG_RECT.oeste)
+    expect(n).toBeGreaterThan(ZMG_RECT.norte); expect(e).toBeGreaterThan(ZMG_RECT.este)
+    expect(ZOOM_MIN).toBeGreaterThanOrEqual(9)
+  })
+  it('el aviso de ruta queda debajo de la barra de arriba, no a media pantalla', () => {
+    expect(topAvisoRuta(76, 76 + 70)).toBe(78) // escritorio: fila de leyenda ~70 px
+    expect(topAvisoRuta(0, 188)).toBe(196) // celular: igual que antes
+    expect(topAvisoRuta(100, undefined)).toBe(12)
+  })
+})

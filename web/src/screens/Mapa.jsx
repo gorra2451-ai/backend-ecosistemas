@@ -383,8 +383,10 @@ function AvisoPractica() {
   if (!haySimulacion()) return null
   return (
     <div className="mp-practica" role="status">
-      <span><b>Modo práctica</b> · datos falsos</span>
-      <button type="button" onClick={() => { quitarSimulaciones(); refrescar(); avisar(AVISO_QUITAR_SIM) }}>Quitar simulaciones</button>
+      <span><b>Modo práctica</b><span className="mp-practica-sub"> · datos falsos</span></span>
+      <button type="button" aria-label="Quitar simulaciones" onClick={() => { quitarSimulaciones(); refrescar(); avisar(AVISO_QUITAR_SIM) }}>
+        Quitar<span className="only-desk"> simulaciones</span>
+      </button>
     </div>
   )
 }
@@ -485,6 +487,8 @@ export function TopBar() {
             <Icon name="accesibilidad" size={20} />Accesibilidad
           </button>
         </div>
+        {/* Mini leyenda debajo de los botones (2026-11-24: flotando sobre la hoja tapaba la barra en iPhone SE/13) */}
+        <div className="mp-top-row mp-top-row--mini" data-borde-mapa><MiniLeyenda /></div>
       </div>
       <div className="only-desk"><Leyenda desk /></div>
       <AvisoEjemplo />
@@ -559,7 +563,6 @@ export function Hoja() {
   if (sheet === 'full') {
     return (
       <div className="mp-full mp-arrastre" {...arrastre}>
-        <MiniLeyenda />
         <button type="button" className="mp-handle mp-handle--solo mp-handle--full" aria-label="Mostrar alertas cercanas" onClick={() => setSheet('min')}>
           <span className="sheet-handle" />
         </button>
@@ -591,7 +594,6 @@ export function Hoja() {
 
   return (
     <section className="sheet mp-sheet mp-arrastre" aria-label="Acciones" {...arrastre}>
-      <MiniLeyenda />
       <div className="mp-min-head">
         <button type="button" className="mp-handle mp-handle--min" onClick={() => setSheet('mid')} aria-expanded="false"
           aria-label={n ? `Ver las ${n} alertas cercanas` : 'Ver alertas cercanas'}>
@@ -602,6 +604,7 @@ export function Hoja() {
           <IcoBajar />
         </button>
       </div>
+      {/* En pantallas bajas la tarjeta se oculta (CSS): lo más cercano ya lo dice la tarjeta de arriba */}
       {datos.items[0] && <TarjetaCercana it={datos.items[0]} onClick={() => abrirItem(ir, datos.items[0])} />}
       {/* Reportar = botón "+" de la barra de abajo (D-030) */}
     </section>
@@ -637,7 +640,9 @@ export function Sidebar() {
 export function DeskHeader() {
   const { ir, screen } = useApp()
   const nav = [[null, 'Mapa'], ['buscar', 'Buscar'], ['acudo', '¿A quién acudo?'], ['refugios', 'Refugios'], ['alertas', 'Avisos'], ['mas', 'Más']]
-  const activo = nav.some(([id]) => id === screen) ? screen : screen === 'acudoresp' ? 'acudo' : null
+  // Pantalla → pestaña. Antes, cualquier pantalla fuera del menú (Accesibilidad, Privacidad…) marcaba "Mapa".
+  const DE = { acudoresp: 'acudo', preferencias: 'alertas', alertadetalle: 'alertas', privacidad: 'mas', privacidad_permisos: 'mas', zona: null, inicio: null }
+  const activo = !screen ? null : nav.some(([id]) => id === screen) ? screen : screen in DE ? DE[screen] : 'ninguna'
   return (
     <>
       <div className="mp-brand"><Logo size={40} /><span>¡Aguas!</span></div>
@@ -648,7 +653,7 @@ export function DeskHeader() {
       </nav>
       <div className="mp-head-right">
         <span className="mp-sello"><Icon name="escudo" size={20} stroke={2} />Anónimo. No guardamos dónde estás.</span>
-        <button type="button" className="mp-head-a11y" onClick={() => ir('ajustes')}><Icon name="accesibilidad" size={20} />Accesibilidad</button>
+        <button type="button" className="mp-head-a11y" aria-current={screen === 'ajustes' ? 'page' : undefined} onClick={() => ir('ajustes')}><Icon name="accesibilidad" size={20} />Accesibilidad</button>
       </div>
     </>
   )
@@ -884,7 +889,7 @@ function PanelRutas({ rutas, onVer, real, medio, onMedio }) {
 const SUGERENCIAS = POPULARES
 
 export function Buscar() {
-  const { ir, params, ubic, medio, setMedio, avisar } = useApp()
+  const { ir, params, ubic, medio, setMedio, avisar, setSheet } = useApp()
   const datos = useDatosMapa()
   const [q, setQ] = useState(params?.q || '')
   const [res, setRes] = useState({ estado: 'vacio', lista: [], q: '' }) // vacio | corto | buscando | listo | error
@@ -936,7 +941,8 @@ export function Buscar() {
   // Llegó el GPS real (o te moviste): la ruta vieja ya no sale de donde estás.
   useEffect(() => { if (rutas && debeRecalcular(rutas, ubic)) calcular(rutas.medio) }, [ubic.lat, ubic.lng]) // eslint-disable-line
   const cambiarMedio = (m) => { setMedio(m); if (rutas) calcular(m) }
-  const verRuta = (i) => { verRutaEnMapa(i); ir(null) }
+  // En celular la hoja tapaba la ruta (prueba 2026-11-24): al ver la ruta se baja la hoja y queda el mapa.
+  const verRuta = (i) => { verRutaEnMapa(i); if (window.innerWidth < 1024) setSheet('full'); ir(null) }
 
   // Teclear solo cambia el texto; si se borra todo, vuelven los atajos. No consulta a Nominatim.
   function escribir(v) {

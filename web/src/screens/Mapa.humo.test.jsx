@@ -20,8 +20,10 @@ describe('smoke render', async () => {
   it('TopBar, Hoja (min/full/mid), Sidebar, Mas', () => {
     let h = renderToString(<M.TopBar />)
     expect(h).toContain('En auto'); expect(h).toContain('Leyenda'); expect(h).toContain('Filtrar'); expect(h).toContain('punto de ejemplo')
-    h = renderToString(<M.Hoja />); expect(h).toContain('Banqueta')
-    app.sheet = 'full'; expect(renderToString(<M.Hoja />)).toContain('Cubre llanta')
+    // Mini leyenda (B/M/A) vive en la barra de arriba, en todos los estados de la hoja (2026-11-24)
+    expect(h).toContain('Banqueta'); expect(h).toContain('Cubre llanta')
+    h = renderToString(<M.Hoja />); expect(h).toContain('Cerca de ti')
+    app.sheet = 'full'; expect(renderToString(<M.Hoja />)).toContain('Ver alertas cercanas')
     app.sheet = 'mid'; expect(renderToString(<M.Hoja />)).toContain('Alertas')
     expect(renderToString(<M.Sidebar />)).toContain('Buscando reportes')
     h = renderToString(<M.Mas />); expect(h).toContain('Privacidad y permisos'); expect(h).toContain('Coche atrapado')

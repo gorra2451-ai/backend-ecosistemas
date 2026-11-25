@@ -400,3 +400,67 @@
 .mp-z-etq{font:700 14px var(--f-body);color:var(--mu)}
 .mp-z-hacer ul{font:400 17px/1.4 var(--f-body)}
 .mp-link--wa{min-height:60px;border:2px solid var(--tx);background:var(--s1);color:var(--tx);font-size:18px}
+
+/* ---------- Escritorio (presentación 2026-11-24): los controles del mapa venían del tamaño del celular y en
+   una pantalla de laptop/monitor se veían diminutos (leyenda 12 px, zoom 48 px, © 32 px, pines 44 px). ---------- */
+@media (min-width:1024px){
+  .mp-legend{gap:8px}
+  .mp-legend .legend-item{min-height:48px;padding:6px 14px 6px 10px;gap:8px;border-radius:12px;font:700 16px var(--f-body);box-shadow:var(--sh-legend-light)}
+  .mp-legend .mp-sw,.mp-legend .mp-sw--risk{width:20px;height:20px}
+  .mp-legend .mp-sw--pend{width:18px;height:18px}
+  .mp-legend-row{gap:8px}
+  .mp-capas-btn{min-height:52px;padding:0 16px;font-size:16px;border-radius:14px}
+  .mp-zoom{width:56px!important;height:56px!important;font-size:30px!important;border-radius:16px!important}
+  .mp-miubic{min-height:56px;font-size:16px;padding:0 14px}
+  .mp-miubic svg{width:24px;height:24px}
+  .mp-creditos{width:40px!important;height:40px!important;font-size:17px!important}
+  .mp-practica{font-size:16px;padding:6px 6px 6px 16px}
+  .mp-practica button{min-height:48px;font-size:15px}
+  /* Pines un 20 % más grandes; crecen desde la punta para que sigan marcando el mismo punto */
+  .leaflet-marker-icon .pin{transform:scale(1.2);transform-origin:50% 100%}
+  .leaflet-marker-icon .mk-you{transform:scale(1.25)}
+  .leaflet-marker-icon .mk-pend,.leaflet-marker-icon .mk-ref{transform:scale(1.2)}
+}
+/* Monitores grandes (1920+): un paso más */
+@media (min-width:1700px){
+  .mp-legend .legend-item{min-height:52px;font-size:17px}
+  .mp-capas-btn{min-height:56px;font-size:17px}
+  .leaflet-marker-icon .pin{transform:scale(1.35)}
+}
+/* Al hacer clic en el mapa el contorno de foco salía como marco turquesa por fuera (captura de Diego): va por dentro */
+.map-area .leaflet-container:focus-visible{outline-offset:-3px}
+
+/* ---------- Celular (prueba en iPhone 13 / Pixel 7, 2026-11-24): entre la barra de arriba y la hoja casi no se
+   veía el mapa; la mini leyenda tapaba "Cómo me muevo" y "Leyenda"; el "+" del zoom chocaba con la barra. ---------- */
+@media (max-width:1023.98px){
+  .mp-controles .mp-zoom{display:none!important} /* en celular se acerca con dos dedos */
+  .mp-practica{padding:2px 2px 2px 12px;font-size:14px}
+  .mp-practica button{min-height:40px}
+  /* Hoja mínima compacta: sin dibujo ni línea de "actualizado"; nivel y tránsito siguen a la vista */
+  .mp-sheet .mp-near{padding:10px 12px}
+  .mp-sheet .mp-near-art,.mp-sheet .mp-near .mp-row-m{display:none}
+  .mp-sheet .mp-near .mp-badges{margin-top:4px}
+  /* Mini leyenda: debajo de los botones de arriba, a la izquierda; deja libre el resto del mapa */
+  .mp-top-row--mini{pointer-events:none}
+  .mp-top-row--mini .mp-minileyenda{position:static;pointer-events:auto;font-size:12px;padding:5px 8px}
+  /* Pantallas bajas (iPhone SE/13/14, la mayoría de Android): la hoja mínima solo dice "Cerca de ti" + conteo */
+  .mp-sheet .mp-near{display:none}
+  .mp-practica-sub{display:none}
+}
+@media (max-width:1023.98px) and (min-height:900px){ .mp-sheet .mp-near{display:flex} }
+@media (max-width:1023.98px){ [data-ruta] .mp-top-row--mini{display:none} }
+/* Celulares angostos (iPhone SE, 375 px): los 3 botones no cabían en una fila. "Leyenda" ya la abre la mini leyenda. */
+@media (max-width:399.98px){
+  .mp-top-row--chips .mp-capas-btn:first-child{display:none}
+  .mp-top-row--chips .mp-capas-btn{flex:1;justify-content:center}
+}
+/* La etiqueta SIMULACIÓN va en su propio renglón (se encimaba con "Lo más cerca") */
+.mp-row-tx > .mp-simtag{display:block;width:max-content}
+/* Celulares bajos (iPhone SE, 667 px): "Mi ubicación" solo con ícono y la píldora de alertas a la izquierda, para
+   que no se encimen con una ruta a la vista */
+@media (max-width:1023.98px) and (max-height:700px){
+  .mp-miubic span{display:none}
+  .mp-miubic{min-width:52px;justify-content:center}
+  .mp-verlista--pill{align-self:flex-start}
+}
+.mp-head-a11y[aria-current=page]{border:2px solid var(--acc);background:var(--chip)}
