@@ -73,3 +73,24 @@
 .cf-aviso-voz p{margin:0;font:var(--t-small)}
 .cf-aviso-voz .confirm-link{align-self:center}
 .cf-nota-voz{margin:0;text-align:center;font:var(--t-small);opacity:.85}
+
+/* Presentación · escritorio: tarjeta un poco más ancha y etiquetas/íconos proporcionales. */
+@media (min-width:1024px){
+  .confirm{max-width:480px}
+  .cf-badge{min-height:34px;font-size:15px;padding:2px 12px}
+  .cf-badge svg{width:18px;height:18px}
+  .cf-sw{width:18px;height:18px}
+  .cf-insignia{font-size:16px}
+  .cf-insignia svg,.cf-etq svg{width:20px;height:20px}
+  .confirm-si svg{width:30px;height:30px}
+  .confirm-no svg{width:26px;height:26px}
+  .confirm-link{font-size:16px}
+}
+
+/* Celulares angostos (iPhone SE): los botones grandes caben en una línea y no se cortan dentro de la tarjeta. */
+@media (max-width:399.98px){
+  .confirm-si{min-height:64px;font-size:20px;gap:8px;padding:0 10px}
+  .confirm-no{min-height:56px;font-size:17px;gap:8px;padding:0 10px}
+  .confirm-si svg,.confirm-no svg{width:22px;height:22px}
+  .cf-card h2{font-size:26px}
+}
