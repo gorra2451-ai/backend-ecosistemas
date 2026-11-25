@@ -11,7 +11,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useApp } from '../lib/store.jsx'
 import { zonasPublicas, reportesEnArea, refugiosPublicos, escucharCambios, bboxAlrededor } from '../lib/api.js'
-import { leerCapas, suscribirCapas, filtrarCapas, zonasConNivelAgua, leerCentro, suscribirCentro, leerEnfoque, suscribirEnfoque, enfocarEn, centroVisible } from '../lib/mapa.js'
+import { leerCapas, suscribirCapas, filtrarCapas, zonasConNivelAgua, leerCentro, suscribirCentro, leerEnfoque, suscribirEnfoque, enfocarEn, centroVisible, LIMITES_MAPA, ZOOM_MIN, topAvisoRuta } from '../lib/mapa.js'
 import { agruparRafaga } from '../lib/rafaga.js'
 
 const COLOR = { bajo: 'var(--rb)', medio: 'var(--rm)', alto: 'var(--ra)', critico: 'var(--risk)' }
@@ -58,11 +58,32 @@ function Creditos() {
           © OpenStreetMap
         </a>
       )}
-      <button type="button" aria-expanded={abierto} aria-label="Créditos del mapa: OpenStreetMap" onClick={() => setAbierto((v) => !v)}
+      <button type="button" className="mp-creditos" aria-expanded={abierto} aria-label="Créditos del mapa: OpenStreetMap" onClick={() => setAbierto((v) => !v)}
         style={{ width: 32, height: 32, border: 'var(--bw) solid var(--line)', borderRadius: 10, background: 'var(--s1)',
           color: 'var(--mu)', font: '700 15px var(--f-body)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>©</button>
     </div>
   )
+}
+
+// Alto de lo que tapa la parte de arriba del mapa (barra/tarjeta en celular, leyenda en escritorio). Se vuelve a
+// medir al cambiar de tamaño. Lo usan el aviso de ruta y los controles para no quedar debajo de la barra.
+function useTopMapa(activo = true, sel = '.map-top .mp-top') {
+  const map = useMap()
+  const [top, setTop] = useState(196)
+  useEffect(() => {
+    if (!activo) return
+    const medir = () => {
+      const cont = map.getContainer().getBoundingClientRect()
+      const arriba = document.querySelector(sel)?.getBoundingClientRect()
+      setTop(topAvisoRuta(cont.top, arriba?.height ? arriba.bottom : undefined))
+    }
+    medir()
+    const ro = new ResizeObserver(medir)
+    document.querySelectorAll('.map-top .mp-top').forEach((el) => ro.observe(el))
+    window.addEventListener('resize', medir)
+    return () => { ro.disconnect(); window.removeEventListener('resize', medir) }
+  }, [activo]) // eslint-disable-line
+  return top
 }
 
 // Ruta elegida en "Cómo llegar" (D-031). Lee el MISMO estado que el panel de Buscar (lib/rutas.js):
@@ -73,7 +94,11 @@ function RutaEnMapa() {
   const e = useSyncExternalStore(suscribirRuta, leerRutas)
   const r = e?.enMapa ? rutaActiva(e) : null
   const lineas = useMemo(() => (e?.enMapa && e.estado === 'listo' ? e.lista.map((x) => x.coords.map(([lng, lat]) => [lat, lng])) : []), [e?.seq, e?.enMapa, e?.lista]) // eslint-disable-line
-  useEffect(() => { const l = lineas[e?.elegida]; if (l?.length) map.fitBounds(l, { padding: [40, 40] }) }, [lineas, e?.elegida]) // eslint-disable-line
+  const top = useTopMapa(!!r)
+  // Con ruta a la vista se esconde la mini leyenda en celular (CSS [data-ruta]): su lugar lo toma el aviso de ruta
+  useEffect(() => { if (!r) return; document.documentElement.dataset.ruta = ''; return () => { delete document.documentElement.dataset.ruta } }, [!!r]) // eslint-disable-line
+  // Encuadre: la ruta no queda debajo de la barra de arriba ni del aviso de ruta (≈ 70 px)
+  useEffect(() => { const l = lineas[e?.elegida]; if (l?.length) map.fitBounds(l, { paddingTopLeft: [40, top + 90], paddingBottomRight: [90, 110] }) }, [lineas, e?.elegida]) // eslint-disable-line
   if (!r) return null
   const nombre = e.destino?.titulo || String(e.destino?.nombre || '').split(',')[0]
   return (
@@ -85,7 +110,7 @@ function RutaEnMapa() {
       <Polyline key={'b' + e.elegida} positions={lineas[e.elegida]} pathOptions={{ color: '#05080F', weight: 11, opacity: 0.6 }} interactive={false} />
       <Polyline key={'a' + e.elegida} positions={lineas[e.elegida]} pathOptions={{ color: 'var(--acc)', weight: 7, opacity: 1 }} interactive={false} />
       <div ref={(el) => { if (el) { L.DomEvent.disableClickPropagation(el) } }} role="status"
-        style={{ position: 'absolute', left: 12, right: 72, top: 196, zIndex: 455, display: 'flex', gap: 8, alignItems: 'center',
+        style={{ position: 'absolute', left: 12, right: 72, top, zIndex: 455, maxWidth: 720, display: 'flex', gap: 8, alignItems: 'center',
           background: 'var(--s1)', border: '2px solid var(--acc)', borderRadius: 14, padding: '6px 6px 6px 12px',
           color: 'var(--tx)', font: '700 14px/1.3 var(--f-body)' }}>
         <span style={{ flex: 1, minWidth: 0 }}>
@@ -148,11 +173,13 @@ function Controles({ ubic }) {
     if (!ubic.real) { avisar('Activa tu ubicación para volver a donde estás'); return }
     map.setView([ubic.lat, ubic.lng], Math.max(map.getZoom(), 15))
   }
+  // En celular los controles van a la derecha de la mini leyenda (misma altura), no debajo de ella
+  const topBarra = useTopMapa(true, window.innerWidth < 1024 ? '.map-top .mp-top-row--chips' : '.map-top .mp-top')
   return (
-    <div ref={ref}
-      style={{ position: 'absolute', right: 12, top: '40%', zIndex: 455, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-      <button style={b} aria-label="Acercar el mapa" onClick={() => map.zoomIn()}>+</button>
-      <button style={b} aria-label="Alejar el mapa" onClick={() => map.zoomOut()}>−</button>
+    <div ref={ref} className="mp-controles"
+      style={{ position: 'absolute', right: 12, top: `max(40%, ${topBarra}px)`, zIndex: 455, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+      <button className="mp-zoom" style={b} aria-label="Acercar el mapa" onClick={() => map.zoomIn()}>+</button>
+      <button className="mp-zoom" style={b} aria-label="Alejar el mapa" onClick={() => map.zoomOut()}>−</button>
       <button className="mp-miubic" onClick={recentrar}><IcoDiana /><span>Mi ubicación</span></button>
       <Creditos />
     </div>
@@ -192,8 +219,9 @@ export default function MapView({ centrarSeq = 0 }) {
   const tiles = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
   return (
     <MapContainer center={[ubic.lat, ubic.lng]} zoom={15} zoomControl={false} attributionControl={false}
+      minZoom={ZOOM_MIN} maxBounds={LIMITES_MAPA} maxBoundsViscosity={1}
       style={{ position: 'absolute', inset: 0 }}>
-      <TileLayer url={tiles} maxZoom={19} />
+      <TileLayer url={tiles} maxZoom={19} minZoom={ZOOM_MIN} />
       <Seguir ubic={ubic} centrarSeq={centrarSeq} />
       <Controles ubic={ubic} />
       <CentrarEn />

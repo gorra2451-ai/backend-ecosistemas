@@ -312,3 +312,13 @@ export function abrirPanel(p) {
   oyentesPanel.forEach((f) => f())
 }
 export function suscribirPanel(f) { oyentesPanel.add(f); return () => oyentesPanel.delete(f) }
+
+// Límites del mapa (escritorio: alejar con trackpad llevaba al mapamundi sin calles). Mismo rectángulo provisional
+// de la ZMG que la base (`limites_zmg`, 0000_base: -103.75,20.30 → -102.95,21.05) + ~15 km de margen.
+export const ZMG_RECT = { sur: 20.30, oeste: -103.75, norte: 21.05, este: -102.95 }
+export const LIMITES_MAPA = [[ZMG_RECT.sur - 0.15, ZMG_RECT.oeste - 0.15], [ZMG_RECT.norte + 0.15, ZMG_RECT.este + 0.15]]
+export const ZOOM_MIN = 10 // a 10 se ve toda la ZMG; menos ya no hay nada que reportar
+
+// Aviso de "Ruta a …": va justo debajo de lo que tapa la parte de arriba del mapa (en celular la tarjeta de estado,
+// en escritorio solo la fila de leyenda/filtros). Antes estaba fijo a 196 px: en escritorio quedaba a media pantalla.
+export const topAvisoRuta = (contTop, arribaBottom) => Math.max(12, Math.round((arribaBottom ?? contTop) - contTop + 8))
