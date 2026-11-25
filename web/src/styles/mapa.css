@@ -456,3 +456,10 @@
 }
 /* La etiqueta SIMULACIÓN va en su propio renglón (se encimaba con "Lo más cerca") */
 .mp-row-tx > .mp-simtag{display:block;width:max-content}
+/* Celulares bajos (iPhone SE, 667 px): "Mi ubicación" solo con ícono y la píldora de alertas a la izquierda, para
+   que no se encimen con una ruta a la vista */
+@media (max-width:1023.98px) and (max-height:700px){
+  .mp-miubic span{display:none}
+  .mp-miubic{min-width:52px;justify-content:center}
+  .mp-verlista--pill{align-self:flex-start}
+}

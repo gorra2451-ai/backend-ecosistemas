@@ -67,22 +67,25 @@ function Creditos() {
 
 // Alto de lo que tapa la parte de arriba del mapa (barra/tarjeta en celular, leyenda en escritorio). Se vuelve a
 // medir al cambiar de tamaño. Lo usan el aviso de ruta y los controles para no quedar debajo de la barra.
-function useTopMapa(activo = true, sel = '.map-top .mp-top') {
+function useTopMapa(activo = true, sel = '.map-top .mp-top', clave = '') {
   const map = useMap()
   const [top, setTop] = useState(196)
   useEffect(() => {
     if (!activo) return
     const medir = () => {
       const cont = map.getContainer().getBoundingClientRect()
-      const arriba = document.querySelector(sel)?.getBoundingClientRect()
+      const els = sel.split('|').map((x) => document.querySelector(x)).filter(Boolean)
+      const arriba = els.length ? { bottom: Math.max(...els.map((el) => el.getBoundingClientRect().bottom)), height: 1 } : null
       setTop(topAvisoRuta(cont.top, arriba?.height ? arriba.bottom : undefined))
     }
     medir()
     const ro = new ResizeObserver(medir)
-    document.querySelectorAll('.map-top .mp-top').forEach((el) => ro.observe(el))
+    // También la barra completa: si cambia de alto (p. ej. se oculta la mini leyenda) lo de abajo se mueve sin cambiar de tamaño
+    ;[...sel.split('|'), '.map-top .mp-top'].forEach((x) => document.querySelectorAll(x).forEach((el) => ro.observe(el)))
+    const t = setTimeout(medir, 350) // tras la animación de la hoja / el panel
     window.addEventListener('resize', medir)
-    return () => { ro.disconnect(); window.removeEventListener('resize', medir) }
-  }, [activo]) // eslint-disable-line
+    return () => { ro.disconnect(); clearTimeout(t); window.removeEventListener('resize', medir) }
+  }, [activo, sel, clave]) // eslint-disable-line
   return top
 }
 
@@ -109,7 +112,7 @@ function RutaEnMapa() {
       ))}
       <Polyline key={'b' + e.elegida} positions={lineas[e.elegida]} pathOptions={{ color: '#05080F', weight: 11, opacity: 0.6 }} interactive={false} />
       <Polyline key={'a' + e.elegida} positions={lineas[e.elegida]} pathOptions={{ color: 'var(--acc)', weight: 7, opacity: 1 }} interactive={false} />
-      <div ref={(el) => { if (el) { L.DomEvent.disableClickPropagation(el) } }} role="status"
+      <div className="mp-ruta-aviso" ref={(el) => { if (el) { L.DomEvent.disableClickPropagation(el) } }} role="status"
         style={{ position: 'absolute', left: 12, right: 72, top, zIndex: 455, maxWidth: 720, display: 'flex', gap: 8, alignItems: 'center',
           background: 'var(--s1)', border: '2px solid var(--acc)', borderRadius: 14, padding: '6px 6px 6px 12px',
           color: 'var(--tx)', font: '700 14px/1.3 var(--f-body)' }}>
@@ -174,13 +177,16 @@ function Controles({ ubic }) {
     map.setView([ubic.lat, ubic.lng], Math.max(map.getZoom(), 15))
   }
   // En celular los controles van a la derecha de la mini leyenda (misma altura), no debajo de ella
-  const topBarra = useTopMapa(true, window.innerWidth < 1024 ? '.map-top .mp-top-row--chips' : '.map-top .mp-top')
+  // Con ruta a la vista, además debajo del aviso de ruta (en iPhone SE se encimaban)
+  const ruta = useSyncExternalStore(suscribirRuta, leerRutas)
+  const conRuta = !!(ruta?.enMapa && ruta.estado === 'listo')
+  const topBarra = useTopMapa(true, (window.innerWidth < 1024 ? '.map-top .mp-top-row--chips' : '.map-top .mp-top') + (conRuta ? '|.mp-ruta-aviso' : ''), String(conRuta))
   return (
     <div ref={ref} className="mp-controles"
       style={{ position: 'absolute', right: 12, top: `max(40%, ${topBarra}px)`, zIndex: 455, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
       <button className="mp-zoom" style={b} aria-label="Acercar el mapa" onClick={() => map.zoomIn()}>+</button>
       <button className="mp-zoom" style={b} aria-label="Alejar el mapa" onClick={() => map.zoomOut()}>−</button>
-      <button className="mp-miubic" onClick={recentrar}><IcoDiana /><span>Mi ubicación</span></button>
+      <button className="mp-miubic" aria-label="Mi ubicación" onClick={recentrar}><IcoDiana /><span>Mi ubicación</span></button>
       <Creditos />
     </div>
   )
