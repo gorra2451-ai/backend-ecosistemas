@@ -217,15 +217,18 @@ function Interruptor({ k, t, d, sw, capas }) {
 function PanelCapas({ pestana, onCerrar, fuenteLluvia }) {
   const capas = useSyncExternalStore(suscribirCapas, leerCapas)
   const n = filtrosActivos(capas)
-  const { prefs, setPrefs } = useApp()
+  const { prefs, setPrefs, avisar } = useApp()
   const dalton = a11yActivo(prefs, 'dalton')
   // Junto a la leyenda: ahí es donde se nota si los colores no se distinguen.
   const alternarDalton = () => {
     const p = alternarA11y(prefs, 'dalton')
     setPrefs(p)
     guardarAccesibilidad({ daltonismo: a11yActivo(p, 'dalton') }).catch(() => {})
+    // Que se note el cambio aunque el mapa no tenga reportes (testeo iPad: "el modo daltonismo no cambia")
+    avisar(a11yActivo(p, 'dalton') ? 'Modo daltonismo activado: niveles en azul → naranja, sin rojo ni verde' : 'Modo daltonismo desactivado')
   }
   const cerrarRef = useRef(null)
+  const abajoEnFondo = useRef(false)
   useEffect(() => {
     cerrarRef.current?.focus()
     const tecla = (e) => { if (e.key === 'Escape') onCerrar() }
@@ -238,7 +241,10 @@ function PanelCapas({ pestana, onCerrar, fuenteLluvia }) {
       className="mp-tab" onClick={() => abrirPanel(k)}>{t}{k === 'filtros' && n > 0 && <span className="mp-tab-n">{n}</span>}</button>
   )
   return createPortal(
-    <div className="mp-capas-fondo" onClick={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
+    // Se cierra solo si el toque EMPEZÓ y terminó en el fondo (iPad: un deslizamiento que empezaba en el panel y
+    // terminaba afuera, o un toque durante el rebote, se leía como "tocar fuera" y cerraba el panel).
+    <div className="mp-capas-fondo" onPointerDown={(e) => { abajoEnFondo.current = e.target === e.currentTarget }}
+      onClick={(e) => { if (abajoEnFondo.current && e.target === e.currentTarget) onCerrar(); abajoEnFondo.current = false }}>
       <section className="mp-capas" role="dialog" aria-modal="true" aria-labelledby="mp-capas-t">
         <div className="mp-capas-head">
           <h2 id="mp-capas-t">{filtros ? 'Filtrar reportes' : 'Leyenda del mapa'}</h2>

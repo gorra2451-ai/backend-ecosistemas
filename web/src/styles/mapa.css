@@ -464,3 +464,44 @@
   .mp-verlista--pill{align-self:flex-start}
 }
 .mp-head-a11y[aria-current=page]{border:2px solid var(--acc);background:var(--chip)}
+
+/* ---------- Panel Leyenda/Filtros (video del iPad, 2026-11-25) ----------
+   Causa: `.mp-capas{max-height:calc(100dvh - 24px)}` (arriba) le ganaba a la regla de escritorio y el panel, que en
+   escritorio/iPad empieza 92 px abajo, se salía 68 px de la pantalla: "Listo" cortado y, en Safari del iPad, al
+   deslizar se movía TODA la página (brincos) y un toque podía caer en el fondo y cerrar el panel.
+   Ahora el panel mide como máximo el espacio del fondo fijo (que ya descuenta su padding) y solo su cuerpo se desplaza. */
+.mp-capas-fondo{overscroll-behavior:contain}
+.mp-capas{max-height:100%!important;display:flex;flex-direction:column}
+/* Encabezado de escritorio en tablets/laptops chicas (iPad horizontal 1024–1279): "¿A quién acudo?" y el sello se
+   partían en dos renglones */
+@media (min-width:1024px) and (max-width:1279.98px){
+  .mp-nav{gap:2px}
+  .mp-nav button{padding:0 10px;font-size:15px;white-space:nowrap}
+  .mp-sello{display:none}
+}
+.mp-nav button{white-space:nowrap}
+
+/* ---------- Celular acostado (alto ≤ 500 px, p. ej. iPhone en horizontal: 343 px) ----------
+   Las barras de arriba y abajo tapaban el mapa entero. Queda: buscar + botones en una fila, hoja de una línea y
+   barra inferior más baja. El estado de la zona se sigue viendo al girar el celular o en "Cerca de ti". */
+@media (max-width:1023.98px) and (max-height:500px){
+  .map-top{padding:6px 12px}
+  .mp-top .mp-top-row:has(.mp-status),.mp-top-row--mini,.mp-practica-sub{display:none}
+  .mp-top{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px}
+  .mp-top > .only-mobile.mp-top{flex-direction:row;flex-wrap:nowrap;flex:1;min-width:0}
+  .mp-top-row{flex:1;min-width:0}
+  .mp-top-row--chips{flex:none;flex-wrap:nowrap}
+  .mp-search{min-height:44px}
+  .mp-capas-btn--sm{min-height:44px}
+  .mp-practica{flex:none;padding:2px 2px 2px 10px}
+  .mp-practica button{min-height:40px}
+  .mp-sheet .mp-resumen,.mp-sheet .mp-min-t > :not(b){display:none}
+  .mp-sheet{padding-top:2px;padding-bottom:4px}
+  .tabbar{padding-top:2px;padding-bottom:calc(4px + env(safe-area-inset-bottom))}
+  .tabbar-pill{height:50px}
+  .tab{min-height:46px}
+  .tab--centro{margin-top:-18px}
+  .tab-mas{width:52px;height:52px;border-width:4px}
+  .tab-gota{top:2px;width:46px;height:46px;left:calc(var(--i) * 20% + 10% - 23px)}
+}
+@media (max-width:1023.98px) and (max-height:500px){ .toast-wrap{top:60px} }
