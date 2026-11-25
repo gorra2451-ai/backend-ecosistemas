@@ -505,3 +505,17 @@
   .tab-gota{top:2px;width:46px;height:46px;left:calc(var(--i) * 20% + 10% - 23px)}
 }
 @media (max-width:1023.98px) and (max-height:500px){ .toast-wrap{top:60px} }
+/* Celulares muy angostos (Galaxy Fold cerrado viejo, 280 px): el resumen por nivel se apilaba en columna y la hoja
+   tapaba medio mapa. "Cerca de ti" queda en una línea; el detalle está al abrir la lista. */
+@media (max-width:339.98px){
+  .mp-sheet .mp-resumen{display:none}
+  .mp-top-row--mini .mp-minileyenda{font-size:11px}
+}
+/* Tablets horizontales y laptops chicas (1024–1279, p. ej. Surface Duo abierto, iPad horizontal): barra lateral más
+   angosta para que la leyenda y los botones quepan sobre el mapa */
+@media (min-width:1024px) and (max-width:1279.98px){
+  .desk-sidebar{width:380px;padding:18px}
+  .mp-legend .legend-item{font-size:14px;min-height:44px;padding:4px 10px 4px 8px}
+  .mp-capas-btn{min-height:44px;font-size:15px;padding:0 12px}
+}
+@media (max-width:339.98px){ .tabbar{padding-left:6px;padding-right:6px} .tab{font-size:10px;letter-spacing:-.01em} .tab-mas{width:54px;height:54px} }
