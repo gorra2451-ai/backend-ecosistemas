@@ -99,3 +99,31 @@
   .screen.full .onb-aviso-cuerpo,.screen.full .onb-atras,.screen.full .onb .onb-volver{background:var(--bg)}
   .onb-spacer{flex:none;min-height:4px}
 }
+
+/* Presentación: los .btn-text sin tamaño caían a 13.3 px ("Leer el aviso de privacidad completo") */
+.onb .btn-text{font-size:16px}
+.onb-sello .btn-text{padding:0;text-align:left}
+/* Escritorio: tarjeta más ancha y textos/íconos proporcionales (antes 14 px y glifos de 20 px en cajas de 44) */
+@media (min-width:1024px){
+  .screen.full:has(.onb) > .screen-inner{max-width:600px;padding:32px 40px}
+  .onb-ic{width:52px;height:52px;border-radius:16px} .onb-ic svg{width:28px;height:28px}
+  .onb-lead{font-size:18px}
+  .onb-beneficios li{font-size:18px}
+  .onb-sello .t,.onb-permiso .t,.onb-ajuste .tx b,.onb-opt{font-size:18px}
+  .onb-sello .s,.onb-permiso .s,.onb-ajuste .tx span,.onb-resumen{font-size:15px}
+  .onb-puntos,.onb-tip,.onb-aviso summary,.onb-aviso-cuerpo{font-size:16px}
+  .onb-tip svg{width:24px;height:24px}
+  .onb-tag,.onb-sw .st{font-size:13px}
+  .onb-idchip{font-size:15px}
+  .onb-opt{min-height:68px} .onb-opt .rd{width:26px;height:26px}
+  .onb-acts .btn{font-size:16px;min-height:56px}
+  .onb-atras svg{width:26px;height:26px}
+  .onb-cnt{font-size:16px}
+  .onb-sw .switch{width:60px;height:34px} .onb-sw .switch>i{width:28px;height:28px}
+}
+/* Laptops de 768–900 px de alto: menos aire para que el botón principal quede más cerca */
+@media (min-width:1024px) and (max-height:900px){
+  .screen.full:has(.onb){padding:20px}
+  .screen.full:has(.onb) > .screen-inner{padding:24px 36px}
+  .onb{gap:12px}
+}
