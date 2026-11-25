@@ -94,3 +94,21 @@
   .confirm-si svg,.confirm-no svg{width:22px;height:22px}
   .cf-card h2{font-size:26px}
 }
+/* Fold viejo (280 px): "Desviar ruta ahora" / "Sí, sigue inundado" en una línea. */
+@media (max-width:319.98px){
+  .confirm-si{font-size:17px;gap:6px;padding:0 8px}
+  .confirm-no{font-size:16px;gap:6px;padding:0 8px}
+  .confirm-si svg,.confirm-no svg{width:20px;height:20px}
+  .cf-card h2{font-size:24px}
+}
+/* Celular acostado (≈734×343): la tarjeta se ensancha, los botones van lado a lado y se quedan pegados abajo,
+   así "Sí sigue inundado" / "Desviar ruta" se ven sin desplazar aunque la tarjeta tenga que hacer scroll. */
+@media (max-width:1023.98px) and (max-height:500px){
+  .confirm{max-width:680px;padding:14px 18px;gap:8px}
+  .cf-card h2{font-size:24px}
+  .cf-card .confirm-acciones{position:sticky;bottom:-14px;z-index:1;flex-direction:row;flex-wrap:wrap;gap:8px;
+    margin:0 -18px -14px;padding:8px 18px 14px;background:var(--tx)}
+  .cf-card .confirm-acciones > *{flex:1 1 200px}
+  .confirm-si{min-height:56px;font-size:20px}
+  .confirm-no{min-height:56px;font-size:17px}
+}
