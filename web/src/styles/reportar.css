@@ -213,3 +213,61 @@
 .rp-riesgo button.sec{background:transparent;width:100%}
 /* Listas: etiqueta "Tuyo" en tus reportes */
 .rp-tuyo{display:inline-flex;align-items:center;font:800 14px var(--f-body);background:var(--acc);color:var(--accTx);border-radius:var(--r-pill);padding:2px 10px}
+
+/* Presentación · escritorio (panel derecho de 560 px): íconos y dibujos proporcionales al panel.
+   El tamaño del SVG viene en atributos width/height; el CSS los sobrescribe sin tocar el JSX. */
+@media (min-width:1024px){
+  .rp-tiles .tile svg{width:68px;height:68px}
+  .rp-tiles .tile{gap:10px}
+  .rp-opt{min-height:80px;gap:18px}
+  .rp-opt > svg{width:92px;height:auto}
+  /* Laptops de 768–900 px de alto: "Continuar" / "Enviar" quedaban bajo el pliegue; se quedan pegados abajo del panel. */
+  .screen[aria-label^="Reportar inundación · paso 2"] .rp-spacer ~ .btn-primary,
+  .screen[aria-label^="Reportar inundación · paso 3"] .rp-spacer ~ .btn-primary{position:sticky;bottom:12px;z-index:2;
+    box-shadow:0 0 0 12px var(--bg)}
+  .rp-opt .radio{width:28px;height:28px}
+  .rp-opt.sel .radio{border-width:8px}
+  .rp-hint{font-size:16px;gap:10px}
+  .rp-hint svg{width:22px;height:22px}
+  .rp-stepper li + li::before{top:14px;right:calc(50% + 17px);left:calc(-50% + 17px)}
+  .rp-stepper .dot{width:30px;height:30px}
+  .rp-stepper .dot svg{width:16px;height:16px}
+  .rp-stepper .lbl{font-size:15px}
+  .rp-loc > svg{width:30px;height:30px}
+  .rp-back svg{width:24px;height:24px}
+  .rp-resultados svg{width:22px;height:22px}
+  .rp-link-btn svg,.rp-tel svg{width:24px;height:24px}
+  .rp-drop{min-height:220px;gap:8px}
+  .rp-drop svg{width:60px;height:60px}
+  .rp-resumen li svg{width:22px;height:22px}
+  .rp-sent-ok.grande{width:92px;height:92px;border-radius:28px}
+  .rp-sent-ok.grande svg{width:50px;height:50px}
+  .rp-sin-ayuda p svg{width:24px;height:24px}
+  .rp-cerrar svg{width:22px;height:22px}
+  .rp-badge{width:56px;height:56px;border-radius:16px}
+  .rp-badge svg{width:30px;height:30px}
+  .rp-item > svg:last-child{width:24px;height:24px}
+  .rp-tag{font-size:15px}
+  .rp-tag .rp-sw{width:20px;height:20px}
+  .rp-prueba{font-size:15px}
+  .rp-prueba svg{width:22px;height:22px}
+  .rp-mini-cta svg{width:20px;height:20px}
+  .rp-wa svg{width:26px;height:26px}
+  .rp-tl .col{width:30px}
+  .rp-tl .dot{width:30px;height:30px}
+  .rp-tl .dot svg{width:18px;height:18px}
+  .rp-sub svg{width:18px;height:18px}
+  .rp-err-ico{width:80px;height:80px}
+  .rp-err-ico svg{width:44px;height:44px}
+  /* Pantalla roja: en el panel no hace falta empujar el 911 al pulgar; sin el hueco enorme bajo el aviso. */
+  .rp-riesgo .rp-spacer{flex:0 0 4px}
+  .rp-911 svg{width:46px;height:46px}
+  .rp-riesgo .sec svg{width:26px;height:26px}
+}
+
+/* Celulares angostos (iPhone SE, 320–399 px): "Llamar al 911" en una sola línea. */
+@media (max-width:399.98px){
+  .rp-911{font-size:32px;gap:10px;white-space:nowrap;min-height:104px;padding:0 12px}
+  .rp-911 svg{width:32px;height:32px}
+  .rp-riesgo h1{font-size:44px}
+}
