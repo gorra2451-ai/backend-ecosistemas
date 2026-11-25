@@ -53,3 +53,11 @@
 .bs-ruta-1 b{font:800 20px var(--f-head)}
 .bs-ruta-activa{font:700 12px var(--f-body);color:var(--accTx);background:var(--acc);border-radius:var(--r-pill);padding:3px 8px}
 .bs-ruta .mp-ruta-tag{align-self:flex-start;font-size:14px}
+
+/* Matriz de dispositivos (2026-11-25): "Buscar" y "Cancelar" (.btn-text sin tamaño) caían a 13.3 px, y en celulares
+   angostos (Fold 280, SE 375) aplastaban el campo hasta mostrar solo "Lu…". */
+.mp-buscar .mp-cancelar{font-size:16px;padding:0 8px;flex:none}
+@media (max-width:399.98px){
+  form.mp-buscar{flex-wrap:wrap;justify-content:flex-end;gap:4px 8px}
+  .mp-buscar .mp-buscar-campo{flex:1 1 100%}
+}

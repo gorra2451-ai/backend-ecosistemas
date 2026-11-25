@@ -95,6 +95,12 @@
    CTA <a href=tel:911> min-h 120 r30 bg #fff color #8A1420 800 40px Bricolage + ícono 38;
    secundario min-h 68 r22 border 2px #fff; “Volver” min-h 56 r18 bg rgba(0,0,0,.25) */
 
+/* Fold viejo (280) / Fold cerrado (344): títulos de 32 px partían "Elegir de dónde quiero avisos" en 4 renglones y
+   "Accesibilidad" tocaba el borde derecho. */
+@media (max-width:359.98px){
+  .screen-head h1{font-size:26px;line-height:30px;overflow-wrap:break-word}
+}
+
 /* Animaciones */
 @keyframes rise{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}} /* .24s ease-out (pantallas, hojas) */
 @keyframes fillup{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0)}}              /* .3s celdas nuevas */
