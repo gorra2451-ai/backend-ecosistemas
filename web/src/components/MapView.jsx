@@ -65,6 +65,18 @@ function Creditos() {
   )
 }
 
+// Si el contenedor del mapa cambia de tamaño sin que cambie la ventana (se oculta la barra lateral, gira el iPad,
+// se abre un panel), Leaflet no se entera y deja franjas grises: se le avisa.
+function AjustarTamano() {
+  const map = useMap()
+  useEffect(() => {
+    const ro = new ResizeObserver(() => map.invalidateSize({ pan: false }))
+    ro.observe(map.getContainer())
+    return () => ro.disconnect()
+  }, [map])
+  return null
+}
+
 // Alto de lo que tapa la parte de arriba del mapa (barra/tarjeta en celular, leyenda en escritorio). Se vuelve a
 // medir al cambiar de tamaño. Lo usan el aviso de ruta y los controles para no quedar debajo de la barra.
 function useTopMapa(activo = true, sel = '.map-top .mp-top', clave = '') {
@@ -228,6 +240,7 @@ export default function MapView({ centrarSeq = 0 }) {
       minZoom={ZOOM_MIN} maxBounds={LIMITES_MAPA} maxBoundsViscosity={1}
       style={{ position: 'absolute', inset: 0 }}>
       <TileLayer url={tiles} maxZoom={19} minZoom={ZOOM_MIN} />
+      <AjustarTamano />
       <Seguir ubic={ubic} centrarSeq={centrarSeq} />
       <Controles ubic={ubic} />
       <CentrarEn />

@@ -8,6 +8,8 @@ const tab = (w, h) => ({ viewport: { width: w, height: h }, deviceScaleFactor: 2
 const esc = (w, h) => ({ viewport: { width: w, height: h }, deviceScaleFactor: 1 })
 const D = [
   ['ipad-11-horiz', webkit, devices['iPad (gen 11) landscape'] || tab(1180, 820)], ['ipad-11-vert', webkit, devices['iPad (gen 11)'] || tab(820, 1180)],
+  // Safari real del iPad 10.ª/11.ª gen: 1180×820 (el perfil de Playwright mide 944×656)
+  ['ipad-real-horiz', webkit, tab(1180, 820)], ['ipad-real-vert', webkit, tab(820, 1180)],
   ['ipad-mini-horiz', webkit, devices['iPad Mini landscape']], ['ipad-mini-vert', webkit, devices['iPad Mini']],
   ['ipad-pro11-horiz', webkit, devices['iPad Pro 11 landscape']], ['ipad-pro13-horiz', webkit, tab(1366, 1024)],
   ['tab-s9-horiz', chromium, devices['Galaxy Tab S9 landscape']], ['tab-s9-vert', chromium, devices['Galaxy Tab S9']],
@@ -59,6 +61,11 @@ for (const [n, motor, d] of D) {
     await p.screenshot({ path: `${out}/${n}-3-dalton.png` })
     await t(sw) // regresa
     r.pines = pines0
+    // Con un panel abierto (Refugios) el mapa debe seguir viéndose
+    await t(p.locator('.mp-capas-x')).catch(() => {})
+    await p.evaluate(() => document.querySelector('.mp-capas-fondo')?.click())
+    const ref = p.locator('button:visible').filter({ hasText: /^Refugios$/ }).first()
+    if (await ref.count()) { await t(ref); await p.waitForTimeout(600); r.mapa_con_panel = Math.round(await p.evaluate(() => { const m = document.querySelector('.leaflet-container').getBoundingClientRect(); const s = document.querySelector('.map-area > .screen'); return s ? s.getBoundingClientRect().left - m.left : m.width })) }
   } catch (e) { r.error = e.message.split('\n')[0].slice(0, 90) }
   filas.push(r); console.log(JSON.stringify(r))
   await b.close()

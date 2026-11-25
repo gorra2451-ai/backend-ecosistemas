@@ -519,3 +519,8 @@
   .mp-capas-btn{min-height:44px;font-size:15px;padding:0 12px}
 }
 @media (max-width:339.98px){ .tabbar{padding-left:6px;padding-right:6px} .tab{font-size:10px;letter-spacing:-.01em} .tab-mas{width:54px;height:54px} }
+/* 1024–1279 px (iPad horizontal, Surface Duo, laptops chicas): barra lateral + panel de 560 px dejaban el mapa de
+   24–180 px. Con un panel abierto se oculta la barra lateral (lo mismo está en el panel y en el mapa). */
+@media (min-width:1024px) and (max-width:1439.98px){
+  .app-main:has(.map-area > .screen:not(.full)) .desk-sidebar{display:none}
+}
