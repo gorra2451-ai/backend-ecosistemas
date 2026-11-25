@@ -24,6 +24,14 @@ no se crean reportes reales.
 | offline | se guarda al instante y se reenvía al volver la señal | 0.4 s · 0.0 s |
 | sin_gps (permiso negado) | pide escribir la ubicación; no deja enviar sin ella | ✔ · ✔ |
 
+### 1.b Diseño en tamaños reales (antes de presentar)
+```bash
+cd web && npm run build && npx vite preview --port 4173 &
+cd campo && node pantallas.mjs http://localhost:4173 capturas   # o contra https://aguas-zmg.netlify.app
+```
+Captura mapa, pines (escenario de prueba), ruta y mapa alejado en Mac 1440/1512, Windows 1366/1536, monitor 1920,
+iPhone SE/13/14 Pro Max y Pixel 7. `pantallas_reportar.mjs` y `pantallas_ayuda.mjs` recorren las demás pantallas.
+
 ## 2. En teléfono real (no se puede simular)
 
 - [ ] **Voz:** activar "Leer en voz alta" en un iPhone y en un Android. Debe sonar con acento mexicano/latino
