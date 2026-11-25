@@ -1,6 +1,8 @@
 /* Base y layout de la app. Móvil primero; escritorio desde 1024px (D-018). */
 *,*::before,*::after{box-sizing:border-box}
 html,body,#root{height:100%;margin:0}
+/* La app ocupa la pantalla y nada se desplaza "por fuera" (en iPad/iPhone la página entera rebotaba y brincaba) */
+html,body{overflow:hidden;overscroll-behavior:none}
 body{background:var(--bg);color:var(--tx);font:var(--t-body);-webkit-font-smoothing:antialiased;
   transition:background var(--dur-theme),color var(--dur-theme)}
 h1,h2,h3{margin:0}

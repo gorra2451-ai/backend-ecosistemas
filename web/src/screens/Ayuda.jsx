@@ -817,7 +817,11 @@ export function Ajustes() {
       return
     }
     setPrefs({ ...prefs, a11y: v ? [...a11y, k] : a11y.filter((x) => x !== k) })
-    if (k === 'dalton') guardarAccesibilidad({ daltonismo: v }).catch(() => {}) // se guarda en el perfil anónimo; si falla, queda local
+    if (k === 'dalton') {
+      guardarAccesibilidad({ daltonismo: v }).catch(() => {}) // se guarda en el perfil anónimo; si falla, queda local
+      // Mismo aviso que la leyenda del mapa (testeo iPad: "el modo daltonismo no cambia")
+      avisar(v ? 'Modo daltonismo activado: niveles en azul → naranja, sin rojo ni verde' : 'Modo daltonismo desactivado')
+    }
   }
 
   return (

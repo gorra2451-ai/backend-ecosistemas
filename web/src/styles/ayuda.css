@@ -198,6 +198,12 @@
   .ay-toggle{padding:8px 12px}
   .ay-toggle-r{gap:6px;font-size:13px}
 }
+/* Fold cerrado (344) y Fold viejo (280): "Desactivado" junto al interruptor dejaba ~110 px al texto ("Texto / grande",
+   descripciones de 6 renglones). El estado va debajo del interruptor, como en la Bienvenida. */
+@media (max-width:359.98px){
+  .ay-toggle > span:first-child{min-width:0}
+  .ay-toggle-r{flex-direction:column-reverse;gap:4px;font-size:12px}
+}
 /* Escritorio: el panel derecho mide 560 px; textos e íconos proporcionales a laptop/monitor */
 @media (min-width:1024px){
   .ay-sub,.ay-toggle-d{font-size:15px}
@@ -222,3 +228,5 @@
   .ay-stepper{font-size:16px}
   .ay-num{width:36px;height:36px;font-size:20px}
 }
+/* Que "contacta a:" no deje la "a:" sola en el renglón de abajo (iPhone SE, Fold) */
+.ay-rec-lead,.ay-urg-t,.ay-pc-aviso{text-wrap:balance}
