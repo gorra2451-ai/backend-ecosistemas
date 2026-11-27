@@ -19,7 +19,7 @@ import {
 import { hablar } from '../lib/confirmar.js'
 import { fraseEstado, ubicacionReal } from '../lib/vozAlertas.js'
 import { useArrastreHoja } from '../lib/hoja.js'
-import { pedirRutas, leerRutas, suscribirRuta, rutasPara, rutaActiva, elegirRuta, verRutaEnMapa, olvidarSiOtroDestino, debeRecalcular, claveDestino } from '../lib/rutas.js'
+import { pedirRutas, leerRutas, suscribirRuta, rutasPara, rutaActiva, elegirRuta, verRutaEnMapa, olvidarSiOtroDestino, debeRecalcular, claveDestino, etiquetaCamino } from '../lib/rutas.js'
 import { avisoCorto, sugerenciasSinResultado, vistaLugar, encabezadoLugar, estadoCaminoDestino, POPULARES } from '../lib/buscar.js'
 import '../styles/buscar.css'
 import { etiquetaPin } from '../lib/pines.js'
@@ -839,7 +839,6 @@ const IcoRuta = () => (
 )
 // Medio de transporte activo, cambiable desde el panel (testeo: chip "En auto ▾"). Usa medio/setMedio del store.
 const MEDIOS_RUTA = [['peaton', 'A pie'], ['bici', 'En bici'], ['moto', 'En moto'], ['auto', 'En auto'], ['transporte_publico', 'En transporte público']]
-const nReportes = (n) => (n ? `${n} reporte${n === 1 ? '' : 's'} en el camino` : 'Sin reportes en el camino')
 
 // rutas = estado ÚNICO de lib/rutas.js (el mismo que dibuja el mapa) o null.
 function PanelRutas({ rutas, onVer, real, medio, onMedio }) {
@@ -867,7 +866,7 @@ function PanelRutas({ rutas, onVer, real, medio, onMedio }) {
             <span className="bs-ruta-linea" aria-hidden="true" />
             <span className="bs-ruta-txt">
               <span className="bs-ruta-1"><b>{x.min} min</b> · {x.km} km{i === rutas.elegida && <span className="bs-ruta-activa">Ruta activa</span>}</span>
-              <span className={'mp-ruta-tag' + (x.enCamino.length ? ' mal' : ' bien')}>{nReportes(x.enCamino.length)}</span>
+              <span className={'mp-ruta-tag' + (x.enCamino.length || !x.revisada ? ' mal' : ' bien')}>{etiquetaCamino(x)}</span>
             </span>
           </button>
         ))}
@@ -940,7 +939,7 @@ export function Buscar() {
   const reportes = [...datos.reportes, ...repDestino.filter((x) => !ids.has(x.id))]
 
   function calcular(m = medio) {
-    if (lugar) pedirRutas({ medio: m, origen: ubic, destino: lugar, reportes })
+    if (lugar) pedirRutas({ medio: m, origen: ubic, destino: lugar, reportes, buscarReportes: reportesEnArea })
   }
   // Desde el detalle de alerta: calcula en cuanto hay reportes cargados (si no, "en el camino" sale en 0).
   useEffect(() => { if (calcularAlCargar.current && lugar && !datos.cargando) { calcularAlCargar.current = false; calcular() } }, [datos.cargando, lugar]) // eslint-disable-line
@@ -985,7 +984,7 @@ export function Buscar() {
             <span className="bs-over"><Icon name="pin" size={16} stroke={2.6} />Destino</span>
             <h2 className="bs-dest-t">{v.nombre}{v.municipio && <span className="bs-dest-muni"> · {v.municipio}</span>}</h2>
             {(v.categoria || v.detalle) && <p className="bs-dir">{[v.categoria, v.detalle].filter(Boolean).join(' · ')}</p>}
-            <p className="bs-estado">{estadoCaminoDestino({ enCamino: activa ? activa.enCamino.length : null, enDestino })}</p>
+            <p className="bs-estado">{estadoCaminoDestino({ enCamino: activa ? activa.enCamino.length : null, enDestino, revisada: !!activa?.revisada })}</p>
           </header>
           <div className="mp-lugar-acc">
             <button type="button" className="btn btn-primary mp-btn-prim" onClick={() => calcular()} disabled={rutas?.estado === 'buscando'}>

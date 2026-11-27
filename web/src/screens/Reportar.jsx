@@ -254,10 +254,10 @@ export function Tipo() {
   const { ir, ubic, pedirUbicacion } = useApp()
   // Se pide la ubicación desde ya para que en Detalles esté lista.
   useEffect(() => { if (!ubic.real) pedirUbicacion().catch(() => {}) }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  // Persona en riesgo: directo a la pantalla completa "Llama al 911" (ronda 1, a pedido de Diego 2026-11-11);
-  // el aviso se pone en el mapa desde ahí con tu ubicación (sin GPS real no se manda).
+  // Persona en riesgo: directo a la pantalla completa "Llama al 911" (ronda 1, a pedido de Diego 2026-11-11).
+  // Revisión de Leo (2026-11-26): el aviso al mapa ya NO se publica al abrir; solo con su botón (pantalla Riesgo).
   const elegir = (tipo, gravedad = null) => (tipo === 'persona_en_riesgo'
-    ? ir('riesgo', { armado: ubic.real ? armarReporte({ tipo, ubic }) : null }, { cerrarFlujo: true })
+    ? ir('riesgo', {}, { cerrarFlujo: true })
     : ir('paso2', gravedad ? { tipo, gravedad } : { tipo }))
   const voz = useVozTipo(elegir)
   // Reporte a medias de esta sesión (sessionStorage): se ofrece seguir o descartarlo.
@@ -513,29 +513,32 @@ function Enviado() {
 export function Riesgo() {
   const app = useApp()
   const { ir, params, ubic } = app
-  const armado = params.armado || null
   const coche = !!params.coche
-  const [envio, setEnvio] = useState(armado ? 'enviando' : 'sin_ubic')
+  // Revisión de Leo (2026-11-26): abrir esta pantalla NO publica nada. El 911 va primero, con o sin GPS, y el
+  // aviso comunitario se publica solo al tocar "Publicar aviso en mi ubicación", mostrando el punto que se comparte.
+  const [envio, setEnvio] = useState('listo')
   const mandado = useRef(false)
 
-  useEffect(() => {
-    if (!armado || mandado.current) return
+  // Nunca el punto de ejemplo del mapa: sin GPS real no se publica y el mensaje solo lleva lo que la persona escribe.
+  const gps = ubic.real ? { lat: ubic.lat, lng: ubic.lng } : null
+  const publicado = ['enviando', 'pendiente', 'activo', 'cola'].includes(envio)
+  const publicar = () => {
+    if (!gps || mandado.current) return
     mandado.current = true
-    enviar(app, armado).then((res) => setEnvio(res.error || res.estado))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Nunca el punto de ejemplo del mapa: sin GPS real el mensaje solo lleva el lugar que la persona escribe.
-  const gps = armado ? { lat: armado.rep.lat, lng: armado.rep.lng } : ubic.real ? { lat: ubic.lat, lng: ubic.lng } : null
+    setEnvio('enviando')
+    enviar(app, armarReporte({ tipo: 'persona_en_riesgo', ubic })).then((res) => {
+      if (res.error) mandado.current = false // se puede reintentar
+      setEnvio(res.error || res.estado)
+    })
+  }
   const [referencia, setReferencia] = useState('')
   const [intento, setIntento] = useState(false)
   const mensaje = mensajeRiesgo({ referencia, ...gps, conGps: !!gps, enCoche: coche })
-  const linea = {
+  const linea = envio === 'listo' ? null : {
     enviando: 'Poniendo tu aviso en el mapa…',
     pendiente: 'Tu aviso ya está en el mapa.',
     activo: 'Tu aviso ya está en el mapa.',
     cola: 'Sin señal: tu aviso se guardó y se manda solo cuando vuelva.',
-    sin_ubic: 'No tenemos tu ubicación: tu aviso no se puso en el mapa.',
   }[envio] || `No pudimos poner tu aviso en el mapa (${mensajeError(envio).titulo}).`
 
   return (
@@ -544,9 +547,18 @@ export function Riesgo() {
         <div className="tag">{coche ? 'Alguien dentro de un coche' : 'Persona en riesgo'}</div>
         <h1>Llama al 911 ahora</h1>
         <p>{coche ? 'Si el agua sube, salgan del coche hacia un lugar alto.' : 'No entres al agua.'}</p>
-        <div className="envio" role="status" aria-live="polite">{linea}</div>
         <div className="rp-spacer" />
         <a className="rp-911" href="tel:911"><Icon name="telefono" size={38} />Llamar al 911</a>
+        <div className="rp-publicar">
+          <button type="button" className="sec" disabled={!gps || publicado} aria-describedby="rp-pub-ayuda" onClick={publicar}>
+            <Icon name="pin" />Publicar aviso en mi ubicación
+          </button>
+          <p id="rp-pub-ayuda" className="rp-ref-ayuda">
+            {gps ? `Se publicará este punto: ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)} (${textoUbicacion(null, ubic.precision)}). Otras personas lo verán en el mapa.`
+              : 'Sin tu ubicación no podemos publicar el aviso. Llama al 911 y avisa a tu familia con lo que escribas abajo.'}
+          </p>
+          {linea && <div className="envio" role="status" aria-live="polite">{linea}</div>}
+        </div>
         {/* Después del 911: avisar a la familia. El lugar escrito es obligatorio y NO se guarda en la base. */}
         <div className="rp-compartir">
           <label htmlFor="rp-ref"><b>¿Dónde está? Calle, cruce o algo cercano</b></label>

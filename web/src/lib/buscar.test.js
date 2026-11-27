@@ -67,4 +67,10 @@ describe('vista del destino', () => {
     expect(estadoCaminoDestino({ enCamino: 0, enDestino: 1 })).toBe('En el camino: sin reportes · En el destino: 1 reporte cerca')
     expect(estadoCaminoDestino({ enDestino: 0 })).toBe('En el destino: sin reportes registrados')
   })
+  it('si no se revisó todo el trayecto, nunca dice "sin reportes" en el camino (revisión de Leo)', () => {
+    expect(estadoCaminoDestino({ enCamino: 0, enDestino: 0, revisada: false }))
+      .toBe('En el camino: no pudimos revisar todo el trayecto · En el destino: sin reportes registrados')
+    expect(estadoCaminoDestino({ enCamino: 1, enDestino: 0, revisada: false }))
+      .toBe('En el camino: 1 reporte, no pudimos revisar todo el trayecto · En el destino: sin reportes registrados')
+  })
 })

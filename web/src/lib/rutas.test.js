@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { perfilDeMedio, urlRutas, redondearOrigen, instruccion, reportesEnRuta, resumirRutas,
-  pedirRutas, leerRutas, rutaActiva, elegirRuta, verRutaEnMapa, quitarRuta, olvidarSiOtroDestino, rutasPara, debeRecalcular } from './rutas.js'
+  pedirRutas, leerRutas, rutaActiva, elegirRuta, verRutaEnMapa, quitarRuta, olvidarSiOtroDestino, rutasPara, debeRecalcular, etiquetaCamino, areaDeRuta } from './rutas.js'
 
 describe('rutas dentro de la app (D-031)', () => {
   it('perfil según cómo se mueve', () => {
@@ -92,5 +92,68 @@ describe('rutas: una sola fuente para panel y mapa (bug del testeo "1 min · 0.2
     await pedirRutas({ medio: 'auto', origen: ORIGEN, destino: MINERVA }, osrm({ '-103.387': { min: 11, km: 8.1 } }))
     expect(debeRecalcular(leerRutas(), { lat: 20.6497, lng: -103.4017 })).toBe(false)
     expect(debeRecalcular(leerRutas(), { lat: 20.70, lng: -103.35 })).toBe(true)
+  })
+})
+
+// Revisión de Leo (2026-11-26): una inundación a mitad de un trayecto largo no se detectaba (solo se miraban
+// reportes a 8 km del origen y 1.5 km del destino) y una consulta fallida decía "Sin reportes en el camino".
+describe('rutas: se revisa TODO el trayecto y se dice cuando no se pudo', () => {
+  // Trayecto largo (~20 km) de oeste a este; la inundación está a la mitad, lejos de origen y destino.
+  const LARGO = { lat: 20.65, lng: -103.25, nombre: 'Tonalá' }
+  const osrmLargo = async () => ({ json: async () => ({ code: 'Ok', routes: [
+    { duration: 1800, distance: 20000, geometry: { coordinates: [[-103.44, 20.65], [-103.345, 20.65], [-103.25, 20.65]] }, legs: [{ steps: [] }] },
+  ] }) })
+  const MITAD = { id: 'mitad', tipo: 'calle', lat: 20.6502, lng: -103.345 }
+
+  it('pide los reportes del área de toda la ruta y detecta la inundación a la mitad', async () => {
+    quitarRuta()
+    let area = null
+    const buscarReportes = async (b) => { area = b; return { data: [MITAD], error: null } }
+    const e = await pedirRutas({ medio: 'auto', origen: ORIGEN, destino: LARGO, reportes: [], buscarReportes }, osrmLargo)
+    expect(area.min_lng).toBeLessThan(-103.44)
+    expect(area.max_lng).toBeGreaterThan(-103.25)
+    expect(e.lista[0].enCamino.map((r) => r.id)).toEqual(['mitad'])
+    expect(e.lista[0].revisada).toBe(true)
+    expect(etiquetaCamino(e.lista[0])).toBe('1 reporte en el camino')
+  })
+
+  it('si la consulta de reportes falla, NO dice "Sin reportes en el camino"', async () => {
+    quitarRuta()
+    const buscarReportes = async () => ({ data: null, error: 'sin_red' })
+    const e = await pedirRutas({ medio: 'auto', origen: ORIGEN, destino: LARGO, reportes: [], buscarReportes }, osrmLargo)
+    expect(e.estado).toBe('listo') // la ruta sí se muestra
+    expect(e.lista[0].revisada).toBe(false)
+    expect(etiquetaCamino(e.lista[0])).toBe('No pudimos revisar todo el trayecto')
+  })
+
+  it('si falla pero ya conocíamos un reporte en el camino, lo dice y avisa que la revisión quedó incompleta', async () => {
+    quitarRuta()
+    const buscarReportes = async () => { throw new Error('red') }
+    const e = await pedirRutas({ medio: 'auto', origen: ORIGEN, destino: LARGO, reportes: [MITAD], buscarReportes }, osrmLargo)
+    expect(etiquetaCamino(e.lista[0])).toBe('1 reporte en el camino · no pudimos revisar todo el trayecto')
+  })
+
+  it('sin forma de consultar reportes, la revisión no se da por completa', async () => {
+    quitarRuta()
+    const e = await pedirRutas({ medio: 'auto', origen: ORIGEN, destino: LARGO, reportes: [] }, osrmLargo)
+    expect(etiquetaCamino(e.lista[0])).toBe('No pudimos revisar todo el trayecto')
+  })
+
+  it('revisión completa y sin reportes: "Sin reportes en el camino"', () => {
+    expect(etiquetaCamino({ enCamino: [], revisada: true })).toBe('Sin reportes en el camino')
+    expect(etiquetaCamino({ enCamino: [{}, {}], revisada: true })).toBe('2 reportes en el camino')
+  })
+
+  it('los reportes ya conocidos (p. ej. simulaciones) se suman sin duplicar', async () => {
+    quitarRuta()
+    const buscarReportes = async () => ({ data: [MITAD], error: null })
+    const e = await pedirRutas({ medio: 'auto', origen: ORIGEN, destino: LARGO, reportes: [MITAD], buscarReportes }, osrmLargo)
+    expect(e.lista[0].enCamino).toHaveLength(1)
+  })
+
+  it('el área de la ruta cubre todos sus puntos con margen', () => {
+    const b = areaDeRuta([[[-103.44, 20.60], [-103.25, 20.70]]], 200)
+    expect(b.min_lat).toBeLessThan(20.60); expect(b.max_lat).toBeGreaterThan(20.70)
+    expect(b.min_lng).toBeLessThan(-103.44); expect(b.max_lng).toBeGreaterThan(-103.25)
   })
 })

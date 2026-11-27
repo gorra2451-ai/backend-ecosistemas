@@ -2,6 +2,20 @@
 > Lo más nuevo arriba. Una entrada por sesión. Formato:
 > `## AAAA-MM-DD · Persona · Herramienta` → Hecho / Decidido / Pendiente
 
+## 2026-11-27 (revisión de Leo: rutas y emergencia) · Diego · Claude Code
+**Hecho** (rama `fix/web-rutas-emergencia`, solo front; `docs/API.md` sin cambios)
+- Rutas: los reportes se piden en el área de TODA la ruta (antes solo 8 km del origen y 1.5 km del destino; una
+  inundación a mitad de un trayecto largo no salía). Si esa consulta falla dice «No pudimos revisar todo el
+  trayecto» (antes «Sin reportes en el camino»). Mismo texto en la tarjeta del mapa y en "En el camino" del destino.
+- Persona en riesgo: abrir la pantalla ya no publica nada. 911 visible con o sin GPS; botón aparte «Publicar aviso
+  en mi ubicación» que muestra el punto (lat, lng y ±m); sin GPS no se puede tocar y dice por qué. Acordado con Leo.
+- 354 pruebas, build. Liga borrador probada en Chrome: emergencia con GPS y sin GPS (sin llamadas a Supabase al
+  abrir), ruta con escenario de prueba (1 reporte en el camino) y sin reportes; consulta del área responde 200.
+**Pendiente**
+- Lunes (congelar código): probar en celular real el botón «Publicar» (crea reporte real) y la ruta sin red.
+- Después del martes: peso por gravedad al ordenar rutas, avisos de ruta en vivo, ubicación al entrar, pin
+  ajustable, preguntas del reporte, camión, modo claro; P-40 frases con Protección Civil.
+
 ## 2026-11-24 (listo para presentar en compu y celular) · Diego · Claude Code
 **Hecho**
 - Escritorio: el mapa ya no se aleja al mapamundi (límites de la ZMG, zoom mín. 10); aviso "Ruta a …" bajo la barra

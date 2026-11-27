@@ -30,8 +30,11 @@ export const encabezadoLugar = (l) => { const v = vistaLugar(l); return [v.nombr
 
 // "En el camino: 2 reportes · En el destino: sin reportes registrados" (testeo: no mezclar camino y destino).
 const nRep = (n) => `${n} reporte${n === 1 ? '' : 's'}`
-export function estadoCaminoDestino({ enCamino = null, enDestino = 0 } = {}) {
+export function estadoCaminoDestino({ enCamino = null, enDestino = 0, revisada = true } = {}) {
   const destino = `En el destino: ${enDestino ? nRep(enDestino) + ' cerca' : 'sin reportes registrados'}`
   if (enCamino == null) return destino
-  return `En el camino: ${enCamino ? nRep(enCamino) : 'sin reportes'} · ${destino}`
+  const camino = !revisada
+    ? (enCamino ? `${nRep(enCamino)}, no pudimos revisar todo el trayecto` : 'no pudimos revisar todo el trayecto')
+    : (enCamino ? nRep(enCamino) : 'sin reportes')
+  return `En el camino: ${camino} · ${destino}`
 }
