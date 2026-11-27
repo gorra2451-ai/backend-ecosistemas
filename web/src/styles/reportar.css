@@ -299,3 +299,6 @@
   .rp-911 svg{width:26px;height:26px}
   .rp-riesgo h1{font-size:38px}
 }
+/* Revisión de Leo (2026-11-26): publicar el aviso de persona en riesgo es una acción aparte del 911 */
+.rp-riesgo .rp-publicar{display:flex;flex-direction:column;gap:8px}
+.rp-riesgo button.sec:disabled{opacity:.55;cursor:not-allowed}

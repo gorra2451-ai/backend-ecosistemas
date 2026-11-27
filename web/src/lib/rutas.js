@@ -41,8 +41,28 @@ export function reportesEnRuta(coords = [], reportes = [], margen = 80) {
   return reportes.filter((r) => coords.some((c, i) => i > 0 && distTramo(r, coords[i - 1], c) <= margen))
 }
 
-export function resumirRutas(rutas = [], reportes = []) {
+// Rectángulo que cubre todas las rutas (+ margen) para pedir los reportes de TODO el trayecto, no solo los
+// de cerca del origen y del destino (revisión de Leo: una inundación a mitad del camino no se detectaba).
+export function areaDeRuta(listas = [], margenM = 200) {
+  const pts = listas.flat()
+  const lats = pts.map((c) => c[1]); const lngs = pts.map((c) => c[0])
+  const minLat = Math.min(...lats); const maxLat = Math.max(...lats)
+  const dLat = margenM / 111320
+  const dLng = margenM / (111320 * Math.cos((((minLat + maxLat) / 2) * Math.PI) / 180))
+  return { min_lat: minLat - dLat, max_lat: maxLat + dLat, min_lng: Math.min(...lngs) - dLng, max_lng: Math.max(...lngs) + dLng }
+}
+
+// "Sin reportes en el camino" SOLO si de verdad se revisó todo el trayecto.
+export function etiquetaCamino({ enCamino = [], revisada = false } = {}) {
+  const n = enCamino.length
+  const cuantos = n ? `${n} reporte${n === 1 ? '' : 's'} en el camino` : ''
+  if (!revisada) return n ? `${cuantos} · no pudimos revisar todo el trayecto` : 'No pudimos revisar todo el trayecto'
+  return cuantos || 'Sin reportes en el camino'
+}
+
+export function resumirRutas(rutas = [], reportes = [], revisada = false) {
   return rutas.map((r) => ({
+    revisada,
     coords: r.geometry.coordinates,
     min: Math.max(1, Math.round(r.duration / 60)),
     km: (r.distance / 1000).toFixed(1),
@@ -51,13 +71,26 @@ export function resumirRutas(rutas = [], reportes = []) {
   })).sort((a, b) => a.enCamino.length - b.enCamino.length || a.min - b.min)
 }
 
-export async function buscarRutas(medio, origen, destino, reportes, f = fetch) {
+// Une los reportes ya conocidos (incluye simulaciones del modo prueba) con los del área de la ruta, sin duplicar.
+async function reportesDelTrayecto(rutas, conocidos, buscarReportes) {
+  if (!buscarReportes) return { reportes: conocidos, revisada: false }
+  try {
+    const { data, error } = await buscarReportes(areaDeRuta(rutas.map((r) => r.geometry.coordinates)))
+    if (error || !Array.isArray(data)) return { reportes: conocidos, revisada: false }
+    const ids = new Set(conocidos.map((x) => x.id))
+    return { reportes: [...conocidos, ...data.filter((x) => !ids.has(x.id))], revisada: true }
+  } catch { return { reportes: conocidos, revisada: false } }
+}
+
+export async function buscarRutas(medio, origen, destino, reportes = [], f = fetch, buscarReportes = null) {
+  let d
   try {
     const res = await f(urlRutas(perfilDeMedio(medio), redondearOrigen(origen), destino))
-    const d = await res.json()
-    if (d.code !== 'Ok' || !d.routes?.length) return { data: null, error: 'sin_ruta' }
-    return { data: resumirRutas(d.routes, reportes), error: null }
+    d = await res.json()
   } catch { return { data: null, error: 'sin_red' } }
+  if (d.code !== 'Ok' || !d.routes?.length) return { data: null, error: 'sin_ruta' }
+  const t = await reportesDelTrayecto(d.routes, reportes, buscarReportes)
+  return { data: resumirRutas(d.routes, t.reportes, t.revisada), error: null }
 }
 
 // ---------- Estado ÚNICO de rutas (store pequeño, como centrarEn) ----------
@@ -79,11 +112,11 @@ export const rutaActiva = (e = actual) => (e?.estado === 'listo' ? e.lista[e.ele
 export const debeRecalcular = (e, origen, umbralM = 150) =>
   !!(e && e.estado === 'listo' && origen && distanciaM(e.origen, redondearOrigen(origen)) > umbralM)
 
-export async function pedirRutas({ medio, origen, destino, reportes = [] }, f = fetch) {
+export async function pedirRutas({ medio, origen, destino, reportes = [], buscarReportes = null }, f = fetch) {
   const n = ++seq
   fijar({ seq: n, clave: claveDestino(destino), destino, origen: redondearOrigen(origen), medio,
     estado: 'buscando', lista: [], elegida: 0, enMapa: false })
-  const r = await buscarRutas(medio, origen, destino, reportes, f)
+  const r = await buscarRutas(medio, origen, destino, reportes, f, buscarReportes)
   if (actual?.seq !== n) return null // llegó tarde: ya se pidió otra ruta o se cambió de destino
   fijar({ ...actual, estado: r.error ? 'error' : 'listo', lista: r.data || [] })
   return actual

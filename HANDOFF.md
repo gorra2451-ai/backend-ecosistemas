@@ -1,10 +1,11 @@
 # HANDOFF — Estado actual
 > Foto corta para retomar en una sesión nueva. Máx. ~60 líneas. Se reescribe al cerrar cada sesión.
 
-**Última actualización:** 2026-11-23 · Diego (con Claude Code)
+**Última actualización:** 2026-11-27 · Diego (con Claude Code)
 **Fase actual:** post-testeo mid-fi: cambios D-033 aplicados en prod (ver `docs/CAMBIOS_TESTEO_MIDFI.md`)
 **Liga del testeo:** https://aguas-zmg.netlify.app/?prueba=1 (main `a708f16` desplegado en Netlify prod)
-**Rama activa:** ninguna (todo en `main`). Merge a main: Diego, por PR con checks verdes (D-025).
+**Rama activa:** `fix/web-rutas-emergencia` (PR abierto; borrador https://rutas-emergencia--aguas-zmg.netlify.app).
+Merge a main: Diego, por PR con checks verdes (D-025). **Presentación: martes 2026-12-01; lunes se congela el código.**
 
 ## Dónde quedamos
 - Prod con D-026…D-031: hoja arrastrable, atrás dentro de la app, vibración (Android; iOS 18+ con truco), pines por
@@ -15,6 +16,8 @@
   Diego ya se borró. Todo reporte que NO empiece con `5eed` es de un tester.
 
 ## Siguiente paso (en este orden)
+00. Merge del PR de rutas/emergencia → deploy prod → lunes: recorrido en compu y celular (911 con/sin GPS, publicar
+   solo con botón, ruta con inundación a la mitad y sin red). Demo: `?prueba=1` + Más → Simulaciones.
 0. Probar D-033 en teléfono real (`docs/PRUEBAS_CAMPO.md` §2) y decidir P-38 (avisos por zona) y P-39 (datos de refugios).
 1. Durante el testeo (si Diego lo pide): vigilar `en_revision` y `persona_en_riesgo` nuevos con
    `supabase db query --linked`; restaurar/ocultar solo con OK de Diego.

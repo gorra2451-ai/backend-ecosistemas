@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Circle, Polyline, useMap } from 'react
 import { renderToStaticMarkup } from 'react-dom/server'
 import Icon from './Icon.jsx'
 import { htmlPin } from '../lib/pines.js'
-import { leerRutas, suscribirRuta, quitarRuta, elegirRuta, rutaActiva } from '../lib/rutas.js'
+import { leerRutas, suscribirRuta, quitarRuta, elegirRuta, rutaActiva, etiquetaCamino } from '../lib/rutas.js'
 import { htmlDestino } from '../lib/destino.js'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -130,7 +130,7 @@ function RutaEnMapa() {
           color: 'var(--tx)', font: '700 14px/1.3 var(--f-body)' }}>
         <span style={{ flex: 1, minWidth: 0 }}>
           {nombre && <span style={{ display: 'block', font: '800 15px var(--f-body)' }}>Ruta a {nombre}</span>}
-          {r.min} min · {r.km} km · {r.enCamino.length ? `⚠ ${r.enCamino.length} reporte${r.enCamino.length === 1 ? '' : 's'} en el camino` : 'sin reportes en el camino'}
+          {r.min} min · {r.km} km · {r.enCamino.length || !r.revisada ? '⚠ ' : ''}{etiquetaCamino(r)}
           {e.lista.length > 1 && <span style={{ display: 'block', fontWeight: 400, color: 'var(--mu2)' }}>Opción {e.elegida + 1} de {e.lista.length} · toca la línea punteada para cambiar</span>}
         </span>
         <button type="button" onClick={quitarRuta} aria-label="Quitar ruta"
